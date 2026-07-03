@@ -1925,8 +1925,9 @@ async function loadEventGuests() {
       <td>${g.sms_sent === 'yes' ? '<span class="badge badge-green">Imetumwa</span>' : '<span class="badge badge-yellow">Haijatumwa</span>'}</td>
       <td>${g.wa_sent === 'yes' ? '<span class="badge badge-green">Imetumwa</span>' : '<span class="badge badge-yellow">Haijatumwa</span>'}</td>
       <td>
-        <button class="btn btn-outline btn-sm" onclick="deleteGuest('${g.id}')">🗑️</button>
-      </td>
+  <button class="btn btn-outline btn-sm" onclick="generateCard('${g.id}')">🎫</button>
+  <button class="btn btn-outline btn-sm" onclick="deleteGuest('${g.id}')">🗑️</button>
+</td>
     </tr>`;
   }).join('');
 }
