@@ -987,7 +987,20 @@
           </div>
           <button class="btn btn-primary" onclick="showModal('uploadTemplateModal')">+ Upload Template</button>
         </div>
-
+</div> async function loadTemplates() {
+    </div> const { data, error } = await client.from('templates').select('*');
+    
+    </div> if (data) {
+       </div> const listContainer = document.getElementById('templatesList'); // Hakikisha una div yenye ID hii kwenye HTML
+        </div> listContainer.innerHTML = data.map(t => `
+            <div class="template-item">
+                <img src="${t.image_url}" width="100">
+                <p>${t.name}</p>
+                <button onclick="deleteTemplate('${t.id}')">Futa</button>
+            </div>
+        `).join('');
+    }
+}
         <div class="card" style="margin-bottom:16px;">
           <div class="card-header">
             <div class="card-title">🎨 Mipangilio ya Kadi (Positions)</div>
