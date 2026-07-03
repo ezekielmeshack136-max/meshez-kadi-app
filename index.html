@@ -1965,13 +1965,16 @@ async function addGuest() {
   const prefix  = event?.prefix || 'EVENT2026';
   const cardId  = prefix + '-' + Math.random().toString(36).substr(2, 6).toUpperCase();
 
-  const { error } = await sb.from('guests').insert({
-    user_id: currentUser.id,
-    event_id: eventId,
-    name, phone: phoneFixed, group_size: groupSize,
-    whatsapp, card_id: cardId,
-    sms_sent: 'no', wa_sent: 'no', used_count: 0, status: 'Halali'
-  });
+  const { count } = await sb.from('guests').select('*', { count: 'exact', head: true }).eq('event_id', eventId);
+const seqNumber = (count || 0) + 1;
+
+const { error } = await sb.from('guests').insert({
+  user_id: currentUser.id,
+  event_id: eventId,
+  name, phone: phoneFixed, group_size: groupSize,
+  whatsapp, card_id: cardId, sequence_number: seqNumber,
+  sms_sent: 'no', wa_sent: 'no', used_count: 0, status: 'Halali'
+});
 
   if (error) return showToast('Kosa: ' + error.message, 'error');
   showToast(`${name} ameongezwa! Kadi: ${cardId}`, 'success');
@@ -2510,7 +2513,22 @@ function generateSingleCardBlob(guest, template, pos) {
           ctx.fill();
           ctx.restore();
           ctx.drawImage(qrImg, parseInt(pos.qrX), parseInt(pos.qrY), parseInt(pos.qrSize), parseInt(pos.qrSize));
-          canvas.toBlob(blob => resolve(blob), 'image/png');
+
+const label = getGuestLabel(guest, guest.sequence_number || 1);
+ctx.fillStyle = '#000000';
+ctx.font = `bold 24px Inter, sans-serif`;
+ctx.textAlign = 'center';
+ctx.fillText(label, parseInt(pos.qrX) + parseInt(pos.qrSize) / 2, parseInt(pos.qrY) + parseInt(pos.qrSize) + 30);
+
+canvas.toBlob(blob => resolve(blob), 'image/png');ctx.drawImage(qrImg, parseInt(pos.qrX), parseInt(pos.qrY), parseInt(pos.qrSize), parseInt(pos.qrSize));
+
+const label = getGuestLabel(guest, guest.sequence_number || 1);
+ctx.fillStyle = '#000000';
+ctx.font = `bold 24px Inter, sans-serif`;
+ctx.textAlign = 'center';
+ctx.fillText(label, parseInt(pos.qrX) + parseInt(pos.qrSize) / 2, parseInt(pos.qrY) + parseInt(pos.qrSize) + 30);
+
+canvas.toBlob(blob => resolve(blob), 'image/png');
         };
         qrImg.onerror = reject;
         qrImg.src = qrDataUrl;
