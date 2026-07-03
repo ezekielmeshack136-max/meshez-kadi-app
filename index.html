@@ -2286,12 +2286,29 @@ async function renderPositionPreview() {
     ctx.textAlign = 'center';
     ctx.fillText('Jina Mfano', pos.jinaX, pos.jinaY);
 
-    const qrDataUrl = await QRCode.toDataURL('MFANO-QR', { width: pos.qrSize, margin: 1 });
-    const qrImg = new Image();
-    qrImg.onload = () => {
-      ctx.drawImage(qrImg, pos.qrX, pos.qrY, pos.qrSize, pos.qrSize);
-    };
-    qrImg.src = qrDataUrl;
+   const qrDataUrl = await QRCode.toDataURL('MFANO-QR', { width: pos.qrSize, margin: 1 });
+const qrImg = new Image();
+qrImg.onload = () => {
+  const padding = 16;
+  const boxX = pos.qrX - padding;
+  const boxY = pos.qrY - padding;
+  const boxSize = pos.qrSize + (padding * 2);
+  const radius = 12;
+
+  // Chora mstatili mweupe wenye kona za mviringo chini ya QR
+  ctx.save();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.shadowColor = 'rgba(0,0,0,0.25)';
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  ctx.roundRect(boxX, boxY, boxSize, boxSize, radius);
+  ctx.fill();
+  ctx.restore();
+
+  // Chora QR juu ya hiyo background
+  ctx.drawImage(qrImg, pos.qrX, pos.qrY, pos.qrSize, pos.qrSize);
+};
+qrImg.src = qrDataUrl;
   };
   bgImg.src = previewTemplateCache.url;
 }
