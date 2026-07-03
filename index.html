@@ -2451,12 +2451,18 @@ async function generateCard(guestId) {
     const qrDataUrl = await QRCode.toDataURL(guest.card_id, { width: parseInt(pos.qrSize), margin: 1 });
     const qrImg = new Image();
     qrImg.onload = () => {
-      ctx.drawImage(qrImg, parseInt(pos.qrX), parseInt(pos.qrY), parseInt(pos.qrSize), parseInt(pos.qrSize));
+  ctx.drawImage(qrImg, parseInt(pos.qrX), parseInt(pos.qrY), parseInt(pos.qrSize), parseInt(pos.qrSize));
 
-      // Onesha canvas, ficha "loading"
-      document.getElementById('cardLoading').style.display = 'none';
-      canvas.style.display = 'inline-block';
-    };
+  // Andika label chini ya QR
+  const label = getGuestLabel(guest, guest.sequence_number || 1);
+  ctx.fillStyle = '#000000';
+  ctx.font = `bold 24px Inter, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(label, parseInt(pos.qrX) + parseInt(pos.qrSize) / 2, parseInt(pos.qrY) + parseInt(pos.qrSize) + 30);
+
+  document.getElementById('cardLoading').style.display = 'none';
+  canvas.style.display = 'inline-block';
+};
     qrImg.src = qrDataUrl;
   };
   bgImg.onerror = () => {
