@@ -2472,6 +2472,87 @@ function downloadCard() {
   link.href = canvas.toDataURL('image/png');
   link.click();
 }
+  // ===== BULK QR/CARD GENERATION =====
+function generateSingleCardBlob(guest, template, pos) {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const bgImg = new Image();
+    bgImg.crossOrigin = 'anonymous';
+    bgImg.onload = async () => {
+      canvas.width = bgImg.width;
+      canvas.height = bgImg.height;
+      ctx.drawImage(bgImg, 0, 0);
+
+      ctx.fillStyle = '#000000';
+      ctx.font = `bold ${pos.jinaFont}px Inter, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(guest.name, parseInt(pos.jinaX), parseInt(pos.jinaY));
+
+      try {
+        const qrDataUrl = await QRCode.toDataURL(guest.card_id, { width: parseInt(pos.qrSize), margin: 1 });
+        const qrImg = new Image();
+        qrImg.onload = () => {
+          const padding = 16;
+          const boxX = parseInt(pos.qrX) - padding;
+          const boxY = parseInt(pos.qrY) - padding;
+          const boxSize = parseInt(pos.qrSize) + padding * 2;
+          ctx.save();
+          ctx.fillStyle = '#FFFFFF';
+          ctx.beginPath();
+          ctx.roundRect(boxX, boxY, boxSize, boxSize, 12);
+          ctx.fill();
+          ctx.restore();
+          ctx.drawImage(qrImg, parseInt(pos.qrX), parseInt(pos.qrY), parseInt(pos.qrSize), parseInt(pos.qrSize));
+          canvas.toBlob(blob => resolve(blob), 'image/png');
+        };
+        qrImg.onerror = reject;
+        qrImg.src = qrDataUrl;
+      } catch (e) { reject(e); }
+    };
+    bgImg.onerror = reject;
+    bgImg.src = template.url;
+  });
+}
+
+async function generateAllCards() {
+  const eventId = document.getElementById('invEventSelect').value;
+  if (!eventId) return showToast('Chagua event kwanza', 'error');
+
+  const { data: eventData } = await sb.from('events').select('*').eq('id', eventId).single();
+
+  const { data: templates } = await sb.from('templates').select('*').eq('user_id', currentUser.id).eq('type', eventData?.type);
+  const template = (templates && templates[0]) || null;
+  if (!template) return showToast('Hakuna template ya aina "' + (eventData?.type || '') + '"', 'error');
+
+  const { data: guests } = await sb.from('guests').select('*').eq('event_id', eventId);
+  if (!guests || guests.length === 0) return showToast('Hakuna wageni kwenye event hii', 'error');
+
+  showToast(`Inatengeneza kadi ${guests.length}... subiri`, 'info');
+
+  const pos = loadPositions();
+  const zip = new JSZip();
+
+  for (let i = 0; i < guests.length; i++) {
+    const g = guests[i];
+    try {
+      const blob = await generateSingleCardBlob(g, template, pos);
+      const safeName = g.name.replace(/[^a-zA-Z0-9]/g, '_');
+      zip.file(`${safeName}_${g.card_id}.png`, blob);
+    } catch (e) {
+      console.error('Imeshindwa: ' + g.name, e);
+    }
+  }
+
+  showToast('Inapakia ZIP...', 'info');
+  const content = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(content);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kadi_${(eventData?.name || 'event').replace(/[^a-zA-Z0-9]/g, '_')}.zip`;
+  a.click();
+  showToast('Kadi zote zimepakuliwa! ✅', 'success');
+}
 </script>
   <!-- Card Preview Modal -->
 <div class="modal-overlay" id="cardPreviewModal">
