@@ -2320,5 +2320,22 @@ async function saveSettings() {
   showToast('Mipangilio imehifadhiwa!', 'success');
 }
 </script>
+  <!-- Card Preview Modal -->
+<div class="modal-overlay" id="cardPreviewModal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">🎫 Kadi ya Mgeni</div>
+      <button class="modal-close" onclick="closeModal('cardPreviewModal')">✕</button>
+    </div>
+    <div class="modal-body" style="text-align:center;">
+      <canvas id="cardCanvas" style="max-width:100%;border:1px solid var(--gray-200);border-radius:8px;"></canvas>
+      <div id="cardLoading" style="padding:32px;color:var(--gray-400);">Inatengeneza kadi...</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('cardPreviewModal')">Funga</button>
+      <button class="btn btn-primary" id="downloadCardBtn" onclick="downloadCard()">⬇️ Pakua Kadi</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
