@@ -2245,6 +2245,57 @@ function savePositions() {
   localStorage.setItem('kadi_positions', JSON.stringify(pos));
   showToast('Mipangilio imehifadhiwa!', 'success');
 }
+  let previewTemplateCache = null;
+
+async function renderPositionPreview() {
+  const canvas = document.getElementById('positionPreviewCanvas');
+  const emptyState = document.getElementById('previewEmptyState');
+  if (!currentUser) return;
+
+  if (!previewTemplateCache) {
+    const { data } = await sb.from('templates').select('*').eq('user_id', currentUser.id).limit(1);
+    if (!data || data.length === 0) {
+      canvas.style.display = 'none';
+      emptyState.style.display = 'block';
+      return;
+    }
+    previewTemplateCache = data[0];
+  }
+
+  canvas.style.display = 'inline-block';
+  emptyState.style.display = 'none';
+
+  const pos = {
+    jinaX: parseInt(document.getElementById('posJinaX').value) || 0,
+    jinaY: parseInt(document.getElementById('posJinaY').value) || 0,
+    jinaFont: parseInt(document.getElementById('posJinaFont').value) || 40,
+    qrX: parseInt(document.getElementById('posQrX').value) || 0,
+    qrY: parseInt(document.getElementById('posQrY').value) || 0,
+    qrSize: parseInt(document.getElementById('posQrSize').value) || 100,
+  };
+
+  const ctx = canvas.getContext('2d');
+  const bgImg = new Image();
+  bgImg.crossOrigin = 'anonymous';
+  bgImg.onload = async () => {
+    canvas.width = bgImg.width;
+    canvas.height = bgImg.height;
+    ctx.drawImage(bgImg, 0, 0);
+
+    ctx.fillStyle = '#1E293B';
+    ctx.font = `bold ${pos.jinaFont}px Inter, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('Jina Mfano', pos.jinaX, pos.jinaY);
+
+    const qrDataUrl = await QRCode.toDataURL('MFANO-QR', { width: pos.qrSize, margin: 1 });
+    const qrImg = new Image();
+    qrImg.onload = () => {
+      ctx.drawImage(qrImg, pos.qrX, pos.qrY, pos.qrSize, pos.qrSize);
+    };
+    qrImg.src = qrDataUrl;
+  };
+  bgImg.src = previewTemplateCache.url;
+}
 
 async function uploadTemplate() {
   const name = document.getElementById('tplName').value.trim();
