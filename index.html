@@ -2532,6 +2532,13 @@ async function generateAllCards() {
 
   const pos = loadPositions();
   const zip = new JSZip();
+  
+  function getGuestLabel(guest, sequenceNumber) {
+  if (guest.group_size === 1) return '#SINGLE';
+  if (guest.group_size === 2) return '#DOUBLE';
+  if (guest.group_size === 3) return '#TRIPLE';
+  return `#GROUP${sequenceNumber}-${guest.group_size}`;
+}
 
   for (let i = 0; i < guests.length; i++) {
     const g = guests[i];
