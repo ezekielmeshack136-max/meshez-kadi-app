@@ -2320,6 +2320,78 @@ async function saveSettings() {
   await sb.from('profiles').update({ settings: JSON.stringify(settings) }).eq('id', currentUser.id);
   showToast('Mipangilio imehifadhiwa!', 'success');
 }
+  // ===== GENERATE CARD (Template + Jina + QR) =====
+function loadPositions() {
+  const saved = localStorage.getItem('kadi_positions');
+  if (saved) return JSON.parse(saved);
+  return { jinaX: 709, jinaY: 381, jinaFont: 75, qrX: 872, qrY: 1662, qrSize: 250 };
+}
+
+async function generateCard(guestId) {
+  showModal('cardPreviewModal');
+  document.getElementById('cardLoading').style.display = 'block';
+  document.getElementById('cardCanvas').style.display = 'none';
+
+  // 1. Pata taarifa za mgeni
+  const { data: guest, error: gErr } = await sb.from('guests').select('*').eq('id', guestId).single();
+  if (gErr || !guest) return showToast('Imeshindwa kupata mgeni', 'error');
+
+  // 2. Pata event ya mgeni huyu (kwa ajili ya kujua 'type')
+  const { data: eventData } = await sb.from('events').select('*').eq('id', guest.event_id).single();
+
+  // 3. Pata template inayolingana na aina ya event
+  const { data: templates } = await sb.from('templates').select('*').eq('user_id', currentUser.id).eq('type', eventData?.type);
+  const template = (templates && templates[0]) || null;
+
+  if (!template) {
+    document.getElementById('cardLoading').textContent = 'Hakuna template ya aina "' + (eventData?.type || '') + '". Upload template kwanza kwenye Template Management.';
+    return;
+  }
+
+  const pos = loadPositions();
+
+  // 4. Chora kwenye Canvas
+  const canvas = document.getElementById('cardCanvas');
+  const ctx = canvas.getContext('2d');
+
+  const bgImg = new Image();
+  bgImg.crossOrigin = 'anonymous';
+  bgImg.onload = async () => {
+    canvas.width = bgImg.width;
+    canvas.height = bgImg.height;
+    ctx.drawImage(bgImg, 0, 0);
+
+    // Andika jina la mgeni
+    ctx.fillStyle = '#1E293B';
+    ctx.font = `bold ${pos.jinaFont}px Inter, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(guest.name, parseInt(pos.jinaX), parseInt(pos.jinaY));
+
+    // Tengeneza QR code kama picha, kisha ichore juu ya kadi
+    const qrDataUrl = await QRCode.toDataURL(guest.card_id, { width: parseInt(pos.qrSize), margin: 1 });
+    const qrImg = new Image();
+    qrImg.onload = () => {
+      ctx.drawImage(qrImg, parseInt(pos.qrX), parseInt(pos.qrY), parseInt(pos.qrSize), parseInt(pos.qrSize));
+
+      // Onesha canvas, ficha "loading"
+      document.getElementById('cardLoading').style.display = 'none';
+      canvas.style.display = 'inline-block';
+    };
+    qrImg.src = qrDataUrl;
+  };
+  bgImg.onerror = () => {
+    document.getElementById('cardLoading').textContent = 'Imeshindwa kupakia picha ya template.';
+  };
+  bgImg.src = template.url;
+}
+
+function downloadCard() {
+  const canvas = document.getElementById('cardCanvas');
+  const link = document.createElement('a');
+  link.download = 'kadi.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
 </script>
   <!-- Card Preview Modal -->
 <div class="modal-overlay" id="cardPreviewModal">
