@@ -1000,35 +1000,42 @@
             <div>
               <div class="form-group">
                 <label>Jina - Position X</label>
-                <input type="number" id="posJinaX" value="709" placeholder="709">
+                <input type="number" id="posJinaX" value="709" placeholder="709" oninput="renderPositionPreview()">
               </div>
               <div class="form-group">
                 <label>Jina - Position Y</label>
-                <input type="number" id="posJinaY" value="381" placeholder="381">
+                <input type="number" id="posJinaY" value="381" placeholder="381" oninput="renderPositionPreview()">
               </div>
               <div class="form-group">
                 <label>Font Size ya Jina</label>
-                <input type="number" id="posJinaFont" value="75" placeholder="75">
+                <input type="number" id="posJinaFont" value="75" placeholder="75" oninput="renderPositionPreview()">
               </div>
             </div>
             <div>
               <div class="form-group">
                 <label>QR Code - Position X</label>
-                <input type="number" id="posQrX" value="872" placeholder="872">
+                <input type="number" id="posQrX" value="872" placeholder="872" oninput="renderPositionPreview()">
               </div>
               <div class="form-group">
                 <label>QR Code - Position Y</label>
-                <input type="number" id="posQrY" value="1662" placeholder="1662">
+                <input type="number" id="posQrY" value="1662" placeholder="1662" oninput="renderPositionPreview()">
               </div>
               <div class="form-group">
                 <label>QR Code Ukubwa</label>
-                <input type="number" id="posQrSize" value="250" placeholder="250">
+                <input type="number" id="posQrSize" value="250" placeholder="250" oninput="renderPositionPreview()">
               </div>
             </div>
           </div>
           <button class="btn btn-primary" style="width:auto;" onclick="savePositions()">
             💾 Hifadhi Mipangilio
           </button>
+          <div style="margin-top:20px;text-align:center;">
+  <p style="font-size:13px;color:var(--gray-600);margin-bottom:10px;">🔍 Preview ya Moja kwa Moja</p>
+  <canvas id="positionPreviewCanvas" style="max-width:100%;border:1px solid var(--gray-200);border-radius:8px;"></canvas>
+  <div id="previewEmptyState" class="empty-state" style="display:none;">
+    <p>Upload template kwanza ili uone preview</p>
+  </div>
+</div>
         </div>
 
         <div class="card">
