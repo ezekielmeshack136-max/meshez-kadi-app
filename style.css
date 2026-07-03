@@ -1,0 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+:root { --blue: #1A56DB; --orange: #F97316; --gray-50: #F8FAFC; --gray-800: #1E293B; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Inter', sans-serif; background: var(--gray-50); color: var(--gray-800); }
+.app { display: flex; }
+.sidebar { width: 240px; background: var(--gray-800); height: 100vh; position: fixed; color: white; }
+.nav-item { display: block; width: 100%; padding: 15px; color: #ccc; cursor: pointer; border: none; background: none; text-align: left; }
+.nav-item.active { background: var(--blue); color: white; }
+.main { margin-left: 240px; padding: 20px; width: 100%; }
+.page { display: none; }
+.page.active { display: block; }
+.event-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+.event-card { background: white; padding: 20px; border-radius: 12px; border: 1px solid #ddd; }
