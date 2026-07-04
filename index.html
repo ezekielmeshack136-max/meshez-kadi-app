@@ -991,9 +991,12 @@
           <button class="btn btn-primary" onclick="showModal('uploadTemplateModal')">+ Upload Template</button>
         </div>
 
-        <div class="card" style="margin-bottom:16px;">
+        <div class="card" style="margin-bottom:16px;" id="positionEditorCard">
           <div class="card-header">
             <div class="card-title">🎨 Mipangilio ya Kadi (Positions)</div>
+          </div>
+          <div id="editingTemplateLabel" style="font-size:13px;color:var(--orange);font-weight:600;margin-bottom:10px;padding:8px 12px;background:#FFF7ED;border-radius:8px;">
+            👇 Chagua template kwenye orodha ya chini ili kuanza kuhariri mpangilio wake
           </div>
           <p style="font-size:13px;color:var(--gray-600);margin-bottom:16px;">
             Weka positions za jina, QR code, na label kwenye template yako
@@ -1782,7 +1785,7 @@ function showPage(page) {
   if (page === 'users') loadUsers();
   if (page === 'whatsapp') loadWhatsappMonitor();
   if (page === 'scanner') initScanner();
-  if (page === 'templates') { loadTemplates(); previewTemplateCache = null; renderPositionPreview(); }
+  if (page === 'templates') { loadTemplates(); renderPositionPreview(); }
 }
 
 // ===== SIDEBAR MOBILE =====
@@ -2454,7 +2457,35 @@ function initiatePayment(plan) {
 }
 
 // ===== TEMPLATES =====
-function savePositions() {
+const DEFAULT_POSITIONS = { jinaX: 709, jinaY: 381, jinaFont: 75, qrX: 872, qrY: 1662, qrSize: 250 };
+let selectedTemplateForEdit = null; // template inayohaririwa sasa kwenye Position Management
+
+function fillPositionInputs(pos) {
+  document.getElementById('posJinaX').value = pos.jinaX;
+  document.getElementById('posJinaY').value = pos.jinaY;
+  document.getElementById('posJinaFont').value = pos.jinaFont;
+  document.getElementById('posQrX').value = pos.qrX;
+  document.getElementById('posQrY').value = pos.qrY;
+  document.getElementById('posQrSize').value = pos.qrSize;
+}
+
+async function selectTemplateForEditing(templateId) {
+  const { data: t } = await sb.from('templates').select('*').eq('id', templateId).single();
+  if (!t) return showToast('Imeshindwa kupata template', 'error');
+
+  selectedTemplateForEdit = t;
+  previewTemplateCache = t;
+  const pos = t.positions || DEFAULT_POSITIONS;
+  fillPositionInputs(pos);
+
+  const label = document.getElementById('editingTemplateLabel');
+  if (label) label.innerHTML = `✏️ Unahariri mpangilio wa: <strong>${t.name}</strong>`;
+
+  renderPositionPreview();
+  document.getElementById('positionEditorCard')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function savePositions() {
   const pos = {
     jinaX: document.getElementById('posJinaX').value,
     jinaY: document.getElementById('posJinaY').value,
@@ -2463,8 +2494,16 @@ function savePositions() {
     qrY: document.getElementById('posQrY').value,
     qrSize: document.getElementById('posQrSize').value,
   };
-  localStorage.setItem('kadi_positions', JSON.stringify(pos));
-  showToast('Mipangilio imehifadhiwa!', 'success');
+
+  if (!selectedTemplateForEdit) {
+    return showToast('Chagua template kwanza kutoka orodha ya chini kabla ya kuhifadhi', 'error');
+  }
+
+  const { error } = await sb.from('templates').update({ positions: pos }).eq('id', selectedTemplateForEdit.id);
+  if (error) return showToast('Kosa: ' + error.message + ' (Huenda column ya positions haipo - angalia maelezo)', 'error');
+
+  showToast(`Mpangilio wa "${selectedTemplateForEdit.name}" umehifadhiwa!`, 'success');
+  loadTemplates();
 }
   let previewTemplateCache = null;
 
@@ -2474,13 +2513,10 @@ async function renderPositionPreview() {
   if (!currentUser) return;
 
   if (!previewTemplateCache) {
-    const { data } = await sb.from('templates').select('*').eq('user_id', currentUser.id).limit(1);
-    if (!data || data.length === 0) {
-      canvas.style.display = 'none';
-      emptyState.style.display = 'block';
-      return;
-    }
-    previewTemplateCache = data[0];
+    canvas.style.display = 'none';
+    emptyState.style.display = 'block';
+    emptyState.innerHTML = '<p>Chagua template kutoka orodha ya chini ili kuhariri mpangilio wake</p>';
+    return;
   }
 
   canvas.style.display = 'inline-block';
@@ -2550,14 +2586,17 @@ async function uploadTemplate() {
 
   const { data: { publicUrl } } = sb.storage.from('templates').getPublicUrl(path);
 
-  const { error: insErr } = await sb.from('templates').insert({
-    user_id: currentUser.id, name, type, file_path: path, url: publicUrl, event_id: eventId
-  });
-  if (insErr) return showToast('Kosa: ' + insErr.message + ' (Huenda column ya event_id haipo kwenye jedwali la templates - angalia maelezo)', 'error');
+  const { data: inserted, error: insErr } = await sb.from('templates').insert({
+    user_id: currentUser.id, name, type, file_path: path, url: publicUrl, event_id: eventId, positions: DEFAULT_POSITIONS
+  }).select().single();
+  if (insErr) return showToast('Kosa: ' + insErr.message + ' (Huenda column ya event_id/positions haipo kwenye jedwali la templates - angalia maelezo)', 'error');
 
   showToast('Template imepakiwa kwa event hiyo!', 'success');
   closeModal('uploadTemplateModal');
-  loadTemplates();
+  await loadTemplates();
+
+  // Fungua template hii moja kwa moja kwenye preview/editor ili aweze kurekebisha mpangilio
+  if (inserted) selectTemplateForEditing(inserted.id);
 }
 
 async function loadTemplates() {
@@ -2572,14 +2611,16 @@ async function loadTemplates() {
   (allEvents || []).forEach(e => eventNameById[e.id] = e.name);
 
   div.innerHTML = data.map(t => `
-    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray-100);">
+    <div style="display:flex;align-items:center;gap:12px;padding:10px;border-bottom:1px solid var(--gray-100);cursor:pointer;border-radius:8px;${selectedTemplateForEdit?.id === t.id ? 'background:#FFF7ED;' : ''}" onclick="selectTemplateForEditing('${t.id}')">
       <img src="${t.url}" style="width:60px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--gray-200);">
       <div style="flex:1;">
         <div style="font-size:13px;font-weight:600;">${t.name}</div>
         <span class="badge badge-blue" style="font-size:10px;">${t.type}</span>
         ${t.event_id ? `<span class="badge badge-green" style="font-size:10px;">📌 ${eventNameById[t.event_id] || 'Event'}</span>` : `<span class="badge" style="font-size:10px;background:#FEF3C7;color:#92400E;">⚠️ Hakuna event (ya zamani)</span>`}
+        ${t.positions ? `<span class="badge" style="font-size:10px;background:#DBEAFE;color:#1E40AF;">✓ Mpangilio umewekwa</span>` : `<span class="badge" style="font-size:10px;background:#FEE2E2;color:#991B1B;">Mpangilio bado (default)</span>`}
       </div>
-      <button class="btn btn-danger btn-sm" onclick="deleteTemplate('${t.id}','${t.file_path}')">🗑️</button>
+      <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();selectTemplateForEditing('${t.id}')">✏️ Hariri</button>
+      <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteTemplate('${t.id}','${t.file_path}')">🗑️</button>
     </div>
   `).join('');
 }
@@ -2664,9 +2705,7 @@ async function generateCard(guestId) {
     return;
   }
 
-  const pos = loadPositions();
-
-  // 4. Chora kwenye Canvas
+  const pos = template.positions || DEFAULT_POSITIONS;
   const canvas = document.getElementById('cardCanvas');
   const ctx = canvas.getContext('2d');
 
@@ -2778,7 +2817,7 @@ async function generateAllCards() {
 
   showToast(`Inatengeneza kadi ${guests.length}... subiri`, 'info');
 
-  const pos = loadPositions();
+  const pos = template.positions || DEFAULT_POSITIONS;
   const zip = new JSZip();
   
   function getGuestLabel(guest, sequenceNumber) {
