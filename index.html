@@ -8,6 +8,7 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -1116,6 +1117,7 @@
            <div class="card-title">👥 Orodha ya Wageni</div>
 <div style="display:flex;gap:8px;">
   <button class="btn btn-orange btn-sm" onclick="generateAllCards()">📦 Pakua Kadi Zote (ZIP)</button>
+  <button class="btn btn-outline btn-sm" onclick="openBulkImportModal()">📥 Bulk Import (Excel)</button>
   <button class="btn btn-outline btn-sm" onclick="showModal('addGuestModal')">+ Mgeni Mpya</button>
 </div>
           </div>
@@ -1519,6 +1521,50 @@
   </div>
 </div>
 
+<!-- Bulk Import Modal -->
+<div class="modal-overlay" id="bulkImportModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📥 Bulk Import Wageni (Excel/CSV)</div>
+      <button class="modal-close" onclick="closeModal('bulkImportModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>1️⃣ Chagua Event Husika</label>
+        <select id="bulkEventSelect">
+          <option value="">-- Chagua Event --</option>
+        </select>
+        <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Wageni wote kwenye faili hili wataenda kwenye event hii TU.</p>
+      </div>
+
+      <div class="form-group">
+        <label>2️⃣ Pakua Template ya Excel (kama huna)</label>
+        <button class="btn btn-outline btn-sm" style="width:100%;" onclick="downloadGuestExcelTemplate()">⬇️ Pakua Template ya Excel (.xlsx)</button>
+      </div>
+
+      <div class="form-group">
+        <label>3️⃣ Pakia Faili Lako Lililojazwa (.xlsx, .xls, .csv)</label>
+        <input type="file" id="bulkFile" accept=".xlsx,.xls,.csv" onchange="handleBulkFileSelect(event)">
+      </div>
+
+      <div id="bulkPreviewArea" style="display:none;margin-top:12px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px;" id="bulkPreviewCount"></div>
+        <div class="table-wrap" style="max-height:220px;overflow-y:auto;">
+          <table>
+            <thead><tr><th>Jina</th><th>Namba</th><th>Idadi</th><th>WhatsApp</th></tr></thead>
+            <tbody id="bulkPreviewTable"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="bulkErrorArea" style="display:none;margin-top:10px;color:var(--red);font-size:13px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('bulkImportModal')">Ghairi</button>
+      <button class="btn btn-primary" id="bulkConfirmBtn" onclick="confirmBulkImport()" disabled>✅ Ingiza Wageni Wote</button>
+    </div>
+  </div>
+</div>
+
 <!-- Upload Template Modal -->
 <div class="modal-overlay" id="uploadTemplateModal">
   <div class="modal">
@@ -1536,7 +1582,13 @@
         <input type="file" id="tplFile" accept="image/*">
       </div>
       <div class="form-group">
-        <label>Aina</label>
+        <label>Event Husika (template hii itatumika kwa event hii TU)</label>
+        <select id="tplEventSelect">
+          <option value="">-- Chagua Event --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Aina (kwa lebo tu)</label>
         <select id="tplType">
           <option value="harusi">💍 Harusi</option>
           <option value="sendoff">🎊 Sendoff</option>
@@ -1896,6 +1948,17 @@ async function loadEventsDropdown() {
   const { data } = await sb.from('events').select('*').eq('user_id', currentUser.id);
   const sel = document.getElementById('invEventSelect');
   sel.innerHTML = '<option value="">-- Chagua Event --</option>';
+
+  // Sasisha pia dropdown za Template Upload na Bulk Import ili kila moja iwe na orodha ya sasa ya events
+  const tplSel = document.getElementById('tplEventSelect');
+  const bulkSel = document.getElementById('bulkEventSelect');
+  if (tplSel) tplSel.innerHTML = '<option value="">-- Chagua Event --</option>';
+  if (bulkSel) bulkSel.innerHTML = '<option value="">-- Chagua Event --</option>';
+  (data || []).forEach(e => {
+    if (tplSel) tplSel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
+    if (bulkSel) bulkSel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
+  });
+
   (data || []).forEach(e => {
     sel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
   });
@@ -1986,6 +2049,156 @@ async function deleteGuest(id) {
   if (!confirm('Futa mgeni huyu?')) return;
   await sb.from('guests').delete().eq('id', id);
   showToast('Mgeni amefutwa', 'info');
+  loadEventGuests();
+}
+
+// ===== BULK IMPORT (Excel/CSV) =====
+let bulkImportData = [];
+
+function openBulkImportModal() {
+  // Kama tayari kuna event iliyochaguliwa kwenye ukurasa wa wageni, ijaze moja kwa moja
+  const currentEvent = document.getElementById('invEventSelect').value;
+  bulkImportData = [];
+  document.getElementById('bulkFile').value = '';
+  document.getElementById('bulkPreviewArea').style.display = 'none';
+  document.getElementById('bulkErrorArea').style.display = 'none';
+  document.getElementById('bulkConfirmBtn').disabled = true;
+  showModal('bulkImportModal');
+  if (currentEvent) document.getElementById('bulkEventSelect').value = currentEvent;
+}
+
+function downloadGuestExcelTemplate() {
+  const sampleData = [
+    { 'Jina': 'Familia ya Juma', 'Namba': '0713079348', 'Idadi': 2, 'WhatsApp': 'Ndiyo' },
+    { 'Jina': 'Asha Mohamed', 'Namba': '0787654321', 'Idadi': 1, 'WhatsApp': 'Hapana' },
+  ];
+  const ws = XLSX.utils.json_to_sheet(sampleData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Wageni');
+  XLSX.writeFile(wb, 'template_wageni.xlsx');
+}
+
+function normalizeHeaderKey(key) {
+  return String(key || '').trim().toLowerCase();
+}
+
+function findColumnValue(row, possibleNames) {
+  const keys = Object.keys(row);
+  for (const k of keys) {
+    if (possibleNames.includes(normalizeHeaderKey(k))) return row[k];
+  }
+  return '';
+}
+
+function handleBulkFileSelect(evt) {
+  const file = evt.target.files[0];
+  const errArea = document.getElementById('bulkErrorArea');
+  errArea.style.display = 'none';
+  bulkImportData = [];
+
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[firstSheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+      if (!rows.length) {
+        errArea.textContent = 'Faili halina data yoyote.';
+        errArea.style.display = 'block';
+        return;
+      }
+
+      const parsed = rows.map(row => {
+        const name = String(findColumnValue(row, ['jina', 'name', 'jina la mgeni'])).trim();
+        let phone = String(findColumnValue(row, ['namba', 'simu', 'phone', 'namba ya simu'])).trim();
+        let groupSize = parseInt(findColumnValue(row, ['idadi', 'group', 'groupsize', 'idadi ya watu'])) || 1;
+        let whatsapp = String(findColumnValue(row, ['whatsapp', 'wa'])).trim().toLowerCase();
+        whatsapp = (whatsapp === 'ndiyo' || whatsapp === 'yes' || whatsapp === '1' || whatsapp === 'true') ? 'yes' : 'no';
+        return { name, phone, groupSize, whatsapp };
+      }).filter(r => r.name);
+
+      if (!parsed.length) {
+        errArea.textContent = 'Haikupata safu yoyote yenye "Jina" iliyojazwa. Hakikisha unatumia column zenye majina: Jina, Namba, Idadi, WhatsApp.';
+        errArea.style.display = 'block';
+        return;
+      }
+
+      bulkImportData = parsed;
+      document.getElementById('bulkPreviewCount').textContent = `✅ Wageni ${parsed.length} wamepatikana kwenye faili`;
+      document.getElementById('bulkPreviewTable').innerHTML = parsed.slice(0, 50).map(r => `
+        <tr><td>${r.name}</td><td>${r.phone}</td><td>${r.groupSize}</td><td>${r.whatsapp === 'yes' ? '✅' : '❌'}</td></tr>
+      `).join('') + (parsed.length > 50 ? `<tr><td colspan="4" style="text-align:center;color:var(--gray-400);">... na wengine ${parsed.length - 50}</td></tr>` : '');
+      document.getElementById('bulkPreviewArea').style.display = 'block';
+      document.getElementById('bulkConfirmBtn').disabled = false;
+    } catch (err) {
+      errArea.textContent = 'Kosa la kusoma faili: ' + err.message;
+      errArea.style.display = 'block';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function confirmBulkImport() {
+  const eventId = document.getElementById('bulkEventSelect').value;
+  if (!eventId) return showToast('Chagua Event kwanza', 'error');
+  if (!bulkImportData.length) return showToast('Hakuna data ya kuingiza', 'error');
+
+  const btn = document.getElementById('bulkConfirmBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Inaingiza...';
+
+  const { data: event } = await sb.from('events').select('prefix').eq('id', eventId).single();
+  const prefix = event?.prefix || 'EVENT2026';
+
+  const { count } = await sb.from('guests').select('*', { count: 'exact', head: true }).eq('event_id', eventId);
+  let seqNumber = (count || 0);
+
+  const rowsToInsert = bulkImportData.map(g => {
+    let phoneFixed = (g.phone || '').replace(/\s|-/g, '');
+    if (phoneFixed.startsWith('0')) phoneFixed = '255' + phoneFixed.slice(1);
+    else if (phoneFixed && !phoneFixed.startsWith('255')) phoneFixed = '255' + phoneFixed;
+
+    seqNumber += 1;
+    const cardId = prefix + '-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+
+    return {
+      user_id: currentUser.id,
+      event_id: eventId,
+      name: g.name,
+      phone: phoneFixed,
+      group_size: g.groupSize || 1,
+      whatsapp: g.whatsapp,
+      card_id: cardId,
+      sequence_number: seqNumber,
+      sms_sent: 'no', wa_sent: 'no', used_count: 0, status: 'Halali'
+    };
+  });
+
+  // Ingiza kwa vikundi vya 200 ili kuepuka mzigo mkubwa kwa ombi moja
+  const chunkSize = 200;
+  let insertedTotal = 0;
+  for (let i = 0; i < rowsToInsert.length; i += chunkSize) {
+    const chunk = rowsToInsert.slice(i, i + chunkSize);
+    const { error } = await sb.from('guests').insert(chunk);
+    if (error) {
+      showToast('Kosa wakati wa kuingiza: ' + error.message, 'error');
+      btn.disabled = false;
+      btn.textContent = '✅ Ingiza Wageni Wote';
+      return;
+    }
+    insertedTotal += chunk.length;
+  }
+
+  showToast(`Wageni ${insertedTotal} wameingizwa kwenye event kikamilifu! ✅`, 'success');
+  btn.disabled = false;
+  btn.textContent = '✅ Ingiza Wageni Wote';
+  closeModal('bulkImportModal');
+  document.getElementById('invEventSelect').value = eventId;
   loadEventGuests();
 }
 
@@ -2326,8 +2539,10 @@ async function uploadTemplate() {
   const name = document.getElementById('tplName').value.trim();
   const file = document.getElementById('tplFile').files[0];
   const type = document.getElementById('tplType').value;
+  const eventId = document.getElementById('tplEventSelect').value;
 
   if (!name || !file) return showToast('Jaza jina na chagua picha', 'error');
+  if (!eventId) return showToast('Chagua Event husika kwa template hii', 'error');
 
   const path = `${currentUser.id}/${Date.now()}_${file.name}`;
   const { error: upErr } = await sb.storage.from('templates').upload(path, file);
@@ -2335,11 +2550,12 @@ async function uploadTemplate() {
 
   const { data: { publicUrl } } = sb.storage.from('templates').getPublicUrl(path);
 
-  await sb.from('templates').insert({
-    user_id: currentUser.id, name, type, file_path: path, url: publicUrl
+  const { error: insErr } = await sb.from('templates').insert({
+    user_id: currentUser.id, name, type, file_path: path, url: publicUrl, event_id: eventId
   });
+  if (insErr) return showToast('Kosa: ' + insErr.message + ' (Huenda column ya event_id haipo kwenye jedwali la templates - angalia maelezo)', 'error');
 
-  showToast('Template imepakiwa!', 'success');
+  showToast('Template imepakiwa kwa event hiyo!', 'success');
   closeModal('uploadTemplateModal');
   loadTemplates();
 }
@@ -2351,12 +2567,17 @@ async function loadTemplates() {
     div.innerHTML = `<div class="empty-state"><div class="icon">🎨</div><h3>Hakuna templates bado</h3></div>`;
     return;
   }
+  const { data: allEvents } = await sb.from('events').select('id,name').eq('user_id', currentUser.id);
+  const eventNameById = {};
+  (allEvents || []).forEach(e => eventNameById[e.id] = e.name);
+
   div.innerHTML = data.map(t => `
     <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray-100);">
       <img src="${t.url}" style="width:60px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--gray-200);">
       <div style="flex:1;">
         <div style="font-size:13px;font-weight:600;">${t.name}</div>
         <span class="badge badge-blue" style="font-size:10px;">${t.type}</span>
+        ${t.event_id ? `<span class="badge badge-green" style="font-size:10px;">📌 ${eventNameById[t.event_id] || 'Event'}</span>` : `<span class="badge" style="font-size:10px;background:#FEF3C7;color:#92400E;">⚠️ Hakuna event (ya zamani)</span>`}
       </div>
       <button class="btn btn-danger btn-sm" onclick="deleteTemplate('${t.id}','${t.file_path}')">🗑️</button>
     </div>
@@ -2410,6 +2631,19 @@ function loadPositions() {
   return { jinaX: 709, jinaY: 381, jinaFont: 75, qrX: 872, qrY: 1662, qrSize: 250 };
 }
 
+// Hutafuta template ILIYOUNGANISHWA na event maalum kwanza (haiingiliani na events nyingine).
+// Ikikosekana, inarudi kwenye template ya zamani iliyowekwa kwa 'type' (backward-compatibility).
+async function getTemplateForEvent(eventId, eventType) {
+  const { data: byEvent } = await sb.from('templates').select('*').eq('user_id', currentUser.id).eq('event_id', eventId);
+  if (byEvent && byEvent[0]) return byEvent[0];
+
+  if (eventType) {
+    const { data: byType } = await sb.from('templates').select('*').eq('user_id', currentUser.id).eq('type', eventType).is('event_id', null);
+    if (byType && byType[0]) return byType[0];
+  }
+  return null;
+}
+
 async function generateCard(guestId) {
   showModal('cardPreviewModal');
   document.getElementById('cardLoading').style.display = 'block';
@@ -2419,15 +2653,14 @@ async function generateCard(guestId) {
   const { data: guest, error: gErr } = await sb.from('guests').select('*').eq('id', guestId).single();
   if (gErr || !guest) return showToast('Imeshindwa kupata mgeni', 'error');
 
-  // 2. Pata event ya mgeni huyu (kwa ajili ya kujua 'type')
+  // 2. Pata event ya mgeni huyu
   const { data: eventData } = await sb.from('events').select('*').eq('id', guest.event_id).single();
 
-  // 3. Pata template inayolingana na aina ya event
-  const { data: templates } = await sb.from('templates').select('*').eq('user_id', currentUser.id).eq('type', eventData?.type);
-  const template = (templates && templates[0]) || null;
+  // 3. Pata template ILIYOUNGANISHWA MOJA KWA MOJA na event hii (haiingiliani na events nyingine)
+  const template = await getTemplateForEvent(guest.event_id, eventData?.type);
 
   if (!template) {
-    document.getElementById('cardLoading').textContent = 'Hakuna template ya aina "' + (eventData?.type || '') + '". Upload template kwanza kwenye Template Management.';
+    document.getElementById('cardLoading').textContent = 'Hakuna template kwa event "' + (eventData?.name || '') + '". Upload template kwanza kwenye Template Management na uichague event hii.';
     return;
   }
 
@@ -2537,9 +2770,8 @@ async function generateAllCards() {
 
   const { data: eventData } = await sb.from('events').select('*').eq('id', eventId).single();
 
-  const { data: templates } = await sb.from('templates').select('*').eq('user_id', currentUser.id).eq('type', eventData?.type);
-  const template = (templates && templates[0]) || null;
-  if (!template) return showToast('Hakuna template ya aina "' + (eventData?.type || '') + '"', 'error');
+  const template = await getTemplateForEvent(eventId, eventData?.type);
+  if (!template) return showToast('Hakuna template kwa event "' + (eventData?.name || '') + '". Upload template na uichague event hii.', 'error');
 
   const { data: guests } = await sb.from('guests').select('*').eq('event_id', eventId);
   if (!guests || guests.length === 0) return showToast('Hakuna wageni kwenye event hii', 'error');
