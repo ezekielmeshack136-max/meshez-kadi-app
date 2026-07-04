@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thibitisha Uwepo - RSVP</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #1340A8 0%, #1A56DB 50%, #2563EB 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .card {
+    background: white;
+    border-radius: 20px;
+    padding: 40px 32px;
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+
+  .icon { font-size: 56px; margin-bottom: 16px; }
+
+  h1 {
+    font-size: 20px;
+    color: #1E293B;
+    margin-bottom: 8px;
+  }
+
+  p {
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.6;
+  }
+
+  .status-yes { color: #16A34A; }
+  .status-no  { color: #DC2626; }
+  .status-err { color: #CA8A04; }
+
+  .spinner {
+    width: 40px; height: 40px;
+    border: 4px solid #E2E8F0;
+    border-top-color: #1A56DB;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="card" id="card">
+  <div class="spinner"></div>
+  <h1>Inathibitisha...</h1>
+  <p>Tafadhali subiri kidogo</p>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://fymjjqembyrlwgktbcgf.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_SMflxbKh4452586Q4ojrow_L4ZGq2uu';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function submitRsvp() {
+  const params = new URLSearchParams(window.location.search);
+  const cardId = params.get('id');
+  const status = params.get('status');
+  const card = document.getElementById('card');
+
+  if (!cardId || !['yes', 'no'].includes(status)) {
+    card.innerHTML = `
+      <div class="icon">⚠️</div>
+      <h1 class="status-err">Link Batili</h1>
+      <p>Link hii haina taarifa sahihi. Tafadhali tumia link uliyotumiwa kwenye ujumbe wa WhatsApp.</p>`;
+    return;
+  }
+
+  const { data, error } = await sb.rpc('submit_rsvp', {
+    card_id_input: cardId,
+    status_input: status
+  });
+
+  if (error || !data || data.success === false) {
+    card.innerHTML = `
+      <div class="icon">⚠️</div>
+      <h1 class="status-err">Imeshindwa</h1>
+      <p>${(data && data.message) || 'Kadi hii haikupatikana kwenye mfumo. Tafadhali wasiliana na mwenyeji.'}</p>`;
+    return;
+  }
+
+  if (status === 'yes') {
+    card.innerHTML = `
+      <div class="icon">🎉</div>
+      <h1 class="status-yes">Asante, ${data.name || ''}!</h1>
+      <p>Umethibitisha kuwa <strong>UTAHUDHURIA</strong> tukio hili. Tunakusubiri kwa hamu!</p>`;
+  } else {
+    card.innerHTML = `
+      <div class="icon">🙏</div>
+      <h1 class="status-no">Asante, ${data.name || ''}</h1>
+      <p>Umethibitisha kuwa <strong>HUTOHUDHURIA</strong> tukio hili. Asante kwa kutuarifu.</p>`;
+  }
+}
+
+submitRsvp();
+</script>
+
+</body>
+</html>
