@@ -2679,6 +2679,13 @@ async function saveSettings() {
   showToast('Mipangilio imehifadhiwa!', 'success');
 }
   // ===== GENERATE CARD (Template + Jina + QR) =====
+function getGuestLabel(guest, sequenceNumber) {
+  if (guest.group_size === 1) return '#SINGLE';
+  if (guest.group_size === 2) return '#DOUBLE';
+  if (guest.group_size === 3) return '#TRIPLE';
+  return `#GROUP${sequenceNumber}-${guest.group_size}`;
+}
+
 function loadPositions() {
   const saved = localStorage.getItem('kadi_positions');
   if (saved) return JSON.parse(saved);
@@ -2725,6 +2732,7 @@ async function generateCard(guestId) {
   const bgImg = new Image();
   bgImg.crossOrigin = 'anonymous';
   bgImg.onload = async () => {
+    try {
     canvas.width = bgImg.width;
     canvas.height = bgImg.height;
     ctx.drawImage(bgImg, 0, 0);
@@ -2752,6 +2760,9 @@ async function generateCard(guestId) {
   canvas.style.display = 'inline-block';
 };
     qrImg.src = qrDataUrl;
+    } catch (err) {
+      document.getElementById('cardLoading').textContent = 'Kosa wakati wa kutengeneza kadi: ' + err.message;
+    }
   };
   bgImg.onerror = () => {
     document.getElementById('cardLoading').textContent = 'Imeshindwa kupakia picha ya template.';
@@ -2832,13 +2843,6 @@ async function generateAllCards() {
 
   const pos = template.positions || DEFAULT_POSITIONS;
   const zip = new JSZip();
-  
-  function getGuestLabel(guest, sequenceNumber) {
-  if (guest.group_size === 1) return '#SINGLE';
-  if (guest.group_size === 2) return '#DOUBLE';
-  if (guest.group_size === 3) return '#TRIPLE';
-  return `#GROUP${sequenceNumber}-${guest.group_size}`;
-}
 
   for (let i = 0; i < guests.length; i++) {
     const g = guests[i];
