@@ -1129,6 +1129,7 @@
               <thead>
                 <tr>
                   <th>Jina</th>
+                  <th>Guest ID</th>
                   <th>Namba</th>
                   <th>Aina</th>
                   <th>WhatsApp</th>
@@ -1138,7 +1139,7 @@
                 </tr>
               </thead>
               <tbody id="guestsTable">
-                <tr><td colspan="7" style="text-align:center;color:var(--gray-400);padding:32px;">Chagua event kuona wageni</td></tr>
+                <tr><td colspan="8" style="text-align:center;color:var(--gray-400);padding:32px;">Chagua event kuona wageni</td></tr>
               </tbody>
             </table>
           </div>
@@ -1988,7 +1989,7 @@ async function loadEventGuests() {
 
   const tbody = document.getElementById('guestsTable');
   if (!guests || guests.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna wageni bado - ongeza wageni</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna wageni bado - ongeza wageni</td></tr>`;
     return;
   }
 
@@ -1997,6 +1998,10 @@ async function loadEventGuests() {
     return `
     <tr>
       <td><strong>${g.name}</strong></td>
+      <td>
+        <span style="font-family:monospace;font-size:12px;background:var(--gray-50);padding:3px 6px;border-radius:4px;">${g.card_id}</span>
+        <button class="btn btn-outline btn-sm" style="padding:2px 6px;margin-left:4px;" onclick="copyGuestId('${g.card_id}')" title="Nakili Guest ID">📋</button>
+      </td>
       <td>${g.phone || '-'}</td>
       <td><span class="badge badge-gray">${label}</span></td>
       <td>${g.whatsapp === 'yes' ? '<span class="badge badge-green">✅ Ndiyo</span>' : '<span class="badge badge-gray">❌ Hapana</span>'}</td>
@@ -2008,6 +2013,14 @@ async function loadEventGuests() {
 </td>
     </tr>`;
   }).join('');
+}
+
+function copyGuestId(cardId) {
+  navigator.clipboard.writeText(cardId).then(() => {
+    showToast('Guest ID imenakiliwa: ' + cardId, 'success');
+  }).catch(() => {
+    showToast('Imeshindwa kunakili. Guest ID: ' + cardId, 'error');
+  });
 }
 
 async function addGuest() {
