@@ -1201,7 +1201,7 @@
       <div class="page" id="page-whatsapp">
         <div style="margin-bottom:20px;">
           <h2 style="font-size:18px;font-weight:700;">💬 WhatsApp Monitor</h2>
-          <p style="font-size:13px;color:var(--gray-400);">Fuatilia hali ya WhatsApp za wageni</p>
+          <p style="font-size:13px;color:var(--gray-400);">Fuatilia hali ya WhatsApp na RSVP za wageni</p>
         </div>
         <div class="grid-3" style="margin-bottom:16px;">
           <div class="stat-card">
@@ -1220,23 +1220,41 @@
             <div class="stat-label">Zinasubiri</div>
           </div>
         </div>
+        <div class="grid-3" style="margin-bottom:16px;">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#DCFCE7;">🙋</div>
+            <div class="stat-value" id="rsvpYes">0</div>
+            <div class="stat-label">Watahudhuria</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#FEE2E2;">🙅</div>
+            <div class="stat-value" id="rsvpNo">0</div>
+            <div class="stat-label">Hawatohudhuria</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:var(--gray-100);">❔</div>
+            <div class="stat-value" id="rsvpPending">0</div>
+            <div class="stat-label">Bado Hawajajibu</div>
+          </div>
+        </div>
         <div class="card">
           <div class="card-header">
-            <div class="card-title">Orodha ya WhatsApp</div>
+            <div class="card-title">Orodha ya WhatsApp na RSVP</div>
             <a id="scannerLink" href="#" target="_blank" class="btn btn-outline btn-sm">🔗 Link ya Scanner</a>
           </div>
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>Jina</th><th>Namba</th><th>Status</th><th>Muda</th></tr>
+                <tr><th>Jina</th><th>Namba</th><th>Event</th><th>WA Status</th><th>RSVP</th><th>Muda wa RSVP</th></tr>
               </thead>
               <tbody id="waTable">
-                <tr><td colspan="4" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna data bado</td></tr>
+                <tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna data bado</td></tr>
               </tbody>
             </table>
           </div>
         </div>
       </div>
+
 
       <!-- ===== REPORTS PAGE ===== -->
       <div class="page" id="page-reports">
@@ -2449,24 +2467,47 @@ async function confirmBulkImport() {
 }
 
 // ===== UJUMBE WA MWALIKO (RSVP + Location) =====
-function buildInvitationMessage(guest, eventData) {
-  const eventName    = eventData?.name || 'Tukio';
-  const date          = eventData?.event_date || '';
-  const time          = eventData?.event_time || '';
-  const venue         = eventData?.venue || '';
-  const locationUrl   = eventData?.location_url || '';
+function getBaseUrl() {
+  // Mfano: https://user.github.io/meshez-kadi-app/  (folda ile ile ambayo index.html ipo)
+  return location.origin + location.pathname.replace(/[^/]*$/, '');
+}
 
-  let msg = `🎉 Karibu ${guest.name}!\n\n`;
-  msg += `Umealikwa kwenye: *${eventName}*\n`;
-  if (date)  msg += `📅 Tarehe: ${date}\n`;
-  if (time)  msg += `🕐 Saa: ${time}\n`;
-  if (venue) msg += `📍 Mahali: ${venue}\n`;
-  if (locationUrl) msg += `🗺️ Bonyeza hapa kuona location: ${locationUrl}\n`;
+function getRsvpLinks(guest) {
+  const base = getBaseUrl();
+  return {
+    yes: `${base}rsvp.html?id=${encodeURIComponent(guest.card_id)}&status=yes`,
+    no:  `${base}rsvp.html?id=${encodeURIComponent(guest.card_id)}&status=no`
+  };
+}
+
+function formatTimeAMPM(time24) {
+  if (!time24) return '';
+  const [hStr, mStr] = time24.split(':');
+  let h = parseInt(hStr, 10);
+  const m = mStr || '00';
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${h}:${m} ${ampm}`;
+}
+
+function buildInvitationMessage(guest, eventData) {
+  const eventName  = eventData?.name || 'Tukio';
+  const date       = eventData?.event_date || '';
+  const time       = formatTimeAMPM(eventData?.event_time || '');
+  const locationUrl = eventData?.location_url || '';
+  const rsvp       = getRsvpLinks(guest);
+
+  let msg = `Habari *${guest.name}*\n`;
+  msg += `Umealikwa kwenye *${eventName}*\n`;
+  if (date) msg += `Tarehe: ${date}\n`;
+  if (time) msg += `Saa: ${time}\n`;
+  if (locationUrl) msg += `Bonyeza hapa kuona location: ${locationUrl}\n`;
   msg += `\nTafadhali thibitisha uwepo wako kwa kujibu ujumbe huu:\n`;
-  msg += `✅ Jibu *NITAKUWEPO* kama utahudhuria\n`;
-  msg += `❌ Jibu *SITAKUWEPO* kama hutaweza kuhudhuria\n`;
-  msg += `\nKadi yako ya mwaliko iko kwenye picha - tafadhali ihifadhi na uionyeshe mlangoni siku ya tukio.\n`;
-  msg += `\nKaribu sana! 🙏`;
+  msg += `NITAHUDHURIA: ${rsvp.yes}\n`;
+  msg += `SITAHUDHURIA: ${rsvp.no}\n`;
+  msg += `\nTafadhali ihifadhi na uionyeshe mlangoni siku ya tukio.\n`;
+  msg += `\nKaribu sana!`;
   return msg;
 }
 
@@ -2476,6 +2517,7 @@ function formatPhoneForWhatsApp(phone) {
   else if (!p.startsWith('255')) p = '255' + p;
   return p;
 }
+
 
 // ===== TUMA MIALIKO - WHATSAPP (QUEUE, mmoja baada ya mwingine) =====
 let waQueue = [];
@@ -2704,34 +2746,52 @@ function playBeep(type) {
 async function loadWhatsappMonitor() {
   if (!currentUser) return;
   const { data: guests } = await sb.from('guests').select('*').eq('user_id', currentUser.id);
+  const { data: events } = await sb.from('events').select('id, name').eq('user_id', currentUser.id);
+  const eventNameById = {};
+  (events || []).forEach(e => { eventNameById[e.id] = e.name; });
 
   const waOk      = guests?.filter(g => g.wa_sent === 'yes').length || 0;
   const waPending = guests?.filter(g => g.wa_sent === 'no' && g.whatsapp === 'yes').length || 0;
   const waFail    = guests?.filter(g => g.wa_sent === 'no' && g.whatsapp === 'no').length || 0;
 
+  const rsvpYes     = guests?.filter(g => g.rsvp === 'yes').length || 0;
+  const rsvpNo      = guests?.filter(g => g.rsvp === 'no').length || 0;
+  const rsvpPending = guests?.filter(g => !g.rsvp || g.rsvp === 'pending').length || 0;
+
   document.getElementById('waOk').textContent      = waOk;
   document.getElementById('waPending').textContent = waPending;
   document.getElementById('waFail').textContent    = waFail;
+  document.getElementById('rsvpYes').textContent     = rsvpYes;
+  document.getElementById('rsvpNo').textContent      = rsvpNo;
+  document.getElementById('rsvpPending').textContent = rsvpPending;
   document.getElementById('scannerLink').href      = window.location.href;
 
   const tbody = document.getElementById('waTable');
   if (!guests || guests.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna data</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna data</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = guests.map(g => `
+  tbody.innerHTML = guests.map(g => {
+    const rsvpBadge = g.rsvp === 'yes'
+      ? '<span class="badge badge-green">🙋 Atahudhuria</span>'
+      : g.rsvp === 'no'
+        ? '<span class="badge badge-red">🙅 Hatohudhuria</span>'
+        : '<span class="badge badge-gray">❔ Hajajibu</span>';
+    return `
     <tr>
       <td>${g.name}</td>
       <td>+${g.phone || '-'}</td>
+      <td style="font-size:12px;">${eventNameById[g.event_id] || '-'}</td>
       <td>${g.wa_sent === 'yes'
         ? '<span class="badge badge-green">✅ Imetumwa</span>'
         : g.whatsapp === 'yes'
           ? '<span class="badge badge-yellow">⏳ Inasubiri</span>'
           : '<span class="badge badge-gray">❌ Hana WA</span>'}</td>
-      <td style="font-size:12px;color:var(--gray-400);">${g.updated_at ? new Date(g.updated_at).toLocaleString('sw') : '-'}</td>
-    </tr>
-  `).join('');
+      <td>${rsvpBadge}</td>
+      <td style="font-size:12px;color:var(--gray-400);">${g.rsvp_date ? new Date(g.rsvp_date).toLocaleString('sw') : '-'}</td>
+    </tr>`;
+  }).join('');
 }
 
 // ===== REPORTS =====
