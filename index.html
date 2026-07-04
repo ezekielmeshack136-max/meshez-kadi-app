@@ -1311,7 +1311,72 @@
       <div class="page" id="page-payments">
         <div style="margin-bottom:20px;">
           <h2 style="font-size:18px;font-weight:700;">💳 Mfumo wa Malipo</h2>
-          <p style="font-size:13px;color:var(--gray-400);">Simamia malipo ya huduma</p>
+          <p style="font-size:13px;color:var(--gray-400);">Simamia malipo ya wateja kwa kazi za kadi</p>
+        </div>
+
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-header">
+            <div class="card-title">✏️ Weka Taarifa za Malipo kwa Event</div>
+          </div>
+          <div class="form-group">
+            <label>Chagua Event</label>
+            <select id="paymentEventSelect" onchange="onPaymentEventChange()">
+              <option value="">-- Chagua Event --</option>
+            </select>
+          </div>
+
+          <div id="paymentFormArea" style="display:none;">
+            <div class="grid-2">
+              <div>
+                <div class="form-group">
+                  <label>Idadi ya Kadi Zilizotengenezwa</label>
+                  <input type="text" id="paymentCardCount" readonly style="background:var(--gray-50);font-weight:700;">
+                </div>
+                <div class="form-group">
+                  <label>Bei kwa Kadi Moja (TZS)</label>
+                  <input type="number" id="paymentPricePerCard" placeholder="1000" min="0" oninput="updatePaymentTotal()">
+                </div>
+                <div class="form-group">
+                  <label>Jumla ya Bei ya Kadi Zote (TZS)</label>
+                  <input type="text" id="paymentTotalDisplay" readonly style="background:var(--gray-50);font-weight:700;color:var(--blue);">
+                </div>
+              </div>
+              <div>
+                <div class="form-group">
+                  <label>Njia ya Malipo</label>
+                  <select id="paymentMethod">
+                    <option value="">-- Chagua Njia --</option>
+                    <option value="Cash">💵 Cash (Taslimu)</option>
+                    <option value="M-Pesa">📱 M-Pesa</option>
+                    <option value="Tigo Pesa">📱 Tigo Pesa</option>
+                    <option value="Airtel Money">📱 Airtel Money</option>
+                    <option value="Halopesa">📱 Halopesa</option>
+                    <option value="Benki">🏦 Benki</option>
+                    <option value="Nyingine">Nyingine</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Hali ya Malipo</label>
+                  <select id="paymentStatus">
+                    <option value="Hajalipwa">❌ Hajalipwa</option>
+                    <option value="Nusu Malipo">🟡 Nusu Malipo (Deposit)</option>
+                    <option value="Amelipwa">✅ Amelipwa Kikamilifu</option>
+                  </select>
+                </div>
+                <div class="input-row">
+                  <div class="form-group">
+                    <label>Tarehe Kadi Zilizozalishwa</label>
+                    <input type="date" id="paymentProductionDate">
+                  </div>
+                  <div class="form-group">
+                    <label>Tarehe ya Malipo</label>
+                    <input type="date" id="paymentPaymentDate">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="savePaymentInfo()">💾 Hifadhi Taarifa za Malipo</button>
+          </div>
         </div>
 
         <div class="grid-2" style="margin-bottom:16px;">
@@ -1350,15 +1415,16 @@
 
         <div class="card">
           <div class="card-header">
-            <div class="card-title">Historia ya Malipo</div>
+            <div class="card-title">📊 Historia ya Malipo (Kazi Zote kwa Kila Event)</div>
+            <button class="btn btn-outline btn-sm" onclick="exportPaymentsCSV()">📥 Export CSV</button>
           </div>
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>Tarehe</th><th>Event</th><th>Kiasi</th><th>Njia</th><th>Status</th></tr>
+                <tr><th>Event</th><th>Aina</th><th>Idadi ya Kadi</th><th>Bei/Kadi</th><th>Jumla (TZS)</th><th>Njia</th><th>Status</th><th>Tarehe Kadi</th><th>Tarehe Malipo</th></tr>
               </thead>
               <tbody id="paymentsTable">
-                <tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna malipo bado</td></tr>
+                <tr><td colspan="9" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna malipo bado</td></tr>
               </tbody>
             </table>
           </div>
@@ -1783,6 +1849,7 @@ function showPage(page) {
   if (page === 'dashboard') loadDashboard();
   if (page === 'events') loadEvents();
   if (page === 'reports') loadReports();
+  if (page === 'payments') loadPaymentsHistory();
   if (page === 'users') loadUsers();
   if (page === 'whatsapp') loadWhatsappMonitor();
   if (page === 'scanner') initScanner();
@@ -1956,11 +2023,14 @@ async function loadEventsDropdown() {
   // Sasisha pia dropdown za Template Upload na Bulk Import ili kila moja iwe na orodha ya sasa ya events
   const tplSel = document.getElementById('tplEventSelect');
   const bulkSel = document.getElementById('bulkEventSelect');
+  const paySel = document.getElementById('paymentEventSelect');
   if (tplSel) tplSel.innerHTML = '<option value="">-- Chagua Event --</option>';
   if (bulkSel) bulkSel.innerHTML = '<option value="">-- Chagua Event --</option>';
+  if (paySel) paySel.innerHTML = '<option value="">-- Chagua Event --</option>';
   (data || []).forEach(e => {
     if (tplSel) tplSel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
     if (bulkSel) bulkSel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
+    if (paySel) paySel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
   });
 
   (data || []).forEach(e => {
@@ -2501,6 +2571,103 @@ async function deleteUser(id) {
 function initiatePayment(plan) {
   const prices = { basic: 50000, premium: 120000 };
   showToast(`Malipo ya TZS ${prices[plan].toLocaleString()} - Wasiliana: 0713079348`, 'info');
+}
+
+async function onPaymentEventChange() {
+  const eventId = document.getElementById('paymentEventSelect').value;
+  const formArea = document.getElementById('paymentFormArea');
+  if (!eventId) { formArea.style.display = 'none'; return; }
+
+  const { data: event } = await sb.from('events').select('*').eq('id', eventId).single();
+  const { count } = await sb.from('guests').select('*', { count: 'exact', head: true }).eq('event_id', eventId);
+
+  document.getElementById('paymentCardCount').value = count || 0;
+  document.getElementById('paymentPricePerCard').value = event?.price_per_card || '';
+  document.getElementById('paymentMethod').value = event?.payment_method || '';
+  document.getElementById('paymentStatus').value = event?.payment_status || 'Hajalipwa';
+  document.getElementById('paymentProductionDate').value = event?.cards_generated_date || '';
+  document.getElementById('paymentPaymentDate').value = event?.payment_date || '';
+
+  updatePaymentTotal();
+  formArea.style.display = 'block';
+}
+
+function updatePaymentTotal() {
+  const count = parseInt(document.getElementById('paymentCardCount').value) || 0;
+  const price = parseFloat(document.getElementById('paymentPricePerCard').value) || 0;
+  const total = count * price;
+  document.getElementById('paymentTotalDisplay').value = total.toLocaleString() + ' TZS';
+}
+
+async function savePaymentInfo() {
+  const eventId = document.getElementById('paymentEventSelect').value;
+  if (!eventId) return showToast('Chagua Event kwanza', 'error');
+
+  const updates = {
+    price_per_card: parseFloat(document.getElementById('paymentPricePerCard').value) || 0,
+    payment_method: document.getElementById('paymentMethod').value || null,
+    payment_status: document.getElementById('paymentStatus').value,
+    cards_generated_date: document.getElementById('paymentProductionDate').value || null,
+    payment_date: document.getElementById('paymentPaymentDate').value || null,
+  };
+
+  const { error } = await sb.from('events').update(updates).eq('id', eventId);
+  if (error) return showToast('Kosa: ' + error.message + ' (Huenda columns za malipo hazipo kwenye jedwali la events - angalia maelezo)', 'error');
+
+  showToast('Taarifa za malipo zimehifadhiwa!', 'success');
+  loadPaymentsHistory();
+}
+
+async function loadPaymentsHistory() {
+  if (!currentUser) return;
+  const { data: events } = await sb.from('events').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  const tbody = document.getElementById('paymentsTable');
+
+  if (!events || events.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna malipo bado</td></tr>`;
+    return;
+  }
+
+  const rows = await Promise.all(events.map(async e => {
+    const { count } = await sb.from('guests').select('*', { count: 'exact', head: true }).eq('event_id', e.id);
+    const cardCount = count || 0;
+    const price = e.price_per_card || 0;
+    const total = cardCount * price;
+    const statusColor = e.payment_status === 'Amelipwa' ? 'badge-green' : e.payment_status === 'Nusu Malipo' ? 'badge-yellow' : 'badge-red';
+    return `
+      <tr>
+        <td><strong>${e.name}</strong></td>
+        <td><span class="badge ${e.type==='harusi'?'badge-blue':e.type==='birthday'?'badge-orange':'badge-gray'}">${e.type}</span></td>
+        <td>${cardCount}</td>
+        <td>${price.toLocaleString()}</td>
+        <td><strong>${total.toLocaleString()}</strong></td>
+        <td>${e.payment_method || '-'}</td>
+        <td><span class="badge ${statusColor}">${e.payment_status || 'Hajalipwa'}</span></td>
+        <td>${e.cards_generated_date || '-'}</td>
+        <td>${e.payment_date || '-'}</td>
+      </tr>`;
+  }));
+  tbody.innerHTML = rows.join('');
+}
+
+async function exportPaymentsCSV() {
+  if (!currentUser) return;
+  const { data: events } = await sb.from('events').select('*').eq('user_id', currentUser.id);
+  if (!events || events.length === 0) return showToast('Hakuna data ya export', 'error');
+
+  const rows = await Promise.all(events.map(async e => {
+    const { count } = await sb.from('guests').select('*', { count: 'exact', head: true }).eq('event_id', e.id);
+    const cardCount = count || 0;
+    const price = e.price_per_card || 0;
+    const total = cardCount * price;
+    const safe = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    return [safe(e.name), safe(e.type), cardCount, price, total, safe(e.payment_method), safe(e.payment_status), safe(e.cards_generated_date), safe(e.payment_date)].join(',');
+  }));
+
+  const header = 'Event,Aina,Idadi ya Kadi,Bei kwa Kadi,Jumla,Njia ya Malipo,Status,Tarehe Kadi,Tarehe Malipo';
+  const csv = [header].concat(rows).join('\n');
+  downloadCSVBlob(csv, `historia_ya_malipo_${new Date().toISOString().slice(0,10)}.csv`);
+  showToast('Historia ya malipo imepakuliwa!', 'success');
 }
 
 // ===== TEMPLATES =====
