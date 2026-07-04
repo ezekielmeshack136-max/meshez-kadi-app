@@ -1269,15 +1269,15 @@
         <div class="card">
           <div class="card-header">
             <div class="card-title">Ripoti ya Kina kwa Event</div>
-            <button class="btn btn-outline btn-sm" onclick="exportReport()">📥 Export CSV</button>
+            <button class="btn btn-outline btn-sm" onclick="exportReport()">📥 Export CSV (Mfumo Mzima)</button>
           </div>
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>Event</th><th>Aina</th><th>Wageni</th><th>Waliofika</th><th>SMS</th><th>WA</th><th>Asilimia</th></tr>
+                <tr><th>Event</th><th>Aina</th><th>Wageni</th><th>Waliofika</th><th>SMS</th><th>WA</th><th>Asilimia</th><th>Vitendo</th></tr>
               </thead>
               <tbody id="reportsTable">
-                <tr><td colspan="7" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna data</td></tr>
+                <tr><td colspan="8" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna data</td></tr>
               </tbody>
             </table>
           </div>
@@ -2373,7 +2373,7 @@ async function loadReports() {
 
   const tbody = document.getElementById('reportsTable');
   if (!events || events.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna data</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna data</td></tr>`;
     return;
   }
 
@@ -2394,26 +2394,60 @@ async function loadReports() {
         <td>${sms}</td>
         <td>${wa}</td>
         <td><span class="badge ${pct>=80?'badge-green':pct>=50?'badge-yellow':'badge-red'}">${pct}%</span></td>
+        <td><button class="btn btn-outline btn-sm" onclick="exportEventCSV('${e.id}','${e.name.replace(/'/g,"")}')">📥 CSV</button></td>
       </tr>`;
   }));
   tbody.innerHTML = rows.join('');
+}
+
+function guestsToCSV(guests, eventNameById) {
+  const header = 'Jina,Namba,Guest ID (Kadi),Idadi,WhatsApp,SMS Status,WA Status,Walioingia,Status' + (eventNameById ? ',Event' : '');
+  const rows = guests.map(g => {
+    const safe = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const base = [
+      safe(g.name), safe(g.phone), safe(g.card_id), g.group_size,
+      safe(g.whatsapp === 'yes' ? 'Ndiyo' : 'Hapana'),
+      safe(g.sms_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa'),
+      safe(g.wa_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa'),
+      g.used_count || 0, safe(g.status)
+    ];
+    if (eventNameById) base.push(safe(eventNameById[g.event_id] || ''));
+    return base.join(',');
+  });
+  return [header].concat(rows).join('\n');
+}
+
+function downloadCSVBlob(csvContent, filename) {
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 async function exportReport() {
   const { data: guests } = await sb.from('guests').select('*').eq('user_id', currentUser.id);
   if (!guests || guests.length === 0) return showToast('Hakuna data ya export', 'error');
 
-  const csv = ['Jina,Namba,Group Size,Kadi ID,SMS,WhatsApp,Walioingia,Status']
-    .concat(guests.map(g => `${g.name},${g.phone},${g.group_size},${g.card_id},${g.sms_sent},${g.wa_sent},${g.used_count},${g.status}`))
-    .join('\n');
+  const { data: events } = await sb.from('events').select('id,name').eq('user_id', currentUser.id);
+  const eventNameById = {};
+  (events || []).forEach(e => eventNameById[e.id] = e.name);
 
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = 'meshez_kadi_report.csv';
-  a.click();
-  showToast('Report imepakuliwa!', 'success');
+  const csv = guestsToCSV(guests, eventNameById);
+  downloadCSVBlob(csv, `meshez_kadi_ripoti_kamili_${new Date().toISOString().slice(0,10)}.csv`);
+  showToast('Ripoti ya mfumo mzima imepakuliwa!', 'success');
+}
+
+async function exportEventCSV(eventId, eventName) {
+  const { data: guests } = await sb.from('guests').select('*').eq('event_id', eventId);
+  if (!guests || guests.length === 0) return showToast('Hakuna wageni kwenye event hii', 'error');
+
+  const csv = guestsToCSV(guests, null);
+  const safeName = (eventName || 'event').replace(/[^a-zA-Z0-9]/g, '_');
+  downloadCSVBlob(csv, `${safeName}_wageni.csv`);
+  showToast(`Ripoti ya "${eventName}" imepakuliwa!`, 'success');
 }
 
 // ===== USERS =====
@@ -2578,6 +2612,12 @@ qrImg.onload = () => {
 
   // Chora QR juu ya hiyo background
   ctx.drawImage(qrImg, pos.qrX, pos.qrY, pos.qrSize, pos.qrSize);
+
+  // Lebo (mfano #SINGLE) JUU ya QR
+  ctx.fillStyle = '#000000';
+  ctx.font = `bold 24px Inter, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('#SINGLE', pos.qrX + pos.qrSize / 2, boxY - 12);
 };
 qrImg.src = qrDataUrl;
   };
@@ -2749,12 +2789,12 @@ async function generateCard(guestId) {
     qrImg.onload = () => {
   ctx.drawImage(qrImg, parseInt(pos.qrX), parseInt(pos.qrY), parseInt(pos.qrSize), parseInt(pos.qrSize));
 
-  // Andika label chini ya QR
+  // Andika label JUU ya QR
   const label = getGuestLabel(guest, guest.sequence_number || 1);
   ctx.fillStyle = '#000000';
   ctx.font = `bold 24px Inter, sans-serif`;
   ctx.textAlign = 'center';
-  ctx.fillText(label, parseInt(pos.qrX) + parseInt(pos.qrSize) / 2, parseInt(pos.qrY) + parseInt(pos.qrSize) + 30);
+  ctx.fillText(label, parseInt(pos.qrX) + parseInt(pos.qrSize) / 2, parseInt(pos.qrY) - 15);
 
   document.getElementById('cardLoading').style.display = 'none';
   canvas.style.display = 'inline-block';
@@ -2814,7 +2854,7 @@ const label = getGuestLabel(guest, guest.sequence_number || 1);
 ctx.fillStyle = '#000000';
 ctx.font = `bold 24px Inter, sans-serif`;
 ctx.textAlign = 'center';
-ctx.fillText(label, parseInt(pos.qrX) + parseInt(pos.qrSize) / 2, parseInt(pos.qrY) + parseInt(pos.qrSize) + 30);
+ctx.fillText(label, parseInt(pos.qrX) + parseInt(pos.qrSize) / 2, boxY - 12);
 
 canvas.toBlob(blob => resolve(blob), 'image/png');
         };
