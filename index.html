@@ -1635,6 +1635,58 @@
   </div>
 </div>
 
+<!-- Edit Guest Modal -->
+<div class="modal-overlay" id="editGuestModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Hariri Taarifa za Mgeni</div>
+      <button class="modal-close" onclick="closeModal('editGuestModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editGuestId">
+      <div class="form-group">
+        <label>Jina la Mgeni / Group</label>
+        <input type="text" id="editGuestName" placeholder="Familia ya Juma">
+      </div>
+      <div class="input-row">
+        <div class="form-group">
+          <label>Namba ya Simu</label>
+          <input type="text" id="editGuestPhone" placeholder="0713079348">
+        </div>
+        <div class="form-group">
+          <label>Idadi ya Watu (Group Size)</label>
+          <input type="number" id="editGuestGroupSize" value="1" min="1" max="100">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Ana WhatsApp?</label>
+        <select id="editGuestWhatsapp">
+          <option value="yes">✅ Ndiyo</option>
+          <option value="no">❌ Hapana</option>
+        </select>
+      </div>
+      <div class="form-group" style="border-top:1px solid var(--gray-100);padding-top:14px;margin-top:6px;">
+        <label>Hali ya Kutuma (kama umeweka kwa makosa, unaweza kubadilisha hapa)</label>
+        <div class="input-row">
+          <select id="editGuestSmsSent">
+            <option value="no">📨 SMS: Haijatumwa</option>
+            <option value="yes">📨 SMS: Imetumwa</option>
+          </select>
+          <select id="editGuestWaSent">
+            <option value="no">💬 WA: Haijatumwa</option>
+            <option value="yes">💬 WA: Imetumwa</option>
+          </select>
+        </div>
+        <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">💡 Kama mgeni huyu amechelewa kuongezwa (baada ya wenzake kutumiwa), acha hizi kama "Haijatumwa" — atajumuishwa kiotomatiki wakati mtakapotuma tena kwa waliobaki.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('editGuestModal')">Ghairi</button>
+      <button class="btn btn-primary" onclick="saveEditGuest()">💾 Hifadhi Mabadiliko</button>
+    </div>
+  </div>
+</div>
+
 <!-- Upload Template Modal -->
 <div class="modal-overlay" id="uploadTemplateModal">
   <div class="modal">
@@ -2079,6 +2131,7 @@ async function loadEventGuests() {
       <td>${g.wa_sent === 'yes' ? '<span class="badge badge-green">Imetumwa</span>' : '<span class="badge badge-yellow">Haijatumwa</span>'}</td>
       <td>
   <button class="btn btn-outline btn-sm" onclick="generateCard('${g.id}')">🎫</button>
+  <button class="btn btn-outline btn-sm" onclick="openEditGuestModal('${g.id}')">✏️</button>
   <button class="btn btn-outline btn-sm" onclick="deleteGuest('${g.id}')">🗑️</button>
 </td>
     </tr>`;
@@ -2128,6 +2181,47 @@ const { error } = await sb.from('guests').insert({
   if (error) return showToast('Kosa: ' + error.message, 'error');
   showToast(`${name} ameongezwa! Kadi: ${cardId}`, 'success');
   closeModal('addGuestModal');
+  loadEventGuests();
+}
+
+async function openEditGuestModal(guestId) {
+  const { data: guest, error } = await sb.from('guests').select('*').eq('id', guestId).single();
+  if (error || !guest) return showToast('Imeshindwa kupata taarifa za mgeni', 'error');
+
+  document.getElementById('editGuestId').value = guest.id;
+  document.getElementById('editGuestName').value = guest.name || '';
+  document.getElementById('editGuestPhone').value = guest.phone || '';
+  document.getElementById('editGuestGroupSize').value = guest.group_size || 1;
+  document.getElementById('editGuestWhatsapp').value = guest.whatsapp || 'no';
+  document.getElementById('editGuestSmsSent').value = guest.sms_sent || 'no';
+  document.getElementById('editGuestWaSent').value = guest.wa_sent || 'no';
+
+  showModal('editGuestModal');
+}
+
+async function saveEditGuest() {
+  const id = document.getElementById('editGuestId').value;
+  const name = document.getElementById('editGuestName').value.trim();
+  const phone = document.getElementById('editGuestPhone').value.trim();
+  const groupSize = parseInt(document.getElementById('editGuestGroupSize').value) || 1;
+  const whatsapp = document.getElementById('editGuestWhatsapp').value;
+  const smsSent = document.getElementById('editGuestSmsSent').value;
+  const waSent = document.getElementById('editGuestWaSent').value;
+
+  if (!name) return showToast('Weka jina la mgeni', 'error');
+
+  let phoneFixed = phone.replace(/\s|-/g, '');
+  if (phoneFixed.startsWith('0')) phoneFixed = '255' + phoneFixed.slice(1);
+  else if (phoneFixed && !phoneFixed.startsWith('255')) phoneFixed = '255' + phoneFixed;
+
+  const { error } = await sb.from('guests').update({
+    name, phone: phoneFixed, group_size: groupSize, whatsapp,
+    sms_sent: smsSent, wa_sent: waSent
+  }).eq('id', id);
+
+  if (error) return showToast('Kosa: ' + error.message, 'error');
+  showToast('Taarifa za mgeni zimesasishwa!', 'success');
+  closeModal('editGuestModal');
   loadEventGuests();
 }
 
