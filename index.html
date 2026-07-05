@@ -2650,13 +2650,19 @@ async function sendSmsInvite(guestId) {
 
   const { data: eventData } = await sb.from('events').select('*').eq('id', guest.event_id).single();
   const message = buildSmsMessage(guest, eventData);
-  const digits = formatPhoneForWhatsApp(guest.phone); // 255...
-  const phone = '+' + digits;
 
-  window.open(`sms:${phone}?body=${encodeURIComponent(message)}`, '_blank');
+  showToast('Inatuma SMS...', 'info');
+
+  const { data, error } = await sb.functions.invoke('send-sms', {
+    body: { phone: guest.phone, message: message }
+  });
+
+  if (error || data?.error) {
+    return showToast('Imeshindwa: ' + ((data && data.error) || error.message), 'error');
+  }
 
   await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', guestId);
-  showToast('Ujumbe wa SMS umeandaliwa - bonyeza Tuma kwenye simu yako!', 'info');
+  showToast('SMS imetumwa kwa ' + guest.name + '!', 'success');
   loadEventGuests();
 }
 
