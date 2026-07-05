@@ -2542,6 +2542,10 @@ async function sendInvitations() {
         });
         if (error || data?.error) {
           failCount++;
+          if (failCount === 1) {
+            const msg = await getEdgeFunctionErrorMessage(error, data);
+            console.error('Sababu ya kwanza ya kushindwa SMS:', msg);
+          }
         } else {
           await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', g.id);
           okCount++;
@@ -2681,6 +2685,18 @@ function buildSmsMessage(guest, eventData) {
   return msg;
 }
 
+// Husoma ujumbe halisi wa kosa unaorudi kutoka Edge Function (Supabase haiuonyeshi moja kwa moja)
+async function getEdgeFunctionErrorMessage(error, fallbackData) {
+  if (fallbackData && fallbackData.error) return fallbackData.error;
+  if (error?.context && typeof error.context.json === 'function') {
+    try {
+      const body = await error.context.json();
+      if (body?.error) return body.error;
+    } catch (e) { /* endelea na fallback */ }
+  }
+  return error?.message || 'Kosa lisilojulikana';
+}
+
 async function sendSmsInvite(guestId) {
   const { data: guest } = await sb.from('guests').select('*').eq('id', guestId).single();
   if (!guest) return showToast('Mgeni hajapatikana', 'error');
@@ -2696,7 +2712,8 @@ async function sendSmsInvite(guestId) {
   });
 
   if (error || data?.error) {
-    return showToast('Imeshindwa: ' + ((data && data.error) || error.message), 'error');
+    const msg = await getEdgeFunctionErrorMessage(error, data);
+    return showToast('Imeshindwa: ' + msg, 'error');
   }
 
   await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', guestId);
