@@ -745,8 +745,8 @@
     <!-- Login Form -->
     <div id="loginForm">
       <div class="form-group">
-        <label>Simu / Barua Pepe / Jina (kwa Scanner)</label>
-        <input type="text" id="loginEmail" placeholder="0712345678 au barua@pepe.com">
+        <label>Barua Pepe</label>
+        <input type="email" id="loginEmail" placeholder="barua@pepe.com">
       </div>
       <div class="form-group">
         <label>Nenosiri</label>
@@ -1806,26 +1806,13 @@ function isOwnerProfile(u) {
 
 // ===== AUTH =====
 async function login() {
-  const identifier = document.getElementById('loginEmail').value.trim();
+  const email = document.getElementById('loginEmail').value.trim();
   const pass  = document.getElementById('loginPassword').value;
-  if (!identifier || !pass) return showToast('Jaza taarifa zote', 'error');
+  if (!email || !pass) return showToast('Jaza barua pepe na nenosiri', 'error');
 
-  const { data, error } = await sb.functions.invoke('resolve-login', {
-    body: { identifier, password: pass }
-  });
-
-  if (error || !data?.success) {
-    return showToast((data && data.error) || 'Taarifa za kuingia si sahihi', 'error');
-  }
-
-  const { error: sessErr } = await sb.auth.setSession({
-    access_token: data.access_token,
-    refresh_token: data.refresh_token
-  });
-  if (sessErr) return showToast('Imeshindikana kuingia: ' + sessErr.message, 'error');
-
-  const { data: sessionData } = await sb.auth.getSession();
-  currentUser = sessionData.session.user;
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) return showToast('Kosa: ' + error.message, 'error');
+  currentUser = data.user;
   await loadProfile();
   showApp();
 }
