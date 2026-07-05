@@ -742,16 +742,11 @@
       <p>Invitation Management System</p>
     </div>
 
-    <div class="auth-tabs">
-      <button class="auth-tab active" onclick="switchAuthTab('login')">Ingia</button>
-      <button class="auth-tab" onclick="switchAuthTab('register')">Jisajili</button>
-    </div>
-
     <!-- Login Form -->
     <div id="loginForm">
       <div class="form-group">
-        <label>Barua Pepe</label>
-        <input type="email" id="loginEmail" placeholder="barua@pepe.com">
+        <label>Simu / Barua Pepe / Jina (kwa Scanner)</label>
+        <input type="text" id="loginEmail" placeholder="0712345678 au barua@pepe.com">
       </div>
       <div class="form-group">
         <label>Nenosiri</label>
@@ -760,39 +755,9 @@
       <button class="btn btn-primary" onclick="login()" style="margin-top:8px;">
         🔐 Ingia
       </button>
-    </div>
-
-    <!-- Register Form -->
-    <div id="registerForm" style="display:none;">
-      <div class="input-row">
-        <div class="form-group">
-          <label>Jina la Kwanza</label>
-          <input type="text" id="regFirstName" placeholder="Ezekiel">
-        </div>
-        <div class="form-group">
-          <label>Jina la Familia</label>
-          <input type="text" id="regLastName" placeholder="Meshack">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Barua Pepe</label>
-        <input type="email" id="regEmail" placeholder="barua@pepe.com">
-      </div>
-      <div class="form-group">
-        <label>Nenosiri</label>
-        <input type="password" id="regPassword" placeholder="Herufi 6 au zaidi">
-      </div>
-      <div class="form-group">
-        <label>Jukumu</label>
-        <select id="regRole">
-          <option value="admin">Admin (Mwenye mfumo)</option>
-          <option value="scanner">Scanner (Mlinda mlango)</option>
-          <option value="manager">Manager (Msimamizi)</option>
-        </select>
-      </div>
-      <button class="btn btn-primary" onclick="register()" style="margin-top:8px;">
-        ✅ Jisajili
-      </button>
+      <p style="font-size:12px;color:var(--gray-400);text-align:center;margin-top:14px;">
+        Huna akaunti? Muulize Admin akuongeze kwenye "User Management".
+      </p>
     </div>
   </div>
 </div>
@@ -1320,10 +1285,10 @@
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>Jina</th><th>Barua Pepe</th><th>Jukumu</th><th>Tarehe ya Kujiunga</th><th>Vitendo</th></tr>
+                <tr><th>Jina</th><th>Simu / Barua Pepe</th><th>Jukumu</th><th>Badilisha Jukumu</th><th>Tarehe ya Kujiunga</th><th>Vitendo</th></tr>
               </thead>
               <tbody id="usersTable">
-                <tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:32px;">Inapakia...</td></tr>
+                <tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:32px;">Inapakia...</td></tr>
               </tbody>
             </table>
           </div>
@@ -1790,21 +1755,24 @@
         </div>
       </div>
       <div class="form-group">
-        <label>Barua Pepe</label>
-        <input type="email" id="newUserEmail" placeholder="barua@pepe.com">
-      </div>
-      <div class="form-group">
-        <label>Nenosiri la Mwanzo</label>
-        <input type="password" id="newUserPass" placeholder="Herufi 6 au zaidi">
-      </div>
-      <div class="form-group">
         <label>Jukumu</label>
-        <select id="newUserRole">
+        <select id="newUserRole" onchange="toggleNewUserPhoneField()">
           <option value="scanner">🔍 Scanner (Mlinda mlango)</option>
           <option value="manager">📊 Manager (Msimamizi)</option>
           <option value="admin">⚙️ Admin (Mkuu)</option>
         </select>
       </div>
+      <div class="form-group" id="newUserPhoneGroup">
+        <label>Namba ya Simu</label>
+        <input type="text" id="newUserPhone" placeholder="0712345678">
+      </div>
+      <div class="form-group">
+        <label>Nenosiri la Mwanzo</label>
+        <input type="password" id="newUserPass" placeholder="Herufi 6 au zaidi">
+      </div>
+      <p id="scannerLoginNote" style="display:none;font-size:12px;color:var(--gray-400);">
+        ℹ️ Scanner ataingia kwa kutumia <strong>Jina lake kamili</strong> + Nenosiri hili, bila kuhitaji simu wala barua pepe.
+      </p>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('addUserModal')">Ghairi</button>
@@ -1826,48 +1794,40 @@ let scanCountOk = 0;
 let scanCountFail = 0;
 let qrScanner = null;
 
+// ===== MMILIKI WA MFUMO (haiwezi kufutwa/kubadilishwa jukumu na admin wengine) =====
+const OWNER_EMAIL = 'ezekielmeshack136@gmail.com';
+const OWNER_NAME = 'EZEKIEL MESHACK';
+function isOwnerProfile(u) {
+  if (!u) return false;
+  const email = (u.email || '').toLowerCase().trim();
+  const fullName = `${u.first_name || ''} ${u.last_name || ''}`.toUpperCase().trim();
+  return email === OWNER_EMAIL.toLowerCase() || fullName === OWNER_NAME;
+}
+
 // ===== AUTH =====
-function switchAuthTab(tab) {
-  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-  event.target.classList.add('active');
-  document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
-  document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
-}
-
 async function login() {
-  const email = document.getElementById('loginEmail').value.trim();
+  const identifier = document.getElementById('loginEmail').value.trim();
   const pass  = document.getElementById('loginPassword').value;
-  if (!email || !pass) return showToast('Jaza barua pepe na nenosiri', 'error');
+  if (!identifier || !pass) return showToast('Jaza taarifa zote', 'error');
 
-  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-  if (error) return showToast('Kosa: ' + error.message, 'error');
-  currentUser = data.user;
-  await loadProfile();
-  showApp();
-}
-
-async function register() {
-  const first = document.getElementById('regFirstName').value.trim();
-  const last  = document.getElementById('regLastName').value.trim();
-  const email = document.getElementById('regEmail').value.trim();
-  const pass  = document.getElementById('regPassword').value;
-  const role  = document.getElementById('regRole').value;
-
-  if (!first || !email || !pass) return showToast('Jaza taarifa zote', 'error');
-
-  const { data, error } = await sb.auth.signUp({ email, password: pass });
-  if (error) return showToast('Kosa: ' + error.message, 'error');
-
-  // Hifadhi profile
-  await sb.from('profiles').insert({
-    id: data.user.id,
-    first_name: first,
-    last_name: last,
-    email: email,
-    role: role
+  const { data, error } = await sb.functions.invoke('resolve-login', {
+    body: { identifier, password: pass }
   });
 
-  showToast('Umesajiliwa! Angalia barua pepe yako kuthibitisha akaunti.', 'success');
+  if (error || !data?.success) {
+    return showToast((data && data.error) || 'Taarifa za kuingia si sahihi', 'error');
+  }
+
+  const { error: sessErr } = await sb.auth.setSession({
+    access_token: data.access_token,
+    refresh_token: data.refresh_token
+  });
+  if (sessErr) return showToast('Imeshindikana kuingia: ' + sessErr.message, 'error');
+
+  const { data: sessionData } = await sb.auth.getSession();
+  currentUser = sessionData.session.user;
+  await loadProfile();
+  showApp();
 }
 
 async function logout() {
@@ -2870,49 +2830,95 @@ async function exportEventCSV(eventId, eventName) {
 }
 
 // ===== USERS =====
+function toggleNewUserPhoneField() {
+  const role = document.getElementById('newUserRole').value;
+  const isScanner = role === 'scanner';
+  document.getElementById('newUserPhoneGroup').style.display = isScanner ? 'none' : 'block';
+  document.getElementById('scannerLoginNote').style.display = isScanner ? 'block' : 'none';
+}
+
 async function loadUsers() {
-  const { data } = await sb.from('profiles').select('*');
+  const { data } = await sb.from('profiles').select('*').order('created_at', { ascending: true });
   const tbody = document.getElementById('usersTable');
 
   if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna watumiaji</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna watumiaji</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = data.map(u => `
+  tbody.innerHTML = data.map(u => {
+    const owner = isOwnerProfile(u);
+    return `
     <tr>
-      <td><strong>${u.first_name || ''} ${u.last_name || ''}</strong></td>
-      <td>${u.email || '-'}</td>
+      <td><strong>${u.first_name || ''} ${u.last_name || ''}</strong>${owner ? ' 👑' : ''}</td>
+      <td>${u.phone || u.email || '-'}</td>
       <td><span class="badge ${u.role==='admin'?'badge-blue':u.role==='manager'?'badge-orange':'badge-green'}">${u.role || 'user'}</span></td>
-      <td style="font-size:12px;color:var(--gray-400);">${new Date(u.created_at).toLocaleDateString('sw')}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">🗑️ Futa</button></td>
+      <td>
+        ${owner
+          ? `<span style="font-size:11px;color:var(--gray-400);">🔒 Mmiliki wa Mfumo</span>`
+          : `<select onchange="changeUserRole('${u.id}', this.value)" style="padding:6px;border-radius:6px;border:1px solid var(--gray-200);font-size:12px;">
+               <option value="scanner" ${u.role==='scanner'?'selected':''}>🔍 Scanner</option>
+               <option value="manager" ${u.role==='manager'?'selected':''}>📊 Manager</option>
+               <option value="admin" ${u.role==='admin'?'selected':''}>⚙️ Admin</option>
+             </select>`}
+      </td>
+      <td style="font-size:12px;color:var(--gray-400);">${u.created_at ? new Date(u.created_at).toLocaleDateString('sw') : '-'}</td>
+      <td>${owner
+          ? `<span style="font-size:11px;color:var(--gray-400);">Haiwezi kufutwa</span>`
+          : `<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">🗑️ Futa</button>`}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 }
 
 async function addUser() {
   const first = document.getElementById('newUserFirst').value.trim();
   const last  = document.getElementById('newUserLast').value.trim();
-  const email = document.getElementById('newUserEmail').value.trim();
+  const phone = document.getElementById('newUserPhone').value.trim();
   const pass  = document.getElementById('newUserPass').value;
   const role  = document.getElementById('newUserRole').value;
 
-  if (!email || !pass) return showToast('Jaza barua pepe na nenosiri', 'error');
+  if (!first || !pass || pass.length < 6) return showToast('Jaza jina na nenosiri (herufi 6+)', 'error');
+  if (role !== 'scanner' && !phone) return showToast('Namba ya simu inahitajika kwa jukumu hili', 'error');
 
-  const { data, error } = await sb.auth.admin?.createUser({ email, password: pass, email_confirm: true })
-    .catch(() => ({ error: { message: 'Tumia Supabase Dashboard kuongeza watumiaji wapya kwa sasa' } }));
+  const { data, error } = await sb.functions.invoke('manage-users', {
+    body: { action: 'create', first_name: first, last_name: last, phone, password: pass, role }
+  });
 
-  if (error) return showToast(error.message, 'error');
+  if (error || data?.error) return showToast((data && data.error) || error.message, 'error');
+
   showToast('Mtumiaji ameongezwa!', 'success');
   closeModal('addUserModal');
+  document.getElementById('newUserFirst').value = '';
+  document.getElementById('newUserLast').value = '';
+  document.getElementById('newUserPhone').value = '';
+  document.getElementById('newUserPass').value = '';
+  loadUsers();
+}
+
+async function changeUserRole(id, newRole) {
+  const { data, error } = await sb.functions.invoke('manage-users', {
+    body: { action: 'update_role', target_id: id, new_role: newRole }
+  });
+  if (error || data?.error) {
+    showToast((data && data.error) || error.message, 'error');
+    loadUsers();
+    return;
+  }
+  showToast('Jukumu limebadilishwa!', 'success');
   loadUsers();
 }
 
 async function deleteUser(id) {
   if (id === currentUser?.id) return showToast('Huwezi kujifuta mwenyewe!', 'error');
-  if (!confirm('Futa mtumiaji huyu?')) return;
-  await sb.from('profiles').delete().eq('id', id);
-  showToast('Mtumiaji amefutwa', 'info');
+  if (!confirm('Futa mtumiaji huyu KABISA? Akaunti yake yote itaondolewa, hataweza kuingia tena.')) return;
+
+  const { data, error } = await sb.functions.invoke('manage-users', {
+    body: { action: 'delete', target_id: id }
+  });
+  if (error || data?.error) return showToast((data && data.error) || error.message, 'error');
+
+  showToast('Mtumiaji amefutwa kabisa', 'info');
   loadUsers();
 }
 
