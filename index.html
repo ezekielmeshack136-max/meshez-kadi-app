@@ -2535,24 +2535,24 @@ async function sendInvitations() {
       showToast(`Inatuma SMS kwa wageni ${pendingSms.length}...`, 'info');
       let okCount = 0, failCount = 0;
 
+      let firstError = null;
       for (const g of pendingSms) {
         const message = buildSmsMessage(g, eventData);
-        const { data, error } = await sb.functions.invoke('send-sms', {
-          body: { phone: g.phone, message }
-        });
-        if (error || data?.error) {
+        const outcome = await callSendSmsFunction(g.phone, message);
+        if (!outcome.ok) {
           failCount++;
-          if (failCount === 1) {
-            const msg = await getEdgeFunctionErrorMessage(error, data);
-            console.error('Sababu ya kwanza ya kushindwa SMS:', msg);
-          }
+          if (!firstError) firstError = outcome.error;
         } else {
           await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', g.id);
           okCount++;
         }
       }
+      if (firstError) console.error('Sababu ya kushindwa SMS:', firstError);
 
-      showToast(`SMS: zimetumwa ${okCount}, zimeshindwa ${failCount}`, okCount > 0 ? 'success' : 'error');
+      const bulkMsg = failCount > 0
+        ? `SMS: zimetumwa ${okCount}, zimeshindwa ${failCount}. Sababu: ${firstError}`
+        : `SMS: zimetumwa ${okCount}, zimeshindwa ${failCount}`;
+      showToast(bulkMsg, okCount > 0 ? 'success' : 'error');
       loadEventGuests();
     }
   }
@@ -2685,16 +2685,28 @@ function buildSmsMessage(guest, eventData) {
   return msg;
 }
 
-// Husoma ujumbe halisi wa kosa unaorudi kutoka Edge Function (Supabase haiuonyeshi moja kwa moja)
-async function getEdgeFunctionErrorMessage(error, fallbackData) {
-  if (fallbackData && fallbackData.error) return fallbackData.error;
-  if (error?.context && typeof error.context.json === 'function') {
-    try {
-      const body = await error.context.json();
-      if (body?.error) return body.error;
-    } catch (e) { /* endelea na fallback */ }
+// Husoma ujumbe halisi wa kosa unaorudi kutoka Edge Function (fetch moja kwa moja, uhakika zaidi)
+async function callSendSmsFunction(phone, message) {
+  const { data: sessionData } = await sb.auth.getSession();
+  const token = sessionData?.session?.access_token || SUPABASE_KEY;
+
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/send-sms`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'apikey': SUPABASE_KEY
+    },
+    body: JSON.stringify({ phone, message })
+  });
+
+  let result = {};
+  try { result = await res.json(); } catch (e) { /* jibu si JSON */ }
+
+  if (!res.ok) {
+    return { ok: false, error: result.error || `Kosa la server (status ${res.status})` };
   }
-  return error?.message || 'Kosa lisilojulikana';
+  return { ok: true, result };
 }
 
 async function sendSmsInvite(guestId) {
@@ -2707,13 +2719,10 @@ async function sendSmsInvite(guestId) {
 
   showToast('Inatuma SMS...', 'info');
 
-  const { data, error } = await sb.functions.invoke('send-sms', {
-    body: { phone: guest.phone, message: message }
-  });
+  const outcome = await callSendSmsFunction(guest.phone, message);
 
-  if (error || data?.error) {
-    const msg = await getEdgeFunctionErrorMessage(error, data);
-    return showToast('Imeshindwa: ' + msg, 'error');
+  if (!outcome.ok) {
+    return showToast('Imeshindwa: ' + outcome.error, 'error');
   }
 
   await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', guestId);
