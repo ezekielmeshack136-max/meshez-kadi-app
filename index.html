@@ -2200,6 +2200,7 @@ async function loadEventGuests() {
       <td>
   <button class="btn btn-outline btn-sm" onclick="generateCard('${g.id}')" title="Zalisha Kadi">🎫</button>
   ${g.whatsapp === 'yes' ? `<button class="btn btn-outline btn-sm" onclick="sendWhatsAppInvite('${g.id}')" title="Tuma WhatsApp">💬</button>` : ''}
+  ${g.phone ? `<button class="btn btn-outline btn-sm" onclick="sendSmsInvite('${g.id}')" title="Tuma SMS">📨</button>` : ''}
   <button class="btn btn-outline btn-sm" onclick="openEditGuestModal('${g.id}')">✏️</button>
   <button class="btn btn-outline btn-sm" onclick="deleteGuest('${g.id}')">🗑️</button>
 </td>
@@ -2624,6 +2625,38 @@ async function sendWhatsAppInvite(guestId) {
   }, 600);
 
   await sb.from('guests').update({ wa_sent: 'yes' }).eq('id', guestId);
+  loadEventGuests();
+}
+
+// Tuma SMS kwa mgeni MMOJA tu (kutoka kwenye orodha ya wageni) - kazi sawa na WhatsApp
+function buildSmsMessage(guest, eventData) {
+  const eventName = eventData?.name || 'Tukio';
+  const date = eventData?.event_date || '';
+  const time = formatTimeAMPM(eventData?.event_time || '');
+  const rsvp = getRsvpLinks(guest);
+
+  let msg = `Habari ${guest.name}, umealikwa kwenye ${eventName}`;
+  if (date) msg += ` tarehe ${date}`;
+  if (time) msg += ` saa ${time}`;
+  msg += `. Namba yako ya kadi: ${guest.card_id} - tafadhali ionyeshe mlangoni.`;
+  msg += ` Thibitisha uwepo: NITAHUDHURIA ${rsvp.yes} au SITAHUDHURIA ${rsvp.no}`;
+  return msg;
+}
+
+async function sendSmsInvite(guestId) {
+  const { data: guest } = await sb.from('guests').select('*').eq('id', guestId).single();
+  if (!guest) return showToast('Mgeni hajapatikana', 'error');
+  if (!guest.phone) return showToast('Mgeni huyu hana namba ya simu', 'error');
+
+  const { data: eventData } = await sb.from('events').select('*').eq('id', guest.event_id).single();
+  const message = buildSmsMessage(guest, eventData);
+  const digits = formatPhoneForWhatsApp(guest.phone); // 255...
+  const phone = '+' + digits;
+
+  window.open(`sms:${phone}?body=${encodeURIComponent(message)}`, '_blank');
+
+  await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', guestId);
+  showToast('Ujumbe wa SMS umeandaliwa - bonyeza Tuma kwenye simu yako!', 'info');
   loadEventGuests();
 }
 
