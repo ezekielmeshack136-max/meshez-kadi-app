@@ -2515,28 +2515,66 @@ async function sendInvitations() {
   const eventId = document.getElementById('invEventSelect').value;
   if (!eventId) return showToast('Chagua event kwanza', 'error');
 
-  const sendWA = document.getElementById('sendWA').checked;
-  if (!sendWA) return showToast('Tiki "WhatsApp" kwanza ili kuanza kutuma', 'error');
+  const sendSmsChecked = document.getElementById('sendSMS').checked;
+  const sendWaChecked = document.getElementById('sendWA').checked;
+
+  if (!sendSmsChecked && !sendWaChecked) {
+    return showToast('Tiki angalau moja: SMS au WhatsApp', 'error');
+  }
 
   const { data: eventData } = await sb.from('events').select('*').eq('id', eventId).single();
-  const { data: guests } = await sb.from('guests').select('*').eq('event_id', eventId).eq('whatsapp', 'yes');
 
-  const pending = (guests || []).filter(g => g.wa_sent !== 'yes');
-  if (pending.length === 0) {
-    return showToast('Hakuna wageni wanaosubiri WhatsApp (wote wamekwisha tumiwa au hawana WhatsApp)', 'info');
+  // ===== SMS - kwa WOTE wenye namba ya simu, haitegemei WhatsApp =====
+  if (sendSmsChecked) {
+    const { data: guests } = await sb.from('guests').select('*').eq('event_id', eventId);
+    const pendingSms = (guests || []).filter(g => g.phone && g.sms_sent !== 'yes');
+
+    if (pendingSms.length === 0) {
+      showToast('Hakuna wageni wanaosubiri SMS', 'info');
+    } else {
+      showToast(`Inatuma SMS kwa wageni ${pendingSms.length}...`, 'info');
+      let okCount = 0, failCount = 0;
+
+      for (const g of pendingSms) {
+        const message = buildSmsMessage(g, eventData);
+        const { data, error } = await sb.functions.invoke('send-sms', {
+          body: { phone: g.phone, message }
+        });
+        if (error || data?.error) {
+          failCount++;
+        } else {
+          await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', g.id);
+          okCount++;
+        }
+      }
+
+      showToast(`SMS: zimetumwa ${okCount}, zimeshindwa ${failCount}`, okCount > 0 ? 'success' : 'error');
+      loadEventGuests();
+    }
   }
 
-  waQueue = pending;
-  waQueueIndex = 0;
-  waQueueEventData = eventData;
-  waQueueTemplate = await getTemplateForEvent(eventId, eventData?.type);
+  // ===== WHATSAPP - kwa wenye WhatsApp pekee, haitegemei SMS =====
+  if (sendWaChecked) {
+    const { data: guests } = await sb.from('guests').select('*').eq('event_id', eventId).eq('whatsapp', 'yes');
+    const pendingWa = (guests || []).filter(g => g.wa_sent !== 'yes');
 
-  if (!waQueueTemplate) {
-    showToast('Onyo: hakuna template ya kadi kwa event hii - ujumbe utatumwa bila picha ya kadi', 'info');
+    if (pendingWa.length === 0) {
+      showToast('Hakuna wageni wanaosubiri WhatsApp', 'info');
+      return;
+    }
+
+    waQueue = pendingWa;
+    waQueueIndex = 0;
+    waQueueEventData = eventData;
+    waQueueTemplate = await getTemplateForEvent(eventId, eventData?.type);
+
+    if (!waQueueTemplate) {
+      showToast('Onyo: hakuna template ya kadi kwa event hii - ujumbe utatumwa bila picha ya kadi', 'info');
+    }
+
+    showModal('waQueueModal');
+    renderWaQueueStep();
   }
-
-  showModal('waQueueModal');
-  renderWaQueueStep();
 }
 
 function renderWaQueueStep() {
