@@ -1536,9 +1536,19 @@
         <input type="text" id="evtVenue" placeholder="LaLiga Garden, Kisasa - Dodoma">
       </div>
       <div class="form-group">
+        <label>👰🤵 Jina la Mwenye Tukio</label>
+        <input type="text" id="evtHostName" placeholder="Josephine & Mark">
+        <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Itatumika kwenye ujumbe wa WhatsApp (mfano: "Harusi ya Josephine & Mark")</p>
+      </div>
+      <div class="form-group">
         <label>📍 Location Link (Google Maps)</label>
         <input type="text" id="evtLocationUrl" placeholder="https://maps.app.goo.gl/xxxxx">
         <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Fungua Google Maps, tafuta mahali, bonyeza "Share" → "Copy link", kisha bandika hapa.</p>
+      </div>
+      <div class="form-group">
+        <label>🗺️ Coordinates (kwa WhatsApp button)</label>
+        <input type="text" id="evtCoordinates" placeholder="-6.1907858,35.7305194">
+        <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Kwenye Google Maps, bofya mahali husika kisha copy namba mbili zinazoonekana (latitude,longitude) - bila herufi nyingine.</p>
       </div>
       <div class="input-row">
         <div class="form-group">
@@ -1566,20 +1576,29 @@
 <div class="modal-overlay" id="locationModal">
   <div class="modal" style="max-width:420px;">
     <div class="modal-header">
-      <div class="modal-title">📍 Location ya Tukio</div>
+      <div class="modal-title">📍 Location &amp; Maelezo ya Tukio</div>
       <button class="modal-close" onclick="closeModal('locationModal')">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="locEventId">
       <div class="form-group">
+        <label>👰🤵 Jina la Mwenye Tukio</label>
+        <input type="text" id="locHostNameInput" placeholder="Josephine & Mark">
+      </div>
+      <div class="form-group">
         <label>Google Maps Link</label>
         <input type="text" id="locUrlInput" placeholder="https://maps.app.goo.gl/xxxxx">
         <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Fungua Google Maps, tafuta mahali, bonyeza "Share" → "Copy link", kisha bandika hapa.</p>
       </div>
+      <div class="form-group">
+        <label>🗺️ Coordinates (kwa WhatsApp button)</label>
+        <input type="text" id="locCoordinatesInput" placeholder="-6.1907858,35.7305194">
+        <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Kwenye Google Maps, bofya mahali husika kisha copy namba mbili zinazoonekana (latitude,longitude) - bila herufi nyingine.</p>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('locationModal')">Ghairi</button>
-      <button class="btn btn-primary" onclick="saveEventLocation()">💾 Hifadhi Location</button>
+      <button class="btn btn-primary" onclick="saveEventLocation()">💾 Hifadhi</button>
     </div>
   </div>
 </div>
@@ -2066,7 +2085,7 @@ async function loadEvents() {
       </div>
       <div class="event-card-footer">
         <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();selectEventForInvitations('${e.id}')">📨 Tuma</button>
-        <button class="btn btn-outline btn-sm" onclick='event.stopPropagation();openLocationModal("${e.id}", ${JSON.stringify(e.location_url || '')})' title="${e.location_url ? 'Location imewekwa - bonyeza kubadilisha' : 'Weka location ya tukio'}">${e.location_url ? '📍✅' : '📍'}</button>
+        <button class="btn btn-outline btn-sm" onclick='event.stopPropagation();openLocationModal("${e.id}", ${JSON.stringify(e.location_url || '')}, ${JSON.stringify(e.host_name || '')}, ${JSON.stringify(e.coordinates || '')})' title="${e.location_url ? 'Location imewekwa - bonyeza kubadilisha' : 'Weka location ya tukio'}">${e.location_url ? '📍✅' : '📍'}</button>
         <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();deleteEvent('${e.id}')">🗑️</button>
       </div>
     </div>
@@ -2078,7 +2097,9 @@ async function saveNewEvent() {
   const type        = document.getElementById('evtType').value;
   const date        = document.getElementById('evtDate').value;
   const venue       = document.getElementById('evtVenue').value.trim();
+  const hostName    = document.getElementById('evtHostName').value.trim();
   const locationUrl = document.getElementById('evtLocationUrl').value.trim();
+  const coordinates = document.getElementById('evtCoordinates').value.trim();
   const time        = document.getElementById('evtTime').value;
   const phone       = document.getElementById('evtPhone').value.trim();
   const prefix      = document.getElementById('evtPrefix').value.trim().toUpperCase();
@@ -2087,7 +2108,8 @@ async function saveNewEvent() {
 
   const { error } = await sb.from('events').insert({
     user_id: currentUser.id,
-    name, type, event_date: date, venue, location_url: locationUrl, event_time: time,
+    name, type, event_date: date, venue, host_name: hostName,
+    location_url: locationUrl, coordinates, event_time: time,
     contact_phone: phone, prefix: prefix || 'EVENT2026',
     total_guests: 0, attended: 0, sms_sent_count: 0
   });
@@ -2096,25 +2118,33 @@ async function saveNewEvent() {
   showToast('Event imetengenezwa! ✅', 'success');
   closeModal('newEventModal');
   document.getElementById('evtLocationUrl').value = '';
+  document.getElementById('evtHostName').value = '';
+  document.getElementById('evtCoordinates').value = '';
   loadEvents();
   loadDashboard();
 }
 
 // ===== LOCATION YA TUKIO (kwa events zilizokwishatengenezwa) =====
-function openLocationModal(eventId, currentUrl) {
+function openLocationModal(eventId, currentUrl, currentHostName, currentCoordinates) {
   document.getElementById('locEventId').value = eventId;
   document.getElementById('locUrlInput').value = currentUrl || '';
+  document.getElementById('locHostNameInput').value = currentHostName || '';
+  document.getElementById('locCoordinatesInput').value = currentCoordinates || '';
   showModal('locationModal');
 }
 
 async function saveEventLocation() {
   const eventId = document.getElementById('locEventId').value;
   const url = document.getElementById('locUrlInput').value.trim();
+  const hostName = document.getElementById('locHostNameInput').value.trim();
+  const coordinates = document.getElementById('locCoordinatesInput').value.trim();
   if (!eventId) return;
 
-  const { error } = await sb.from('events').update({ location_url: url }).eq('id', eventId);
+  const { error } = await sb.from('events')
+    .update({ location_url: url, host_name: hostName, coordinates })
+    .eq('id', eventId);
   if (error) return showToast('Kosa: ' + error.message, 'error');
-  showToast('Location imehifadhiwa! 📍', 'success');
+  showToast('Taarifa zimehifadhiwa! 📍', 'success');
   closeModal('locationModal');
   loadEvents();
 }
