@@ -2628,44 +2628,46 @@ function renderWaQueueStep() {
     <p style="font-size:13px;color:var(--gray-400);margin-bottom:8px;">Mgeni ${waQueueIndex + 1} / ${waQueue.length}</p>
     <div style="font-size:16px;font-weight:700;">${g.name}</div>
     <div style="font-size:13px;color:var(--gray-600);margin-top:2px;">${g.phone || 'Hana namba ya simu'}</div>
-    <p style="font-size:12px;color:var(--gray-400);margin-top:12px;">Bonyeza kitufe chini kupakua kadi yake na kufungua WhatsApp na ujumbe tayari. Ambatanisha picha iliyopakuliwa kabla ya kutuma.</p>
+    <p style="font-size:12px;color:var(--gray-400);margin-top:12px;">Bonyeza kitufe chini kutengeneza kadi, kuipakia, na kutuma moja kwa moja kupitia WhatsApp Business API.</p>
   `;
   nextBtn.style.display = 'inline-flex';
-  nextBtn.textContent = '📎 Pakua Kadi & Fungua WhatsApp';
+  nextBtn.disabled = false;
+  nextBtn.textContent = '📤 Tuma kwa WhatsApp';
 }
 
 async function processWaQueueStep() {
   const g = waQueue[waQueueIndex];
+  const nextBtn = document.getElementById('waQueueNextBtn');
 
   if (!g.phone) {
     showToast(`${g.name} hana namba ya simu - anarukwa`, 'error');
+  } else if (!waQueueTemplate) {
+    showToast(`${g.name} amerukwa - hakuna template ya kadi kwa event hii`, 'error');
   } else {
-    if (waQueueTemplate) {
-      try {
-        const pos = waQueueTemplate.positions || DEFAULT_POSITIONS;
-        const blob = await generateSingleCardBlob(g, waQueueTemplate, pos);
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Kadi_${g.name.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
-        a.click();
-      } catch (e) {
-        console.error('Imeshindwa kutengeneza kadi ya ' + g.name, e);
+    nextBtn.disabled = true;
+    nextBtn.textContent = '⏳ Inatuma...';
+    try {
+      const imageUrl = await generateAndUploadCard(g.id);
+      const phone = formatPhoneForWhatsApp(g.phone);
+      const bodyParams = buildWhatsAppBodyParams(g, waQueueEventData);
+      const buttonUrlSuffix = buildLocationButtonSuffix(waQueueEventData);
+      const outcome = await callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, buttonUrlSuffix);
+
+      if (outcome.ok) {
+        await sb.from('guests').update({ wa_sent: 'yes' }).eq('id', g.id);
+      } else {
+        showToast(`Imeshindwa kutuma kwa ${g.name}: ${outcome.error}`, 'error');
       }
+    } catch (e) {
+      showToast(`Imeshindwa kwa ${g.name}: ${e.message}`, 'error');
     }
-
-    const message = buildInvitationMessage(g, waQueueEventData);
-    const phone = formatPhoneForWhatsApp(g.phone);
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-
-    await sb.from('guests').update({ wa_sent: 'yes' }).eq('id', g.id);
   }
 
   waQueueIndex++;
   renderWaQueueStep();
 }
 
-// Tuma WhatsApp kwa mgeni MMOJA tu (kutoka kwenye orodha ya wageni)
+// Tuma WhatsApp kwa mgeni MMOJA tu (kutoka kwenye orodha ya wageni) - kupitia Meta Business API
 async function sendWhatsAppInvite(guestId) {
   const { data: guest } = await sb.from('guests').select('*').eq('id', guestId).single();
   if (!guest) return showToast('Mgeni hajapatikana', 'error');
@@ -2673,34 +2675,28 @@ async function sendWhatsAppInvite(guestId) {
 
   const { data: eventData } = await sb.from('events').select('*').eq('id', guest.event_id).single();
   const template = await getTemplateForEvent(guest.event_id, eventData?.type);
+  if (!template) return showToast('Hakuna template ya kadi kwa event hii - Meta inahitaji picha ya header', 'error');
 
-  if (template) {
-    try {
-      const pos = template.positions || DEFAULT_POSITIONS;
-      const blob = await generateSingleCardBlob(guest, template, pos);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Kadi_${guest.name.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
-      a.click();
-      showToast('Kadi imepakuliwa - iambatanishe kwenye WhatsApp!', 'info');
-    } catch (e) {
-      console.error(e);
-    }
-    // Pakia kadi kwenye bucket ya generated-cards kwa siri (background) ili tuwe
-    // na link ya kudumu tayari kwa Edge Function ya Meta WhatsApp API (hatua ijayo)
-    generateAndUploadCard(guestId).catch(e => console.error('Upload ya kadi imeshindwa:', e));
-  } else {
-    showToast('Hakuna template ya kadi kwa event hii - ujumbe utatumwa bila picha', 'info');
+  showToast('Inatengeneza kadi na kutuma...', 'info');
+
+  let imageUrl;
+  try {
+    imageUrl = await generateAndUploadCard(guestId);
+  } catch (e) {
+    return showToast('Imeshindwa kutengeneza/kupakia kadi: ' + e.message, 'error');
   }
 
-  const message = buildInvitationMessage(guest, eventData);
   const phone = formatPhoneForWhatsApp(guest.phone);
-  setTimeout(() => {
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-  }, 600);
+  const bodyParams = buildWhatsAppBodyParams(guest, eventData);
+  const buttonUrlSuffix = buildLocationButtonSuffix(eventData);
+
+  const outcome = await callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, buttonUrlSuffix);
+  if (!outcome.ok) {
+    return showToast('Imeshindwa kutuma WhatsApp: ' + outcome.error, 'error');
+  }
 
   await sb.from('guests').update({ wa_sent: 'yes' }).eq('id', guestId);
+  showToast('Mualiko umetumwa kwa WhatsApp! ✅', 'success');
   loadEventGuests();
 }
 
@@ -2719,7 +2715,54 @@ function buildSmsMessage(guest, eventData) {
   return msg;
 }
 
-// Husoma ujumbe halisi wa kosa unaorudi kutoka Edge Function (fetch moja kwa moja, uhakika zaidi)
+// Hujenga array ya "body variables" (6) zinazoendana na Meta WhatsApp Template iliyoidhinishwa.
+// MPANGILIO: {{1}} Jina la mgeni | {{2}} Jina la Event | {{3}} Jina la Mwenye Tukio |
+//            {{4}} Tarehe | {{5}} Saa | {{6}} Location (jina la mahali)
+// Ukibadilisha muundo wa template yako Meta, badilisha mpangilio huu ipasavyo.
+function buildWhatsAppBodyParams(guest, eventData) {
+  const eventName = eventData?.name || 'Tukio';
+  const hostName  = eventData?.host_name || '';
+  const date      = eventData?.event_date || '';
+  const time      = formatTimeAMPM(eventData?.event_time || '');
+  const venue     = eventData?.venue || '';
+  return [guest.name, eventName, hostName, date, time, venue];
+}
+
+// Hujenga suffix ya kitufe cha "location" (Dynamic URL button, index 2 = kitufe cha 3).
+// Kwa chaguo-msingi hutumia 'coordinates' (lat,lng) kama query kwenye Google Maps.
+// MUHIMU: hii lazima ilingane na muundo wa base URL uliouweka kwenye template yako Meta
+// (mfano: base URL "https://www.google.com/maps/search/?api=1&query={{1}}").
+// Ikiwa template yako imewekwa tofauti, badilisha hapa ipasavyo.
+function buildLocationButtonSuffix(eventData) {
+  const coords = (eventData?.coordinates || '').trim();
+  if (coords) return coords;
+  const url = (eventData?.location_url || '').trim();
+  return url;
+}
+
+async function callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, buttonUrlSuffix) {
+  const { data: sessionData } = await sb.auth.getSession();
+  const token = sessionData?.session?.access_token || SUPABASE_KEY;
+
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp-card`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'apikey': SUPABASE_KEY
+    },
+    body: JSON.stringify({ phone, imageUrl, bodyParams, buttonUrlSuffix })
+  });
+
+  let result = {};
+  try { result = await res.json(); } catch (e) { /* jibu si JSON */ }
+
+  if (!res.ok) {
+    return { ok: false, error: result.error || `Kosa la server (status ${res.status})` };
+  }
+  return { ok: true, result };
+}
+
 async function callSendSmsFunction(phone, message) {
   const { data: sessionData } = await sb.auth.getSession();
   const token = sessionData?.session?.access_token || SUPABASE_KEY;
