@@ -1125,6 +1125,7 @@
            <div class="card-title">👥 Orodha ya Wageni</div>
 <div style="display:flex;gap:8px;">
   <button class="btn btn-orange btn-sm" onclick="generateAllCards()">📦 Pakua Kadi Zote (ZIP)</button>
+  <button class="btn btn-outline btn-sm" id="uploadAllCardsBtn" onclick="handleUploadAllCards()">☁️ Pakia Kadi Zote Bucket</button>
   <button class="btn btn-outline btn-sm" onclick="openBulkImportModal()">📥 Bulk Import (Excel)</button>
   <button class="btn btn-outline btn-sm" onclick="showModal('addGuestModal')">+ Mgeni Mpya</button>
 </div>
@@ -2686,6 +2687,9 @@ async function sendWhatsAppInvite(guestId) {
     } catch (e) {
       console.error(e);
     }
+    // Pakia kadi kwenye bucket ya generated-cards kwa siri (background) ili tuwe
+    // na link ya kudumu tayari kwa Edge Function ya Meta WhatsApp API (hatua ijayo)
+    generateAndUploadCard(guestId).catch(e => console.error('Upload ya kadi imeshindwa:', e));
   } else {
     showToast('Hakuna template ya kadi kwa event hii - ujumbe utatumwa bila picha', 'info');
   }
@@ -3155,6 +3159,7 @@ async function exportPaymentsCSV() {
 
 // ===== MATANGAZO YA KADI (PROMO IMAGES) =====
 const PROMO_BUCKET = 'promo-images';
+const CARDS_BUCKET = 'generated-cards';
 
 async function loadPromoImages() {
   if (!currentUser) return;
@@ -3701,6 +3706,86 @@ canvas.toBlob(blob => resolve(blob), 'image/png');
     bgImg.onerror = reject;
     bgImg.src = template.url;
   });
+}
+
+// Huzalisha kadi ya mgeni na kuipakia kwenye bucket ya 'generated-cards',
+// kisha kuhifadhi link ya kudumu (public URL) kwenye guests.card_image_url.
+// Ikiwa kadi ya mgeni huyu tayari ipo kwenye bucket (haijabadilika), inarudisha
+// link iliyopo badala ya kupakia upya - isipokuwa 'forceRegenerate' iwe true.
+async function generateAndUploadCard(guestId, forceRegenerate = false) {
+  const { data: guest, error: gErr } = await sb.from('guests').select('*').eq('id', guestId).single();
+  if (gErr || !guest) throw new Error('Mgeni hajapatikana');
+
+  // Kama tayari kuna link iliyohifadhiwa na hatujaombwa kuzalisha upya, itumie hiyo hiyo
+  if (!forceRegenerate && guest.card_image_url) {
+    return guest.card_image_url;
+  }
+
+  const { data: eventData } = await sb.from('events').select('*').eq('id', guest.event_id).single();
+  const template = await getTemplateForEvent(guest.event_id, eventData?.type);
+  if (!template) throw new Error('Hakuna template kwa event "' + (eventData?.name || '') + '"');
+
+  const pos = template.positions || DEFAULT_POSITIONS;
+  const blob = await generateSingleCardBlob(guest, template, pos);
+
+  const safeName = guest.name.replace(/[^a-zA-Z0-9]/g, '_');
+  const path = `${currentUser.id}/${guest.event_id}/${safeName}_${guest.card_id}.png`;
+
+  const { error: upErr } = await sb.storage.from(CARDS_BUCKET).upload(path, blob, {
+    contentType: 'image/png',
+    upsert: true
+  });
+  if (upErr) throw new Error('Kosa la upload: ' + upErr.message + ' (Hakikisha bucket "generated-cards" ipo na ni public)');
+
+  const { data: { publicUrl } } = sb.storage.from(CARDS_BUCKET).getPublicUrl(path);
+
+  const { error: updErr } = await sb.from('guests').update({ card_image_url: publicUrl }).eq('id', guestId);
+  if (updErr) throw new Error('Kosa kuhifadhi link ya kadi: ' + updErr.message);
+
+  return publicUrl;
+}
+
+// Huzalisha na kupakia kadi za wageni WOTE wa event fulani kwenda bucket ya generated-cards.
+// Muhimu kabla ya kutuma mialiko ya WhatsApp kwa wingi kupitia Meta API (inahitaji public URL, sio faili).
+async function generateAndUploadAllCards(eventId) {
+  const { data: guests } = await sb.from('guests').select('*').eq('event_id', eventId);
+  if (!guests || guests.length === 0) return { success: 0, failed: 0 };
+
+  let success = 0, failed = 0;
+  for (const g of guests) {
+    try {
+      await generateAndUploadCard(g.id);
+      success++;
+    } catch (e) {
+      console.error('Imeshindwa kupakia kadi ya ' + g.name, e);
+      failed++;
+    }
+  }
+  return { success, failed };
+}
+
+async function handleUploadAllCards() {
+  const eventId = document.getElementById('invEventSelect').value;
+  if (!eventId) return showToast('Chagua event kwanza', 'error');
+
+  const btn = document.getElementById('uploadAllCardsBtn');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Inapakia...';
+
+  try {
+    const { success, failed } = await generateAndUploadAllCards(eventId);
+    if (failed === 0) {
+      showToast(`Kadi ${success} zimepakiwa kwenye bucket! ✅`, 'success');
+    } else {
+      showToast(`Kadi ${success} zimepakiwa, ${failed} zimeshindwa. Angalia console.`, 'error');
+    }
+  } catch (e) {
+    showToast('Kosa: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
 }
 
 async function generateAllCards() {
