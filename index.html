@@ -2607,6 +2607,10 @@ async function sendInvitations() {
       showToast('Onyo: hakuna template ya kadi kwa event hii - ujumbe utatumwa bila picha ya kadi', 'info');
     }
 
+    if (!buildLocationButtonSuffix(eventData)) {
+      return showToast('Weka "Coordinates" za event hii kwanza (bonyeza 📍 kwenye event) - template ya WhatsApp inahitaji link ya location', 'error');
+    }
+
     showModal('waQueueModal');
     renderWaQueueStep();
   }
@@ -2677,6 +2681,11 @@ async function sendWhatsAppInvite(guestId) {
   const template = await getTemplateForEvent(guest.event_id, eventData?.type);
   if (!template) return showToast('Hakuna template ya kadi kwa event hii - Meta inahitaji picha ya header', 'error');
 
+  const buttonUrlSuffix = buildLocationButtonSuffix(eventData);
+  if (!buttonUrlSuffix) {
+    return showToast('Weka "Coordinates" za event hii kwanza (bonyeza 📍) - template inahitaji link ya location', 'error');
+  }
+
   showToast('Inatengeneza kadi na kutuma...', 'info');
 
   let imageUrl;
@@ -2688,7 +2697,6 @@ async function sendWhatsAppInvite(guestId) {
 
   const phone = formatPhoneForWhatsApp(guest.phone);
   const bodyParams = buildWhatsAppBodyParams(guest, eventData);
-  const buttonUrlSuffix = buildLocationButtonSuffix(eventData);
 
   const outcome = await callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, buttonUrlSuffix);
   if (!outcome.ok) {
