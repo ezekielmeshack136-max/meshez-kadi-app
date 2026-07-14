@@ -876,7 +876,7 @@
         <div class="topbar-sub" id="topbarSub">Karibu kwenye Meshez Kadi</div>
       </div>
       <div class="topbar-actions">
-        <button class="btn btn-orange btn-sm" onclick="showModal('newEventModal')">
+        <button class="btn btn-orange btn-sm" onclick="openNewEventModal()">
           + Event Mpya
         </button>
       </div>
@@ -974,7 +974,7 @@
             <h2 style="font-size:18px;font-weight:700;">Events Zako</h2>
             <p style="font-size:13px;color:var(--gray-400);margin-top:2px;">Simamia matukio yako yote</p>
           </div>
-          <button class="btn btn-primary" onclick="showModal('newEventModal')">+ Event Mpya</button>
+          <button class="btn btn-primary" onclick="openNewEventModal()">+ Event Mpya</button>
         </div>
 
         <div class="event-grid" id="eventsGrid">
@@ -1509,10 +1509,11 @@
 <div class="modal-overlay" id="newEventModal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">🎉 Event Mpya</div>
+      <div class="modal-title" id="newEventModalTitle">🎉 Event Mpya</div>
       <button class="modal-close" onclick="closeModal('newEventModal')">✕</button>
     </div>
     <div class="modal-body">
+      <input type="hidden" id="evtEditId" value="">
       <div class="form-group">
         <label>Jina la Event</label>
         <input type="text" id="evtName" placeholder="Harusi ya Stephen & Juliana">
@@ -1568,7 +1569,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('newEventModal')">Ghairi</button>
-      <button class="btn btn-primary" onclick="saveNewEvent()">✅ Tengeneza Event</button>
+      <button class="btn btn-primary" id="evtSaveBtn" onclick="saveNewEvent()">✅ Tengeneza Event</button>
     </div>
   </div>
 </div>
@@ -2086,6 +2087,7 @@ async function loadEvents() {
       </div>
       <div class="event-card-footer">
         <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();selectEventForInvitations('${e.id}')">📨 Tuma</button>
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openEditEventModal('${e.id}')" title="Hariri taarifa za event">✏️</button>
         <button class="btn btn-outline btn-sm" onclick='event.stopPropagation();openLocationModal("${e.id}", ${JSON.stringify(e.location_url || '')}, ${JSON.stringify(e.host_name || '')}, ${JSON.stringify(e.coordinates || '')})' title="${e.location_url ? 'Location imewekwa - bonyeza kubadilisha' : 'Weka location ya tukio'}">${e.location_url ? '📍✅' : '📍'}</button>
         <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();deleteEvent('${e.id}')">🗑️</button>
       </div>
@@ -2093,7 +2095,47 @@ async function loadEvents() {
   `).join('');
 }
 
+// Fungua modal ikiwa tupu, kwa ajili ya KUTENGENEZA event mpya
+function openNewEventModal() {
+  document.getElementById('evtEditId').value = '';
+  document.getElementById('evtName').value = '';
+  document.getElementById('evtType').value = 'harusi';
+  document.getElementById('evtDate').value = '';
+  document.getElementById('evtVenue').value = '';
+  document.getElementById('evtHostName').value = '';
+  document.getElementById('evtLocationUrl').value = '';
+  document.getElementById('evtCoordinates').value = '';
+  document.getElementById('evtTime').value = '12:00';
+  document.getElementById('evtPhone').value = '';
+  document.getElementById('evtPrefix').value = '';
+  document.getElementById('newEventModalTitle').textContent = '🎉 Event Mpya';
+  document.getElementById('evtSaveBtn').textContent = '✅ Tengeneza Event';
+  showModal('newEventModal');
+}
+
+// Fungua modal hii hii ikiwa imejaa taarifa za event iliyopo, kwa ajili ya KUHARIRI
+async function openEditEventModal(eventId) {
+  const { data: e, error } = await sb.from('events').select('*').eq('id', eventId).single();
+  if (error || !e) return showToast('Imeshindwa kupata taarifa za event', 'error');
+
+  document.getElementById('evtEditId').value = e.id;
+  document.getElementById('evtName').value = e.name || '';
+  document.getElementById('evtType').value = e.type || 'harusi';
+  document.getElementById('evtDate').value = e.event_date || '';
+  document.getElementById('evtVenue').value = e.venue || '';
+  document.getElementById('evtHostName').value = e.host_name || '';
+  document.getElementById('evtLocationUrl').value = e.location_url || '';
+  document.getElementById('evtCoordinates').value = e.coordinates || '';
+  document.getElementById('evtTime').value = e.event_time || '12:00';
+  document.getElementById('evtPhone').value = e.contact_phone || '';
+  document.getElementById('evtPrefix').value = e.prefix || '';
+  document.getElementById('newEventModalTitle').textContent = '✏️ Hariri Event';
+  document.getElementById('evtSaveBtn').textContent = '💾 Hifadhi Mabadiliko';
+  showModal('newEventModal');
+}
+
 async function saveNewEvent() {
+  const editId      = document.getElementById('evtEditId').value;
   const name        = document.getElementById('evtName').value.trim();
   const type        = document.getElementById('evtType').value;
   const date        = document.getElementById('evtDate').value;
@@ -2107,17 +2149,29 @@ async function saveNewEvent() {
 
   if (!name) return showToast('Weka jina la event', 'error');
 
-  const { error } = await sb.from('events').insert({
-    user_id: currentUser.id,
+  const eventFields = {
     name, type, event_date: date, venue, host_name: hostName,
     location_url: locationUrl, coordinates, event_time: time,
     contact_phone: phone, prefix: prefix || 'EVENT2026',
-    total_guests: 0, attended: 0, sms_sent_count: 0
-  });
+  };
+
+  let error;
+  if (editId) {
+    // --- HARIRI event iliyopo ---
+    ({ error } = await sb.from('events').update(eventFields).eq('id', editId));
+  } else {
+    // --- TENGENEZA event mpya ---
+    ({ error } = await sb.from('events').insert({
+      user_id: currentUser.id,
+      ...eventFields,
+      total_guests: 0, attended: 0, sms_sent_count: 0
+    }));
+  }
 
   if (error) return showToast('Kosa: ' + error.message, 'error');
-  showToast('Event imetengenezwa! ✅', 'success');
+  showToast(editId ? 'Mabadiliko yamehifadhiwa! ✅' : 'Event imetengenezwa! ✅', 'success');
   closeModal('newEventModal');
+  document.getElementById('evtEditId').value = '';
   document.getElementById('evtLocationUrl').value = '';
   document.getElementById('evtHostName').value = '';
   document.getElementById('evtCoordinates').value = '';
@@ -2728,12 +2782,15 @@ function buildSmsMessage(guest, eventData) {
 //            {{4}} Tarehe | {{5}} Saa | {{6}} Location (jina la mahali)
 // Ukibadilisha muundo wa template yako Meta, badilisha mpangilio huu ipasavyo.
 function buildWhatsAppBodyParams(guest, eventData) {
+  // MUHIMU: Meta WhatsApp API HAIKUBALI parameter ya template ikiwa "" (tupu) -
+  // hurudisha kosa (#131008) Required parameter is missing. Hivyo kila variable
+  // lazima iwe na thamani isiyo tupu - tunatumia fallback ya maandishi hapa.
   const eventName = eventData?.name || 'Tukio';
-  const hostName  = eventData?.host_name || '';
-  const date      = eventData?.event_date || '';
-  const time      = formatTimeAMPM(eventData?.event_time || '');
-  const venue     = eventData?.venue || '';
-  return [guest.name, eventName, hostName, date, time, venue];
+  const hostName  = eventData?.host_name || 'Mwenyeji';
+  const date      = eventData?.event_date || 'Tarehe itatangazwa';
+  const time      = formatTimeAMPM(eventData?.event_time || '') || 'Muda utatangazwa';
+  const venue     = eventData?.venue || 'Mahali patatangazwa';
+  return [guest.name || 'Mgeni', eventName, hostName, date, time, venue];
 }
 
 // Hujenga suffix ya kitufe cha "location" (Dynamic URL button, index 2 = kitufe cha 3).
