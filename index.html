@@ -1656,6 +1656,15 @@
       <button class="btn btn-primary" onclick="addGuest()">✅ Ongeza</button>
     </div>
   </div>
+  <div class="form-group">
+  <label>Kiwango cha Mgeni (Hiari)</label>
+  <select id="guestVipStatus">
+    <option value="none">Kawaida (Hakuna)</option>
+    <option value="vip">⭐ VIP</option>
+    <option value="vvip">👑 VVIP</option>
+  </select>
+  <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Hii ni lebo tu itakayoonekana kwenye kadi - haiathiri uwezo wake wa kuingia.</p>
+</div>
 </div>
 
 <!-- Bulk Import Modal -->
@@ -1725,6 +1734,14 @@
           <input type="number" id="editGuestGroupSize" value="1" min="1" max="100">
         </div>
       </div>
+      <div class="form-group">
+  <label>Kiwango cha Mgeni (Hiari)</label>
+  <select id="editGuestVipStatus">
+    <option value="none">Kawaida (Hakuna)</option>
+    <option value="vip">⭐ VIP</option>
+    <option value="vvip">👑 VVIP</option>
+  </select>
+</div>
       <div class="form-group">
         <label>Ana WhatsApp?</label>
         <select id="editGuestWhatsapp">
@@ -2269,10 +2286,17 @@ async function loadEventGuests() {
   }
 
   tbody.innerHTML = guests.map(g => {
+    const vipBadge = g.vip_status === 'vvip' 
+  ? '<span class="badge" style="background:#FEF3C7;color:#92400E;margin-left:6px;">👑 VVIP</span>'
+  : g.vip_status === 'vip'
+    ? '<span class="badge badge-blue" style="margin-left:6px;">⭐ VIP</span>'
+    : '';
+    
     const label = g.group_size === 1 ? 'SINGLE' : g.group_size === 2 ? 'DOUBLE' : g.group_size === 3 ? 'TRIPLE' : `GROUP-${g.group_size}`;
     return `
+    
     <tr>
-      <td><strong>${g.name}</strong></td>
+      <td><strong>${g.name}</strong>${vipBadge}</td>
       <td>
         <span style="font-family:monospace;font-size:12px;background:var(--gray-50);padding:3px 6px;border-radius:4px;">${g.card_id}</span>
         <button class="btn btn-outline btn-sm" style="padding:2px 6px;margin-left:4px;" onclick="copyGuestId('${g.card_id}')" title="Nakili Guest ID">📋</button>
@@ -2311,6 +2335,16 @@ async function addGuest() {
   const whatsapp  = document.getElementById('guestWhatsapp').value;
 
   if (!name) return showToast('Weka jina la mgeni', 'error');
+  const vipStatus = document.getElementById('guestVipStatus').value;
+
+const { error } = await sb.from('guests').insert({
+  user_id: currentUser.id,
+  event_id: eventId,
+  name, phone: phoneFixed, group_size: groupSize,
+  whatsapp, card_id: cardId, sequence_number: seqNumber,
+  sms_sent: 'no', wa_sent: 'no', used_count: 0, status: 'Halali',
+  vip_status: vipStatus
+});
 
   // Rekebisha namba
   let phoneFixed = phone.replace(/\s|-/g, '');
@@ -2350,6 +2384,7 @@ async function openEditGuestModal(guestId) {
   document.getElementById('editGuestWhatsapp').value = guest.whatsapp || 'no';
   document.getElementById('editGuestSmsSent').value = guest.sms_sent || 'no';
   document.getElementById('editGuestWaSent').value = guest.wa_sent || 'no';
+  document.getElementById('editGuestVipStatus').value = guest.vip_status || 'none';
 
   showModal('editGuestModal');
 }
@@ -2362,6 +2397,7 @@ async function saveEditGuest() {
   const whatsapp = document.getElementById('editGuestWhatsapp').value;
   const smsSent = document.getElementById('editGuestSmsSent').value;
   const waSent = document.getElementById('editGuestWaSent').value;
+  const vipStatus = document.getElementById('editGuestVipStatus').value;
 
   if (!name) return showToast('Weka jina la mgeni', 'error');
 
@@ -2369,12 +2405,14 @@ async function saveEditGuest() {
   if (phoneFixed.startsWith('0')) phoneFixed = '255' + phoneFixed.slice(1);
   else if (phoneFixed && !phoneFixed.startsWith('255')) phoneFixed = '255' + phoneFixed;
 
+ // Futa card_image_url ya zamani ili kadi izalishwe upya na VIP/VVIP mpya ionekane
   const { error } = await sb.from('guests').update({
     name, phone: phoneFixed, group_size: groupSize, whatsapp,
-    sms_sent: smsSent, wa_sent: waSent
+    sms_sent: smsSent, wa_sent: waSent, vip_status: vipStatus,
+    card_image_url: null
   }).eq('id', id);
 
-  if (error) return showToast('Kosa: ' + error.message, 'error');
+ if (error) return showToast('Kosa: ' + error.message, 'error');
   showToast('Taarifa za mgeni zimesasishwa!', 'success');
   closeModal('editGuestModal');
   loadEventGuests();
@@ -3737,6 +3775,10 @@ async function generateCard(guestId) {
     const qrImg = new Image();
     qrImg.onload = () => {
   ctx.drawImage(qrImg, parseInt(pos.qrX), parseInt(pos.qrY), parseInt(pos.qrSize), parseInt(pos.qrSize));
+  drawGuestLabelWithVip(ctx, guest, pos, parseInt(pos.qrY));
+  document.getElementById('cardLoading').style.display = 'none';
+  canvas.style.display = 'inline-block';
+};
 
   // Andika label JUU ya QR
   const label = getGuestLabel(guest, guest.sequence_number || 1);
@@ -3787,23 +3829,46 @@ function generateSingleCardBlob(guest, template, pos) {
         const qrDataUrl = await QRCode.toDataURL(guest.card_id, { width: parseInt(pos.qrSize), margin: 1 });
         const qrImg = new Image();
         qrImg.onload = () => {
-          const padding = 16;
-          const boxX = parseInt(pos.qrX) - padding;
-          const boxY = parseInt(pos.qrY) - padding;
-          const boxSize = parseInt(pos.qrSize) + padding * 2;
-          ctx.save();
-          ctx.fillStyle = '#FFFFFF';
-          ctx.beginPath();
-          ctx.roundRect(boxX, boxY, boxSize, boxSize, 12);
-          ctx.fill();
-          ctx.restore();
-          ctx.drawImage(qrImg, parseInt(pos.qrX), parseInt(pos.qrY), parseInt(pos.qrSize), parseInt(pos.qrSize));
+  const padding = 16;
+  const boxX = parseInt(pos.qrX) - padding;
+  const boxY = parseInt(pos.qrY) - padding;
+  const boxSize = parseInt(pos.qrSize) + padding * 2;
+  ctx.save();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath();
+  ctx.roundRect(boxX, boxY, boxSize, boxSize, 12);
+  ctx.fill();
+  ctx.restore();
+  ctx.drawImage(qrImg, parseInt(pos.qrX), parseInt(pos.qrY), parseInt(pos.qrSize), parseInt(pos.qrSize));
 
-const label = getGuestLabel(guest, guest.sequence_number || 1);
-ctx.fillStyle = '#000000';
-ctx.font = `bold 24px Inter, sans-serif`;
-ctx.textAlign = 'center';
-ctx.fillText(label, parseInt(pos.qrX) + parseInt(pos.qrSize) / 2, boxY - 12);
+  drawGuestLabelWithVip(ctx, guest, pos, boxY);
+
+  canvas.toBlob(blob => resolve(blob), 'image/png');
+};
+
+function drawGuestLabelWithVip(ctx, guest, pos, boxY) {
+  const centerX = parseInt(pos.qrX) + parseInt(pos.qrSize) / 2;
+  const label = getGuestLabel(guest, guest.sequence_number || 1);
+
+  ctx.textAlign = 'center';
+
+  // Line ya #SINGLE / #DOUBLE / #GROUP - inabaki pale pale
+  ctx.fillStyle = '#000000';
+  ctx.font = `bold 24px Inter, sans-serif`;
+  ctx.fillText(label, centerX, boxY - 12);
+
+  // VIP / VVIP - juu zaidi ya label ya kawaida
+  if (guest.vip_status === 'vip' || guest.vip_status === 'vvip') {
+    const isVvip = guest.vip_status === 'vvip';
+    const vipText = isVvip ? '👑 VVIP' : '⭐ VIP';
+    const vipColor = isVvip ? '#B8860B' : '#1A56DB'; // dhahabu kwa VVIP, bluu kwa VIP
+
+    ctx.font = `bold 28px Inter, sans-serif`;
+    ctx.fillStyle = vipColor;
+    ctx.fillText(vipText, centerX, boxY - 45); // juu zaidi ya line ya #SINGLE
+    ctx.fillStyle = '#000000'; // rudisha rangi ya default
+  }
+}
 
 canvas.toBlob(blob => resolve(blob), 'image/png');
         };
