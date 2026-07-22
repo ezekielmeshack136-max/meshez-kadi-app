@@ -3611,6 +3611,16 @@ async function uploadTemplate() {
   if (!name || !file) return showToast('Jaza jina na chagua picha', 'error');
   if (!eventId) return showToast('Chagua Event husika kwa template hii', 'error');
 
+  // Futa templates za zamani zilizounganishwa na event hii KABLA ya kuongeza mpya,
+  // ili "kuhariri" kubadilishe kabisa badala ya kuacha nakala za zamani zikichanganya
+  // (hii ndiyo iliyokuwa ikisababisha kadi kuendelea kutumia template ya mwanzo).
+  const { data: oldTemplates } = await sb.from('templates').select('id,file_path').eq('user_id', currentUser.id).eq('event_id', eventId);
+  if (oldTemplates && oldTemplates.length > 0) {
+    const oldPaths = oldTemplates.map(t => t.file_path).filter(Boolean);
+    if (oldPaths.length > 0) await sb.storage.from('templates').remove(oldPaths);
+    await sb.from('templates').delete().eq('user_id', currentUser.id).eq('event_id', eventId);
+  }
+
   const path = `${currentUser.id}/${Date.now()}_${file.name}`;
   const { error: upErr } = await sb.storage.from('templates').upload(path, file);
   if (upErr) return showToast('Kosa la upload: ' + upErr.message, 'error');
@@ -3737,11 +3747,11 @@ function loadPositions() {
 // Hutafuta template ILIYOUNGANISHWA na event maalum kwanza (haiingiliani na events nyingine).
 // Ikikosekana, inarudi kwenye template ya zamani iliyowekwa kwa 'type' (backward-compatibility).
 async function getTemplateForEvent(eventId, eventType) {
-  const { data: byEvent } = await sb.from('templates').select('*').eq('user_id', currentUser.id).eq('event_id', eventId);
+  const { data: byEvent } = await sb.from('templates').select('*').eq('user_id', currentUser.id).eq('event_id', eventId).order('created_at', { ascending: false });
   if (byEvent && byEvent[0]) return byEvent[0];
 
   if (eventType) {
-    const { data: byType } = await sb.from('templates').select('*').eq('user_id', currentUser.id).eq('type', eventType).is('event_id', null);
+    const { data: byType } = await sb.from('templates').select('*').eq('user_id', currentUser.id).eq('type', eventType).is('event_id', null).order('created_at', { ascending: false });
     if (byType && byType[0]) return byType[0];
   }
   return null;
