@@ -2337,15 +2337,6 @@ async function addGuest() {
   if (!name) return showToast('Weka jina la mgeni', 'error');
   const vipStatus = document.getElementById('guestVipStatus').value;
 
-const { error } = await sb.from('guests').insert({
-  user_id: currentUser.id,
-  event_id: eventId,
-  name, phone: phoneFixed, group_size: groupSize,
-  whatsapp, card_id: cardId, sequence_number: seqNumber,
-  sms_sent: 'no', wa_sent: 'no', used_count: 0, status: 'Halali',
-  vip_status: vipStatus
-});
-
   // Rekebisha namba
   let phoneFixed = phone.replace(/\s|-/g, '');
   if (phoneFixed.startsWith('0')) phoneFixed = '255' + phoneFixed.slice(1);
@@ -3713,6 +3704,30 @@ function getGuestLabel(guest, sequenceNumber) {
   return `#GROUP${sequenceNumber}-${guest.group_size}`;
 }
 
+function drawGuestLabelWithVip(ctx, guest, pos, boxY) {
+  const centerX = parseInt(pos.qrX) + parseInt(pos.qrSize) / 2;
+  const label = getGuestLabel(guest, guest.sequence_number || 1);
+
+  ctx.textAlign = 'center';
+
+  // Line ya #SINGLE / #DOUBLE / #GROUP - inabaki pale pale
+  ctx.fillStyle = '#000000';
+  ctx.font = `bold 24px Inter, sans-serif`;
+  ctx.fillText(label, centerX, boxY - 12);
+
+  // VIP / VVIP - juu zaidi ya label ya kawaida
+  if (guest.vip_status === 'vip' || guest.vip_status === 'vvip') {
+    const isVvip = guest.vip_status === 'vvip';
+    const vipText = isVvip ? '👑 VVIP' : '⭐ VIP';
+    const vipColor = isVvip ? '#B8860B' : '#1A56DB'; // dhahabu kwa VVIP, bluu kwa VIP
+
+    ctx.font = `bold 28px Inter, sans-serif`;
+    ctx.fillStyle = vipColor;
+    ctx.fillText(vipText, centerX, boxY - 45); // juu zaidi ya line ya #SINGLE
+    ctx.fillStyle = '#000000'; // rudisha rangi ya default
+  }
+}
+
 function loadPositions() {
   const saved = localStorage.getItem('kadi_positions');
   if (saved) return JSON.parse(saved);
@@ -3779,17 +3794,6 @@ async function generateCard(guestId) {
   document.getElementById('cardLoading').style.display = 'none';
   canvas.style.display = 'inline-block';
 };
-
-  // Andika label JUU ya QR
-  const label = getGuestLabel(guest, guest.sequence_number || 1);
-  ctx.fillStyle = '#000000';
-  ctx.font = `bold 24px Inter, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.fillText(label, parseInt(pos.qrX) + parseInt(pos.qrSize) / 2, parseInt(pos.qrY) - 15);
-
-  document.getElementById('cardLoading').style.display = 'none';
-  canvas.style.display = 'inline-block';
-};
     qrImg.src = qrDataUrl;
     } catch (err) {
       document.getElementById('cardLoading').textContent = 'Kosa wakati wa kutengeneza kadi: ' + err.message;
@@ -3845,33 +3849,6 @@ function generateSingleCardBlob(guest, template, pos) {
 
   canvas.toBlob(blob => resolve(blob), 'image/png');
 };
-
-function drawGuestLabelWithVip(ctx, guest, pos, boxY) {
-  const centerX = parseInt(pos.qrX) + parseInt(pos.qrSize) / 2;
-  const label = getGuestLabel(guest, guest.sequence_number || 1);
-
-  ctx.textAlign = 'center';
-
-  // Line ya #SINGLE / #DOUBLE / #GROUP - inabaki pale pale
-  ctx.fillStyle = '#000000';
-  ctx.font = `bold 24px Inter, sans-serif`;
-  ctx.fillText(label, centerX, boxY - 12);
-
-  // VIP / VVIP - juu zaidi ya label ya kawaida
-  if (guest.vip_status === 'vip' || guest.vip_status === 'vvip') {
-    const isVvip = guest.vip_status === 'vvip';
-    const vipText = isVvip ? '👑 VVIP' : '⭐ VIP';
-    const vipColor = isVvip ? '#B8860B' : '#1A56DB'; // dhahabu kwa VVIP, bluu kwa VIP
-
-    ctx.font = `bold 28px Inter, sans-serif`;
-    ctx.fillStyle = vipColor;
-    ctx.fillText(vipText, centerX, boxY - 45); // juu zaidi ya line ya #SINGLE
-    ctx.fillStyle = '#000000'; // rudisha rangi ya default
-  }
-}
-
-canvas.toBlob(blob => resolve(blob), 'image/png');
-        };
         qrImg.onerror = reject;
         qrImg.src = qrDataUrl;
       } catch (e) { reject(e); }
