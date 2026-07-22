@@ -2222,10 +2222,38 @@ async function saveEventLocation() {
 }
 
 async function deleteEvent(id) {
-  if (!confirm('Una uhakika kutaka kufuta event hii?')) return;
+  if (!confirm('Una uhakika kutaka kufuta event hii? Data zote za event hii (wageni, templates, kadi zilizotengenezwa) zitafutwa kabisa na haziwezi kurudishwa.')) return;
+
+  showToast('Inafuta event na data zake zote...', 'info');
+
+  // 1. Futa templates zilizounganishwa na event hii (picha kwenye storage + rows)
+  const { data: eventTemplates } = await sb.from('templates').select('id,file_path').eq('user_id', currentUser.id).eq('event_id', id);
+  if (eventTemplates && eventTemplates.length > 0) {
+    const tplPaths = eventTemplates.map(t => t.file_path).filter(Boolean);
+    if (tplPaths.length > 0) await sb.storage.from('templates').remove(tplPaths);
+    await sb.from('templates').delete().eq('user_id', currentUser.id).eq('event_id', id);
+  }
+
+  // 2. Futa kadi zilizotengenezwa (picha) kwenye storage kwa event hii (folder: userId/eventId/...)
+  try {
+    const cardsFolder = `${currentUser.id}/${id}`;
+    const { data: cardFiles } = await sb.storage.from(CARDS_BUCKET).list(cardsFolder);
+    if (cardFiles && cardFiles.length > 0) {
+      const cardPaths = cardFiles.map(f => `${cardsFolder}/${f.name}`);
+      await sb.storage.from(CARDS_BUCKET).remove(cardPaths);
+    }
+  } catch (e) {
+    console.warn('Imeshindwa kufuta baadhi ya kadi kwenye storage:', e);
+  }
+
+  // 3. Futa wageni wote wa event hii
   await sb.from('guests').delete().eq('event_id', id);
-  await sb.from('events').delete().eq('id', id);
-  showToast('Event imefutwa', 'info');
+
+  // 4. Hatimaye futa event yenyewe
+  const { error } = await sb.from('events').delete().eq('id', id);
+  if (error) return showToast('Kosa kufuta event: ' + error.message, 'error');
+
+  showToast('Event na data zake zote zimefutwa', 'success');
   loadEvents();
   loadDashboard();
 }
