@@ -1594,8 +1594,12 @@
       </div>
       <div class="form-group">
         <label>🗺️ Coordinates (kwa WhatsApp button)</label>
-        <input type="text" id="locCoordinatesInput" placeholder="-6.1907858,35.7305194">
+        <input type="text" id="locCoordinatesInput" placeholder="-6.1907858,35.7305194" oninput="refreshDirectionsPreviewLink()">
         <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Kwenye Google Maps, bofya mahali husika kisha copy namba mbili zinazoonekana (latitude,longitude) - bila herufi nyingine.</p>
+        <p style="font-size:11px;color:#92400E;background:#FEF3C7;padding:8px;border-radius:6px;margin-top:6px;">
+          ⚠️ Hiki ndicho kinachotumika kujenga kitufe cha "maelekezo" (directions) kwenye WhatsApp. Kitufe hicho kinaonyesha njia kutoka mahali mgeni alipo hadi hapa - kama Template yako ya Meta imewekwa vizuri kutumia Directions URL, si Search URL tu.
+        </p>
+        <a id="testDirectionsLink" href="#" target="_blank" rel="noopener" style="display:none;font-size:12px;font-weight:600;color:var(--primary,#EA580C);margin-top:8px;">🧭 Jaribu kufungua maelekezo haya (kama guest atakavyoyaona)</a>
       </div>
     </div>
     <div class="modal-footer">
@@ -2202,7 +2206,20 @@ function openLocationModal(eventId, currentUrl, currentHostName, currentCoordina
   document.getElementById('locUrlInput').value = currentUrl || '';
   document.getElementById('locHostNameInput').value = currentHostName || '';
   document.getElementById('locCoordinatesInput').value = currentCoordinates || '';
+  refreshDirectionsPreviewLink();
   showModal('locationModal');
+}
+
+// Husasisha kiungo cha "Jaribu kufungua maelekezo" kila coordinates zinapobadilika,
+// kikitumia HALISI Google Maps Directions URL - hivi ndivyo guest atakavyoona
+// akibonyeza kitufe cha location kwenye WhatsApp (endapo Template ya Meta imewekwa vizuri).
+function refreshDirectionsPreviewLink() {
+  const coords = document.getElementById('locCoordinatesInput').value.trim();
+  const link = document.getElementById('testDirectionsLink');
+  if (!link) return;
+  if (!coords) { link.style.display = 'none'; return; }
+  link.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(coords)}`;
+  link.style.display = 'inline-block';
 }
 
 async function saveEventLocation() {
@@ -2852,9 +2869,14 @@ function buildWhatsAppBodyParams(guest, eventData) {
 
 // Hujenga suffix ya kitufe cha "location" (Dynamic URL button, index 2 = kitufe cha 3).
 // Kwa chaguo-msingi hutumia 'coordinates' (lat,lng) kama query kwenye Google Maps.
-// MUHIMU: hii lazima ilingane na muundo wa base URL uliouweka kwenye template yako Meta
-// (mfano: base URL "https://www.google.com/maps/search/?api=1&query={{1}}").
-// Ikiwa template yako imewekwa tofauti, badilisha hapa ipasavyo.
+//
+// MUHIMU SANA: Ili guest aone MAELEKEZO/NJIA (directions) kutoka alipo hadi eneo la
+// tukio (badala ya kuona pini tu), Template yako kwenye Meta Business Manager LAZIMA
+// itumie DIRECTIONS API kama Base URL ya kitufe, si SEARCH API:
+//   SAHIHI (directions):  https://www.google.com/maps/dir/?api=1&destination={{1}}
+//   SI SAHIHI (pini tu):  https://www.google.com/maps/search/?api=1&query={{1}}
+// Hii inabadilishwa Meta Business Manager > WhatsApp Manager > Message Templates,
+// SIYO humu kwenye code - code hii inatuma tu coordinates kama {{1}}.
 function buildLocationButtonSuffix(eventData) {
   const coords = (eventData?.coordinates || '').trim();
   if (coords) return coords;
