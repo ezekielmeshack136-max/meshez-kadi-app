@@ -783,12 +783,9 @@
         <input type="password" id="regPassword" placeholder="Herufi 6 au zaidi">
       </div>
       <div class="form-group">
-        <label>Jukumu</label>
-        <select id="regRole">
-          <option value="admin">Admin (Mwenye mfumo)</option>
-          <option value="scanner">Scanner (Mlinda mlango)</option>
-          <option value="manager">Manager (Msimamizi)</option>
-        </select>
+        <p style="font-size:12px;color:var(--gray-400);background:var(--gray-50,#F9FAFB);padding:10px;border-radius:8px;">
+          ℹ️ Akaunti mpya inaanza na ruhusa za "Scanner" pekee. Admin wa mfumo anaweza kukuongezea ruhusa (Manager/Admin) baadaye kwenye "User Management".
+        </p>
       </div>
       <button class="btn btn-primary" onclick="register()" style="margin-top:8px;">
         ✅ Jisajili
@@ -817,39 +814,39 @@
     </div>
 
     <nav class="sidebar-nav">
-      <div class="nav-section">Msingi</div>
-      <button class="nav-item active" onclick="showPage('dashboard')">
+      <div class="nav-section" data-roles="admin,manager">Msingi</div>
+      <button class="nav-item active" data-roles="admin,manager" onclick="showPage('dashboard')">
         <span class="icon">📊</span> Dashboard
       </button>
-      <button class="nav-item" onclick="showPage('events')">
+      <button class="nav-item" data-roles="admin,manager" onclick="showPage('events')">
         <span class="icon">🎉</span> Event Management
       </button>
-      <button class="nav-item" onclick="showPage('templates')">
+      <button class="nav-item" data-roles="admin,manager" onclick="showPage('templates')">
         <span class="icon">🎨</span> Template Management
       </button>
-      <button class="nav-item" onclick="showPage('invitations')">
+      <button class="nav-item" data-roles="admin,manager" onclick="showPage('invitations')">
         <span class="icon">📨</span> Send Invitations
       </button>
 
-      <div class="nav-section">Ufuatiliaji</div>
-      <button class="nav-item" onclick="showPage('scanner')">
+      <div class="nav-section" data-roles="admin,manager,scanner">Ufuatiliaji</div>
+      <button class="nav-item" data-roles="admin,manager,scanner" onclick="showPage('scanner')">
         <span class="icon">🔍</span> Scanner
       </button>
-      <button class="nav-item" onclick="showPage('whatsapp')">
+      <button class="nav-item" data-roles="admin,manager" onclick="showPage('whatsapp')">
         <span class="icon">💬</span> WhatsApp Monitor
       </button>
-      <button class="nav-item" onclick="showPage('reports')">
+      <button class="nav-item" data-roles="admin,manager" onclick="showPage('reports')">
         <span class="icon">📈</span> Ripoti za Mfumo
       </button>
 
-      <div class="nav-section">Usimamizi</div>
-      <button class="nav-item" onclick="showPage('users')">
+      <div class="nav-section" data-roles="admin">Usimamizi</div>
+      <button class="nav-item" data-roles="admin" onclick="showPage('users')">
         <span class="icon">👥</span> User Management
       </button>
-      <button class="nav-item" onclick="showPage('payments')">
+      <button class="nav-item" data-roles="admin" onclick="showPage('payments')">
         <span class="icon">💳</span> Malipo
       </button>
-      <button class="nav-item" onclick="showPage('profile')">
+      <button class="nav-item" data-roles="admin,manager,scanner" onclick="showPage('profile')">
         <span class="icon">⚙️</span> Profile & Settings
       </button>
     </nav>
@@ -1893,20 +1890,22 @@ async function register() {
   const last  = document.getElementById('regLastName').value.trim();
   const email = document.getElementById('regEmail').value.trim();
   const pass  = document.getElementById('regPassword').value;
-  const role  = document.getElementById('regRole').value;
 
   if (!first || !email || !pass) return showToast('Jaza taarifa zote', 'error');
 
   const { data, error } = await sb.auth.signUp({ email, password: pass });
   if (error) return showToast('Kosa: ' + error.message, 'error');
 
-  // Hifadhi profile
+  // Usalama: watu wanaojisajili wenyewe hupewa role ya chini kabisa ('scanner').
+  // Admin ndiye pekee mwenye ruhusa ya kumpandisha mtu kuwa 'manager' au 'admin',
+  // kupitia User Management. (Awali field hii ilikuwa dropdown inayomruhusu
+  // mtu yeyote kujichagulia 'admin' mwenyewe - hili lilikuwa tundu la usalama.)
   await sb.from('profiles').insert({
     id: data.user.id,
     first_name: first,
     last_name: last,
     email: email,
-    role: role
+    role: 'scanner'
   });
 
   showToast('Umesajiliwa! Angalia barua pepe yako kuthibitisha akaunti.', 'success');
@@ -1919,6 +1918,59 @@ async function logout() {
   document.getElementById('authScreen').style.display = 'flex';
   if (qrScanner) { try { qrScanner.clear(); } catch(e) {} }
 }
+
+// Ukurasa gani unaruhusiwa kwa role gani - hii ndiyo msingi wa access control
+// upande wa UI. MUHIMU: hii pekee HAITOSHI kwa usalama kamili - lazima pia
+// uwe na Row Level Security (RLS) policies kwenye Supabase zinazolinda data
+// halisi (mfano guests, templates) kulingana na role, kwa sababu mtu mwenye
+// ujuzi angeweza kupitisha vizuizi vya JS na kuomba data moja kwa moja.
+const PAGE_ROLES = {
+  dashboard:   ['admin','manager'],
+  events:      ['admin','manager'],
+  templates:   ['admin','manager'],
+  invitations: ['admin','manager'],
+  scanner:     ['admin','manager','scanner'],
+  whatsapp:    ['admin','manager'],
+  reports:     ['admin','manager'],
+  users:       ['admin'],
+  payments:    ['admin'],
+  profile:     ['admin','manager','scanner']
+};
+
+function applyRoleBasedUI() {
+  const role = currentProfile?.role || 'admin';
+  document.querySelectorAll('[data-roles]').forEach(el => {
+    const allowed = el.getAttribute('data-roles').split(',');
+    el.style.display = allowed.includes(role) ? '' : 'none';
+  });
+}
+
+// Inahakiki mara kwa mara kuwa: (1) akaunti bado ipo (haijafutwa na admin),
+// (2) role haijabadilika. Ikiwa akaunti imefutwa, mtumiaji anatolewa nje
+// papo hapo hata kama alikuwa tayari ameingia kwenye kifaa chake.
+async function verifyAccountStillValid() {
+  if (!currentUser) return;
+  const { data, error } = await sb.from('profiles').select('role').eq('id', currentUser.id).single();
+
+  if (error || !data) {
+    showToast('Akaunti yako imeondolewa kwenye mfumo', 'error');
+    await logout();
+    return;
+  }
+
+  if (currentProfile && data.role !== currentProfile.role) {
+    await loadProfile();
+    applyRoleBasedUI();
+    const activePageEl = document.querySelector('.page.active');
+    const activePage = activePageEl ? activePageEl.id.replace('page-', '') : null;
+    if (activePage && PAGE_ROLES[activePage] && !PAGE_ROLES[activePage].includes(data.role)) {
+      showToast('Ruhusa zako zimebadilika', 'info');
+      showPage(data.role === 'scanner' ? 'scanner' : 'dashboard');
+    }
+  }
+}
+setInterval(verifyAccountStillValid, 45000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) verifyAccountStillValid(); });
 
 async function loadProfile() {
   if (!currentUser) return;
@@ -1943,8 +1995,16 @@ async function loadProfile() {
 function showApp() {
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('mainApp').style.display = 'block';
-  loadDashboard();
-  loadEventsDropdown();
+  applyRoleBasedUI();
+
+  const role = currentProfile?.role || 'admin';
+  if (role === 'scanner') {
+    // Scanner haipaswi kuona/kufikia chochote zaidi ya scanner page
+    showPage('scanner');
+  } else {
+    loadDashboard();
+    loadEventsDropdown();
+  }
 }
 
 // Check auth on load
@@ -1959,6 +2019,16 @@ window.addEventListener('load', async () => {
 
 // ===== NAVIGATION =====
 function showPage(page) {
+  // Zuia ufikiaji wa page kulingana na role (mfano: scanner haruhusiwi
+  // kufungua 'users', 'templates', n.k. hata akijaribu kuita showPage() moja
+  // kwa moja kwenye console ya browser).
+  const role = currentProfile?.role || 'admin';
+  const allowedRoles = PAGE_ROLES[page];
+  if (allowedRoles && !allowedRoles.includes(role)) {
+    showToast('Huna ruhusa ya kufungua ukurasa huu', 'error');
+    page = (role === 'scanner') ? 'scanner' : 'dashboard';
+  }
+
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
@@ -3195,7 +3265,7 @@ async function exportEventCSV(eventId, eventName) {
 
 // ===== USERS =====
 async function loadUsers() {
-  const { data } = await sb.from('profiles').select('*');
+  const { data } = await sb.from('profiles').select('*').order('created_at', { ascending: false });
   const tbody = document.getElementById('usersTable');
 
   if (!data || data.length === 0) {
@@ -3203,15 +3273,42 @@ async function loadUsers() {
     return;
   }
 
-  tbody.innerHTML = data.map(u => `
+  const myRole = currentProfile?.role || 'admin';
+  const roleOptions = ['scanner', 'manager', 'admin'];
+
+  tbody.innerHTML = data.map(u => {
+    const isSelf = u.id === currentUser?.id;
+    // Manager haruhusiwi kumfuta Admin. Admin anaweza kufuta yeyote isipokuwa yeye mwenyewe.
+    const canDelete = !isSelf && (myRole === 'admin' || u.role !== 'admin');
+
+    // Role badge: admin pekee anaweza kubadilisha role ya mtu (isipokuwa yake mwenyewe)
+    const roleCell = (myRole === 'admin' && !isSelf)
+      ? `<select onchange="changeUserRole('${u.id}', this.value)" style="font-size:12px;padding:4px 6px;border-radius:6px;">
+           ${roleOptions.map(r => `<option value="${r}" ${r === (u.role||'scanner') ? 'selected' : ''}>${r}</option>`).join('')}
+         </select>`
+      : `<span class="badge ${u.role==='admin'?'badge-blue':u.role==='manager'?'badge-orange':'badge-green'}">${u.role || 'scanner'}</span>`;
+
+    return `
     <tr>
-      <td><strong>${u.first_name || ''} ${u.last_name || ''}</strong></td>
+      <td><strong>${u.first_name || ''} ${u.last_name || ''}</strong>${isSelf ? ' <span style="font-size:11px;color:var(--gray-400);">(wewe)</span>' : ''}</td>
       <td>${u.email || '-'}</td>
-      <td><span class="badge ${u.role==='admin'?'badge-blue':u.role==='manager'?'badge-orange':'badge-green'}">${u.role || 'user'}</span></td>
+      <td>${roleCell}</td>
       <td style="font-size:12px;color:var(--gray-400);">${new Date(u.created_at).toLocaleDateString('sw')}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">🗑️ Futa</button></td>
+      <td>${canDelete ? `<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">🗑️ Futa</button>` : `<span style="font-size:11px;color:var(--gray-400);">-</span>`}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
+}
+
+// Admin pekee: badilisha role ya mtumiaji (scanner/manager/admin). Hii ni
+// UPDATE ya kawaida ya row (si admin API), hivyo haihitaji service_role key -
+// inategemea RLS policy kwenye jedwali la 'profiles' iruhusu admin ku-update
+// row za wengine.
+async function changeUserRole(userId, newRole) {
+  const { error } = await sb.from('profiles').update({ role: newRole }).eq('id', userId);
+  if (error) return showToast('Kosa kubadilisha role: ' + error.message, 'error');
+  showToast('Role imebadilishwa', 'success');
+  loadUsers();
 }
 
 async function addUser() {
@@ -3221,12 +3318,41 @@ async function addUser() {
   const pass  = document.getElementById('newUserPass').value;
   const role  = document.getElementById('newUserRole').value;
 
-  if (!email || !pass) return showToast('Jaza barua pepe na nenosiri', 'error');
+  if (!first || !email || !pass) return showToast('Jaza jina, barua pepe na nenosiri', 'error');
+  if (pass.length < 6) return showToast('Nenosiri liwe angalau herufi 6', 'error');
 
-  const { data, error } = await sb.auth.admin?.createUser({ email, password: pass, email_confirm: true })
-    .catch(() => ({ error: { message: 'Tumia Supabase Dashboard kuongeza watumiaji wapya kwa sasa' } }));
+  // Kuunda mtumiaji mpya (scanner/manager) KUNAHITAJI service_role key ambayo
+  // haipo (na haipaswi kuwepo) humu kwenye browser kwa sababu za usalama.
+  // Hivyo tunatuma ombi kwa Edge Function 'create-user' inayoendesha upande wa
+  // server na ndiyo yenye ruhusa hiyo. Tunatuma token ya admin aliyeingia sasa
+  // ili server iweze kuthibitisha kuwa mwombaji ni admin kabla ya kuunda mtumiaji.
+  const { data: sessionData } = await sb.auth.getSession();
+  const token = sessionData?.session?.access_token;
+  if (!token) return showToast('Session imeisha, ingia tena', 'error');
 
-  if (error) return showToast(error.message, 'error');
+  showToast('Inaunda mtumiaji...', 'info');
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/create-user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'apikey': SUPABASE_KEY
+      },
+      body: JSON.stringify({ first_name: first, last_name: last, email, password: pass, role })
+    });
+
+    let result = {};
+    try { result = await res.json(); } catch (e) { /* jibu si JSON */ }
+
+    if (!res.ok) {
+      return showToast(result.error || `Imeshindwa kuunda mtumiaji (status ${res.status})`, 'error');
+    }
+  } catch (e) {
+    return showToast('Kosa la mtandao: ' + e.message, 'error');
+  }
+
   showToast('Mtumiaji ameongezwa!', 'success');
   closeModal('addUserModal');
   loadUsers();
@@ -3234,9 +3360,45 @@ async function addUser() {
 
 async function deleteUser(id) {
   if (id === currentUser?.id) return showToast('Huwezi kujifuta mwenyewe!', 'error');
-  if (!confirm('Futa mtumiaji huyu?')) return;
-  await sb.from('profiles').delete().eq('id', id);
-  showToast('Mtumiaji amefutwa', 'info');
+
+  const { data: target } = await sb.from('profiles').select('role,first_name,last_name').eq('id', id).single();
+  const myRole = currentProfile?.role || 'admin';
+
+  if (target?.role === 'admin' && myRole !== 'admin') {
+    return showToast('Huna ruhusa ya kumfuta Admin', 'error');
+  }
+
+  const targetName = `${target?.first_name || ''} ${target?.last_name || ''}`.trim() || 'mtumiaji huyu';
+  if (!confirm(`Una uhakika kufuta ${targetName}? Ataondolewa KABISA na hataweza kuingia tena kwenye mfumo wala scanner.`)) return;
+
+  const { data: sessionData } = await sb.auth.getSession();
+  const token = sessionData?.session?.access_token;
+  if (!token) return showToast('Session imeisha, ingia tena', 'error');
+
+  showToast('Inafuta mtumiaji...', 'info');
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'apikey': SUPABASE_KEY
+      },
+      body: JSON.stringify({ user_id: id })
+    });
+
+    let result = {};
+    try { result = await res.json(); } catch (e) { /* jibu si JSON */ }
+
+    if (!res.ok) {
+      return showToast(result.error || `Imeshindwa kufuta mtumiaji (status ${res.status})`, 'error');
+    }
+  } catch (e) {
+    return showToast('Kosa la mtandao: ' + e.message, 'error');
+  }
+
+  showToast('Mtumiaji amefutwa kabisa - hataweza kuingia tena', 'success');
   loadUsers();
 }
 
