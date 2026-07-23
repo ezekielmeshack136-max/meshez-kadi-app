@@ -1900,13 +1900,19 @@ async function register() {
   // Admin ndiye pekee mwenye ruhusa ya kumpandisha mtu kuwa 'manager' au 'admin',
   // kupitia User Management. (Awali field hii ilikuwa dropdown inayomruhusu
   // mtu yeyote kujichagulia 'admin' mwenyewe - hili lilikuwa tundu la usalama.)
-  await sb.from('profiles').insert({
+  //
+  // MUHIMU: database ina trigger inayounda profile row KIOTOMATIKI (role='admin'
+  // default) mara tu akaunti ya auth inapoundwa - kabla hata mstari huu haujafika.
+  // Tunatumia UPSERT (siyo INSERT) ili kuandika juu ya hiyo default kwa usahihi,
+  // badala ya kugongana nayo kimya kimya (bug iliyokuwepo awali).
+  const { error: profileError } = await sb.from('profiles').upsert({
     id: data.user.id,
     first_name: first,
     last_name: last,
     email: email,
     role: 'scanner'
-  });
+  }, { onConflict: 'id' });
+  if (profileError) console.error('Profile upsert error:', profileError);
 
   showToast('Umesajiliwa! Angalia barua pepe yako kuthibitisha akaunti.', 'success');
 }
