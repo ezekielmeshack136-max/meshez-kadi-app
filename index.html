@@ -2960,15 +2960,21 @@ async function sendWhatsAppInvite(guestId) {
 // Tuma SMS kwa mgeni MMOJA tu (kutoka kwenye orodha ya wageni) - kazi sawa na WhatsApp
 function buildSmsMessage(guest, eventData) {
   const eventName = eventData?.name || 'Tukio';
-  const date = eventData?.event_date || '';
-  const time = formatTimeAMPM(eventData?.event_time || '');
-  const rsvp = getRsvpLinks(guest);
+  const hostName  = eventData?.host_name || '';
+  const date      = eventData?.event_date || '';
+  const time      = formatTimeAMPM(eventData?.event_time || '');
+  const venue     = eventData?.venue || '';
 
-  let msg = `Habari ${guest.name}, umealikwa kwenye ${eventName}`;
-  if (date) msg += ` tarehe ${date}`;
-  if (time) msg += ` saa ${time}`;
-  msg += `. Namba yako ya kadi: ${guest.card_id} - tafadhali ionyeshe mlangoni.`;
-  msg += ` Thibitisha uwepo: NITAHUDHURIA ${rsvp.yes} au SITAHUDHURIA ${rsvp.no}`;
+  let msg = `Habari ${guest.name},\n`;
+  msg += `Umealikwa kwenye ${eventName}`;
+  if (hostName) msg += ` ya ${hostName}`;
+  msg += `.\n`;
+  if (date) msg += `Tarehe: ${date}\n`;
+  if (time) msg += `Saa: ${time}\n`;
+  if (venue) msg += `Mahali: ${venue}\n`;
+  msg += `\nNamba ya Kadi: ${guest.card_id}\n`;
+  msg += `Ionyeshe mlangoni siku ya tukio.\n`;
+  msg += `Karibu sana!`;
   return msg;
 }
 
