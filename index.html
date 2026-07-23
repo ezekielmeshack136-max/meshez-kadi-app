@@ -1098,9 +1098,14 @@
             <div style="display:flex;flex-direction:column;gap:10px;">
               <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:1.5px solid var(--gray-200);border-radius:8px;">
                 <input type="checkbox" id="sendSMS" checked style="width:16px;height:16px;">
-                <div>
+                <div style="flex:1;">
                   <div style="font-size:13px;font-weight:600;">📨 SMS (Maandishi)</div>
                   <div style="font-size:11px;color:var(--gray-400);">Kwa wote - inaenda simu zote</div>
+                  <select id="smsTarget" onclick="event.stopPropagation()" style="margin-top:8px;width:100%;padding:6px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;">
+                    <option value="all">Wote (wenye WhatsApp na wasio na WhatsApp)</option>
+                    <option value="no-whatsapp">Wasio na WhatsApp</option>
+                    <option value="whatsapp">Wenye WhatsApp</option>
+                  </select>
                 </div>
               </label>
               <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:1.5px solid var(--gray-200);border-radius:8px;">
@@ -1126,6 +1131,9 @@
   <button class="btn btn-outline btn-sm" onclick="openBulkImportModal()">📥 Bulk Import (Excel)</button>
   <button class="btn btn-outline btn-sm" onclick="showModal('addGuestModal')">+ Mgeni Mpya</button>
 </div>
+          </div>
+          <div style="padding:0 0 12px;">
+            <input type="text" id="guestSearchInput" oninput="filterGuestsTable()" placeholder="🔍 Tafuta kwa jina, namba ya kadi, namba ya simu au aina (single/double/group)..." style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px;">
           </div>
           <div class="table-wrap">
             <table>
@@ -2401,6 +2409,20 @@ async function loadEventGuests() {
   document.getElementById('invStatSent').textContent    = sent;
   document.getElementById('invStatPending').textContent = pending;
 
+  allGuestsCache = guests || [];
+  const searchInput = document.getElementById('guestSearchInput');
+  if (searchInput) searchInput.value = '';
+  renderGuestsTable(allGuestsCache);
+}
+
+// Cache ya wageni wa event iliyochaguliwa - inatumika kwa search/filter bila kuita database tena
+let allGuestsCache = [];
+
+function guestCardTypeLabel(g) {
+  return g.group_size === 1 ? 'SINGLE' : g.group_size === 2 ? 'DOUBLE' : g.group_size === 3 ? 'TRIPLE' : `GROUP-${g.group_size}`;
+}
+
+function renderGuestsTable(guests) {
   const tbody = document.getElementById('guestsTable');
   if (!guests || guests.length === 0) {
     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna wageni bado - ongeza wageni</td></tr>`;
@@ -2414,7 +2436,7 @@ async function loadEventGuests() {
     ? '<span class="badge badge-blue" style="margin-left:6px;">⭐ VIP</span>'
     : '';
     
-    const label = g.group_size === 1 ? 'SINGLE' : g.group_size === 2 ? 'DOUBLE' : g.group_size === 3 ? 'TRIPLE' : `GROUP-${g.group_size}`;
+    const label = guestCardTypeLabel(g);
     return `
     
     <tr>
@@ -2437,6 +2459,22 @@ async function loadEventGuests() {
 </td>
     </tr>`;
   }).join('');
+}
+
+function filterGuestsTable() {
+  const term = (document.getElementById('guestSearchInput').value || '').trim().toLowerCase();
+  if (!term) {
+    renderGuestsTable(allGuestsCache);
+    return;
+  }
+  const filtered = allGuestsCache.filter(g => {
+    const name = (g.name || '').toLowerCase();
+    const cardId = (g.card_id || '').toLowerCase();
+    const phone = (g.phone || '').toLowerCase();
+    const typeLabel = guestCardTypeLabel(g).toLowerCase();
+    return name.includes(term) || cardId.includes(term) || phone.includes(term) || typeLabel.includes(term);
+  });
+  renderGuestsTable(filtered);
 }
 
 function copyGuestId(cardId) {
@@ -2762,8 +2800,14 @@ async function sendInvitations() {
 
   // ===== SMS - kwa WOTE wenye namba ya simu, haitegemei WhatsApp =====
   if (sendSmsChecked) {
+    const smsTarget = document.getElementById('smsTarget').value; // all | no-whatsapp | whatsapp
     const { data: guests } = await sb.from('guests').select('*').eq('event_id', eventId);
-    const pendingSms = (guests || []).filter(g => g.phone && g.sms_sent !== 'yes');
+    const pendingSms = (guests || []).filter(g => {
+      if (!g.phone || g.sms_sent === 'yes') return false;
+      if (smsTarget === 'no-whatsapp') return g.whatsapp !== 'yes';
+      if (smsTarget === 'whatsapp') return g.whatsapp === 'yes';
+      return true; // all
+    });
 
     if (pendingSms.length === 0) {
       showToast('Hakuna wageni wanaosubiri SMS', 'info');
