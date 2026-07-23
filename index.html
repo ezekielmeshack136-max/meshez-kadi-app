@@ -2343,6 +2343,7 @@ async function deleteEvent(id) {
   showToast('Event na data zake zote zimefutwa', 'success');
   loadEvents();
   loadDashboard();
+  loadEventsDropdown(); // sasisha dropdown za Template/Bulk/Invitations/Payments ili event iliyofutwa isionekane tena
 }
 
 function openEvent(id) {
@@ -3822,6 +3823,15 @@ async function uploadTemplate() {
 
   if (!name || !file) return showToast('Jaza jina na chagua picha', 'error');
   if (!eventId) return showToast('Chagua Event husika kwa template hii', 'error');
+
+  // Hakikisha event bado ipo (dropdown huenda ilikuwa "stale" - mfano event
+  // ilifutwa kwenye tab/kifaa kingine) - hii inazuia kosa la database
+  // (foreign key constraint) na kutoa ujumbe rahisi kueleweka badala yake.
+  const { data: eventCheck } = await sb.from('events').select('id').eq('id', eventId).eq('user_id', currentUser.id).single();
+  if (!eventCheck) {
+    loadEventsDropdown();
+    return showToast('Event uliyochagua haipo tena (huenda ilifutwa). Orodha imesasishwa - chagua tena.', 'error');
+  }
 
   // Futa templates za zamani zilizounganishwa na event hii KABLA ya kuongeza mpya,
   // ili "kuhariri" kubadilishe kabisa badala ya kuacha nakala za zamani zikichanganya
