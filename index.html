@@ -1666,13 +1666,19 @@
     </div>
   </div>
   <div class="form-group">
-  <label>Kiwango cha Mgeni (Hiari)</label>
-  <select id="guestVipStatus">
-    <option value="none">Kawaida (Hakuna)</option>
-    <option value="vip">⭐ VIP</option>
-    <option value="vvip">👑 VVIP</option>
-  </select>
-  <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Hii ni lebo tu itakayoonekana kwenye kadi - haiathiri uwezo wake wa kuingia.</p>
+  <label>Cheo/Kiwango cha Mgeni (Hiari)</label>
+  <input type="text" id="guestVipStatus" list="guestRankSuggestions" placeholder="mfano: VIP, VVIP, Graduate, Alumni, Pastor...">
+  <datalist id="guestRankSuggestions">
+    <option value="VIP">
+    <option value="VVIP">
+    <option value="Guest">
+    <option value="Graduate">
+    <option value="Alumni">
+    <option value="Pastor">
+    <option value="Mheshimiwa">
+    <option value="Mgeni Rasmi">
+  </datalist>
+  <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Andika chochote unachotaka - hii ni lebo tu itakayoonekana kwenye kadi, haiathiri uwezo wake wa kuingia. Acha wazi kama hakuna.</p>
 </div>
 </div>
 
@@ -1744,12 +1750,8 @@
         </div>
       </div>
       <div class="form-group">
-  <label>Kiwango cha Mgeni (Hiari)</label>
-  <select id="editGuestVipStatus">
-    <option value="none">Kawaida (Hakuna)</option>
-    <option value="vip">⭐ VIP</option>
-    <option value="vvip">👑 VVIP</option>
-  </select>
+  <label>Cheo/Kiwango cha Mgeni (Hiari)</label>
+  <input type="text" id="editGuestVipStatus" list="guestRankSuggestions" placeholder="mfano: VIP, VVIP, Graduate, Alumni, Pastor...">
 </div>
       <div class="form-group">
         <label>Ana WhatsApp?</label>
@@ -2487,11 +2489,14 @@ function renderGuestsTable(guests) {
   }
 
   tbody.innerHTML = guests.map(g => {
-    const vipBadge = g.vip_status === 'vvip' 
-  ? '<span class="badge" style="background:#FEF3C7;color:#92400E;margin-left:6px;">👑 VVIP</span>'
-  : g.vip_status === 'vip'
-    ? '<span class="badge badge-blue" style="margin-left:6px;">⭐ VIP</span>'
-    : '';
+    const rank = (g.vip_status || '').trim();
+    const rankLower = rank.toLowerCase();
+    const vipBadge = !rank ? ''
+      : rankLower === 'vvip'
+        ? '<span class="badge" style="background:#FEF3C7;color:#92400E;margin-left:6px;">👑 VVIP</span>'
+      : rankLower === 'vip'
+        ? '<span class="badge badge-blue" style="margin-left:6px;">⭐ VIP</span>'
+        : `<span class="badge" style="background:#E5E7EB;color:#374151;margin-left:6px;">${rank}</span>`;
     
     const label = guestCardTypeLabel(g);
     return `
@@ -2552,7 +2557,7 @@ async function addGuest() {
   const whatsapp  = document.getElementById('guestWhatsapp').value;
 
   if (!name) return showToast('Weka jina la mgeni', 'error');
-  const vipStatus = document.getElementById('guestVipStatus').value;
+  const vipStatus = document.getElementById('guestVipStatus').value.trim();
 
   // Rekebisha namba
   let phoneFixed = phone.replace(/\s|-/g, '');
@@ -2572,7 +2577,8 @@ const { error } = await sb.from('guests').insert({
   event_id: eventId,
   name, phone: phoneFixed, group_size: groupSize,
   whatsapp, card_id: cardId, sequence_number: seqNumber,
-  sms_sent: 'no', wa_sent: 'no', used_count: 0, status: 'Halali'
+  sms_sent: 'no', wa_sent: 'no', used_count: 0, status: 'Halali',
+  vip_status: vipStatus || null
 });
 
   if (error) return showToast('Kosa: ' + error.message, 'error');
@@ -2592,7 +2598,7 @@ async function openEditGuestModal(guestId) {
   document.getElementById('editGuestWhatsapp').value = guest.whatsapp || 'no';
   document.getElementById('editGuestSmsSent').value = guest.sms_sent || 'no';
   document.getElementById('editGuestWaSent').value = guest.wa_sent || 'no';
-  document.getElementById('editGuestVipStatus').value = guest.vip_status || 'none';
+  document.getElementById('editGuestVipStatus').value = guest.vip_status || '';
 
   showModal('editGuestModal');
 }
@@ -2605,7 +2611,7 @@ async function saveEditGuest() {
   const whatsapp = document.getElementById('editGuestWhatsapp').value;
   const smsSent = document.getElementById('editGuestSmsSent').value;
   const waSent = document.getElementById('editGuestWaSent').value;
-  const vipStatus = document.getElementById('editGuestVipStatus').value;
+  const vipStatus = document.getElementById('editGuestVipStatus').value.trim();
 
   if (!name) return showToast('Weka jina la mgeni', 'error');
 
@@ -2613,10 +2619,10 @@ async function saveEditGuest() {
   if (phoneFixed.startsWith('0')) phoneFixed = '255' + phoneFixed.slice(1);
   else if (phoneFixed && !phoneFixed.startsWith('255')) phoneFixed = '255' + phoneFixed;
 
- // Futa card_image_url ya zamani ili kadi izalishwe upya na VIP/VVIP mpya ionekane
+ // Futa card_image_url ya zamani ili kadi izalishwe upya na cheo/VIP mpya ionekane
   const { error } = await sb.from('guests').update({
     name, phone: phoneFixed, group_size: groupSize, whatsapp,
-    sms_sent: smsSent, wa_sent: waSent, vip_status: vipStatus,
+    sms_sent: smsSent, wa_sent: waSent, vip_status: vipStatus || null,
     card_image_url: null
   }).eq('id', id);
 
@@ -4168,11 +4174,14 @@ function drawGuestLabelWithVip(ctx, guest, pos, boxY) {
   ctx.font = `bold 24px Inter, sans-serif`;
   ctx.fillText(label, centerX, boxY - 12);
 
-  // VIP / VVIP - juu zaidi ya label ya kawaida
-  if (guest.vip_status === 'vip' || guest.vip_status === 'vvip') {
-    const isVvip = guest.vip_status === 'vvip';
-    const vipText = isVvip ? '👑 VVIP' : '⭐ VIP';
-    const vipColor = isVvip ? '#B8860B' : '#1A56DB'; // dhahabu kwa VVIP, bluu kwa VIP
+  // Cheo/VIP/VVIP - juu zaidi ya label ya kawaida (sasa inakubali maandishi yoyote)
+  const rank = (guest.vip_status || '').trim();
+  if (rank) {
+    const rankLower = rank.toLowerCase();
+    const isVvip = rankLower === 'vvip';
+    const isVip = rankLower === 'vip';
+    const vipText = isVvip ? '👑 VVIP' : isVip ? '⭐ VIP' : rank;
+    const vipColor = isVvip ? '#B8860B' : isVip ? '#1A56DB' : '#374151'; // dhahabu VVIP, bluu VIP, kijivu giza kwa cheo kingine chochote
 
     ctx.font = `bold 28px Inter, sans-serif`;
     ctx.fillStyle = vipColor;
