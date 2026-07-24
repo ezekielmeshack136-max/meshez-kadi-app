@@ -1548,14 +1548,9 @@
         <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Itatumika kwenye ujumbe wa WhatsApp (mfano: "Harusi ya Josephine & Mark")</p>
       </div>
       <div class="form-group">
-        <label>📍 Location Link (Google Maps)</label>
-        <input type="text" id="evtLocationUrl" placeholder="https://maps.app.goo.gl/xxxxx">
-        <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Fungua Google Maps, tafuta mahali, bonyeza "Share" → "Copy link", kisha bandika hapa.</p>
-      </div>
-      <div class="form-group">
-        <label>🗺️ Coordinates (kwa WhatsApp button)</label>
+        <label>🗺️ Coordinates (Location ya Tukio)</label>
         <input type="text" id="evtCoordinates" placeholder="-6.1907858,35.7305194">
-        <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Kwenye Google Maps, bofya mahali husika kisha copy namba mbili zinazoonekana (latitude,longitude) - bila herufi nyingine.</p>
+        <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Kwenye Google Maps, bofya mahali husika kisha copy namba mbili zinazoonekana (latitude,longitude) - bila herufi nyingine. Kiungo cha maelekezo (directions) kwa SMS na WhatsApp kitatengenezwa kiotomatiki kutoka hapa.</p>
       </div>
       <div class="input-row">
         <div class="form-group">
@@ -1593,16 +1588,11 @@
         <input type="text" id="locHostNameInput" placeholder="Josephine & Mark">
       </div>
       <div class="form-group">
-        <label>Google Maps Link</label>
-        <input type="text" id="locUrlInput" placeholder="https://maps.app.goo.gl/xxxxx">
-        <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Fungua Google Maps, tafuta mahali, bonyeza "Share" → "Copy link", kisha bandika hapa.</p>
-      </div>
-      <div class="form-group">
-        <label>🗺️ Coordinates (kwa WhatsApp button)</label>
+        <label>🗺️ Coordinates (Location ya Tukio)</label>
         <input type="text" id="locCoordinatesInput" placeholder="-6.1907858,35.7305194" oninput="refreshDirectionsPreviewLink()">
         <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Kwenye Google Maps, bofya mahali husika kisha copy namba mbili zinazoonekana (latitude,longitude) - bila herufi nyingine.</p>
         <p style="font-size:11px;color:#92400E;background:#FEF3C7;padding:8px;border-radius:6px;margin-top:6px;">
-          ⚠️ Hiki ndicho kinachotumika kujenga kitufe cha "maelekezo" (directions) kwenye WhatsApp. Kitufe hicho kinaonyesha njia kutoka mahali mgeni alipo hadi hapa - kama Template yako ya Meta imewekwa vizuri kutumia Directions URL, si Search URL tu.
+          ⚠️ Coordinates hizi ndizo pekee zinazotumika kujenga kiungo cha "maelekezo" (directions) kwenye SMS na WhatsApp - kinachomwonyesha mgeni njia kutoka alipo hadi hapa.
         </p>
         <a id="testDirectionsLink" href="#" target="_blank" rel="noopener" style="display:none;font-size:12px;font-weight:600;color:var(--primary,#EA580C);margin-top:8px;">🧭 Jaribu kufungua maelekezo haya (kama guest atakavyoyaona)</a>
       </div>
@@ -2252,11 +2242,20 @@ async function loadEvents() {
       <div class="event-card-footer">
         <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();selectEventForInvitations('${e.id}')">📨 Tuma</button>
         <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openEditEventModal('${e.id}')" title="Hariri taarifa za event">✏️</button>
-        <button class="btn btn-outline btn-sm" onclick='event.stopPropagation();openLocationModal("${e.id}", ${JSON.stringify(e.location_url || '')}, ${JSON.stringify(e.host_name || '')}, ${JSON.stringify(e.coordinates || '')})' title="${e.location_url ? 'Location imewekwa - bonyeza kubadilisha' : 'Weka location ya tukio'}">${e.location_url ? '📍✅' : '📍'}</button>
+        <button class="btn btn-outline btn-sm" onclick='event.stopPropagation();openLocationModal("${e.id}", ${JSON.stringify(e.host_name || '')}, ${JSON.stringify(e.coordinates || '')})' title="${e.coordinates ? 'Location imewekwa - bonyeza kubadilisha' : 'Weka location ya tukio'}">${e.coordinates ? '📍✅' : '📍'}</button>
         <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();deleteEvent('${e.id}')">🗑️</button>
       </div>
     </div>
   `).join('');
+}
+
+// Hutengeneza kiungo HALISI cha "maelekezo" (Directions) cha Google Maps
+// kutoka coordinates (lat,lng). Hiki ndicho kinachotumika SMS/WhatsApp/RSVP
+// ili guest aone njia kutoka alipo hadi eneo la tukio, siyo pini tu.
+function buildDirectionsUrl(coordinates) {
+  const coords = (coordinates || '').trim();
+  if (!coords) return '';
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(coords)}`;
 }
 
 // Fungua modal ikiwa tupu, kwa ajili ya KUTENGENEZA event mpya
@@ -2267,7 +2266,6 @@ function openNewEventModal() {
   document.getElementById('evtDate').value = '';
   document.getElementById('evtVenue').value = '';
   document.getElementById('evtHostName').value = '';
-  document.getElementById('evtLocationUrl').value = '';
   document.getElementById('evtCoordinates').value = '';
   document.getElementById('evtTime').value = '12:00';
   document.getElementById('evtPhone').value = '';
@@ -2288,7 +2286,6 @@ async function openEditEventModal(eventId) {
   document.getElementById('evtDate').value = e.event_date || '';
   document.getElementById('evtVenue').value = e.venue || '';
   document.getElementById('evtHostName').value = e.host_name || '';
-  document.getElementById('evtLocationUrl').value = e.location_url || '';
   document.getElementById('evtCoordinates').value = e.coordinates || '';
   document.getElementById('evtTime').value = e.event_time || '12:00';
   document.getElementById('evtPhone').value = e.contact_phone || '';
@@ -2305,7 +2302,6 @@ async function saveNewEvent() {
   const date        = document.getElementById('evtDate').value;
   const venue       = document.getElementById('evtVenue').value.trim();
   const hostName    = document.getElementById('evtHostName').value.trim();
-  const locationUrl = document.getElementById('evtLocationUrl').value.trim();
   const coordinates = document.getElementById('evtCoordinates').value.trim();
   const time        = document.getElementById('evtTime').value;
   const phone       = document.getElementById('evtPhone').value.trim();
@@ -2313,9 +2309,11 @@ async function saveNewEvent() {
 
   if (!name) return showToast('Weka jina la event', 'error');
 
+  // location_url sasa inatengenezwa kiotomatiki kutoka coordinates pekee
+  // (Directions URL) - hakuna field tofauti ya "Google Maps Link" tena.
   const eventFields = {
     name, type, event_date: date, venue, host_name: hostName,
-    location_url: locationUrl, coordinates, event_time: time,
+    location_url: buildDirectionsUrl(coordinates), coordinates, event_time: time,
     contact_phone: phone, prefix: prefix || 'EVENT2026',
   };
 
@@ -2336,7 +2334,6 @@ async function saveNewEvent() {
   showToast(editId ? 'Mabadiliko yamehifadhiwa! ✅' : 'Event imetengenezwa! ✅', 'success');
   closeModal('newEventModal');
   document.getElementById('evtEditId').value = '';
-  document.getElementById('evtLocationUrl').value = '';
   document.getElementById('evtHostName').value = '';
   document.getElementById('evtCoordinates').value = '';
   loadEvents();
@@ -2344,9 +2341,8 @@ async function saveNewEvent() {
 }
 
 // ===== LOCATION YA TUKIO (kwa events zilizokwishatengenezwa) =====
-function openLocationModal(eventId, currentUrl, currentHostName, currentCoordinates) {
+function openLocationModal(eventId, currentHostName, currentCoordinates) {
   document.getElementById('locEventId').value = eventId;
-  document.getElementById('locUrlInput').value = currentUrl || '';
   document.getElementById('locHostNameInput').value = currentHostName || '';
   document.getElementById('locCoordinatesInput').value = currentCoordinates || '';
   refreshDirectionsPreviewLink();
@@ -2360,20 +2356,21 @@ function refreshDirectionsPreviewLink() {
   const coords = document.getElementById('locCoordinatesInput').value.trim();
   const link = document.getElementById('testDirectionsLink');
   if (!link) return;
-  if (!coords) { link.style.display = 'none'; return; }
-  link.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(coords)}`;
+  const url = buildDirectionsUrl(coords);
+  if (!url) { link.style.display = 'none'; return; }
+  link.href = url;
   link.style.display = 'inline-block';
 }
 
 async function saveEventLocation() {
   const eventId = document.getElementById('locEventId').value;
-  const url = document.getElementById('locUrlInput').value.trim();
   const hostName = document.getElementById('locHostNameInput').value.trim();
   const coordinates = document.getElementById('locCoordinatesInput').value.trim();
   if (!eventId) return;
 
+  // location_url inatengenezwa kiotomatiki kutoka coordinates (Directions URL)
   const { error } = await sb.from('events')
-    .update({ location_url: url, host_name: hostName, coordinates })
+    .update({ location_url: buildDirectionsUrl(coordinates), host_name: hostName, coordinates })
     .eq('id', eventId);
   if (error) return showToast('Kosa: ' + error.message, 'error');
   showToast('Taarifa zimehifadhiwa! 📍', 'success');
@@ -2829,7 +2826,7 @@ function buildInvitationMessage(guest, eventData) {
   msg += `Umealikwa kwenye *${eventName}*\n`;
   if (date) msg += `Tarehe: ${date}\n`;
   if (time) msg += `Saa: ${time}\n`;
-  if (locationUrl) msg += `Bonyeza hapa kuona location: ${locationUrl}\n`;
+  if (locationUrl) msg += `📍 Maelekezo (njia) ya kufika: ${locationUrl}\n`;
   msg += `\nTafadhali thibitisha uwepo wako kwa kujibu ujumbe huu:\n`;
   msg += `NITAHUDHURIA: ${rsvp.yes}\n`;
   msg += `SITAHUDHURIA: ${rsvp.no}\n`;
