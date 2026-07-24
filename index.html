@@ -1712,7 +1712,7 @@
         <div style="font-size:13px;font-weight:600;margin-bottom:6px;" id="bulkPreviewCount"></div>
         <div class="table-wrap" style="max-height:220px;overflow-y:auto;">
           <table>
-            <thead><tr><th>Jina</th><th>Namba</th><th>Idadi</th><th>WhatsApp</th></tr></thead>
+            <thead><tr><th>Jina</th><th>Namba</th><th>Idadi</th><th>WhatsApp</th><th>Cheo</th></tr></thead>
             <tbody id="bulkPreviewTable"></tbody>
           </table>
         </div>
@@ -2657,8 +2657,8 @@ function openBulkImportModal() {
 
 function downloadGuestExcelTemplate() {
   const sampleData = [
-    { 'Jina': 'Familia ya Juma', 'Namba': '0713079348', 'Idadi': 2, 'WhatsApp': 'Ndiyo' },
-    { 'Jina': 'Asha Mohamed', 'Namba': '0787654321', 'Idadi': 1, 'WhatsApp': 'Hapana' },
+    { 'Jina': 'Familia ya Juma', 'Namba': '0713079348', 'Idadi': 2, 'WhatsApp': 'Ndiyo', 'Cheo': 'VIP' },
+    { 'Jina': 'Asha Mohamed', 'Namba': '0787654321', 'Idadi': 1, 'WhatsApp': 'Hapana', 'Cheo': '' },
   ];
   const ws = XLSX.utils.json_to_sheet(sampleData);
   const wb = XLSX.utils.book_new();
@@ -2707,11 +2707,13 @@ function handleBulkFileSelect(evt) {
         let groupSize = parseInt(findColumnValue(row, ['idadi', 'group', 'groupsize', 'idadi ya watu'])) || 1;
         let whatsapp = String(findColumnValue(row, ['whatsapp', 'wa'])).trim().toLowerCase();
         whatsapp = (whatsapp === 'ndiyo' || whatsapp === 'yes' || whatsapp === '1' || whatsapp === 'true') ? 'yes' : 'no';
-        return { name, phone, groupSize, whatsapp };
+        let vipStatus = String(findColumnValue(row, ['cheo', 'rank', 'kiwango', 'vip', 'cheo cha mgeni', 'title', 'status'])).trim();
+        if (vipStatus.toLowerCase() === 'none' || vipStatus.toLowerCase() === 'kawaida') vipStatus = '';
+        return { name, phone, groupSize, whatsapp, vipStatus };
       }).filter(r => r.name);
 
       if (!parsed.length) {
-        errArea.textContent = 'Haikupata safu yoyote yenye "Jina" iliyojazwa. Hakikisha unatumia column zenye majina: Jina, Namba, Idadi, WhatsApp.';
+        errArea.textContent = 'Haikupata safu yoyote yenye "Jina" iliyojazwa. Hakikisha unatumia column zenye majina: Jina, Namba, Idadi, WhatsApp, Cheo.';
         errArea.style.display = 'block';
         return;
       }
@@ -2719,8 +2721,8 @@ function handleBulkFileSelect(evt) {
       bulkImportData = parsed;
       document.getElementById('bulkPreviewCount').textContent = `✅ Wageni ${parsed.length} wamepatikana kwenye faili`;
       document.getElementById('bulkPreviewTable').innerHTML = parsed.slice(0, 50).map(r => `
-        <tr><td>${r.name}</td><td>${r.phone}</td><td>${r.groupSize}</td><td>${r.whatsapp === 'yes' ? '✅' : '❌'}</td></tr>
-      `).join('') + (parsed.length > 50 ? `<tr><td colspan="4" style="text-align:center;color:var(--gray-400);">... na wengine ${parsed.length - 50}</td></tr>` : '');
+        <tr><td>${r.name}</td><td>${r.phone}</td><td>${r.groupSize}</td><td>${r.whatsapp === 'yes' ? '✅' : '❌'}</td><td>${r.vipStatus || '-'}</td></tr>
+      `).join('') + (parsed.length > 50 ? `<tr><td colspan="5" style="text-align:center;color:var(--gray-400);">... na wengine ${parsed.length - 50}</td></tr>` : '');
       document.getElementById('bulkPreviewArea').style.display = 'block';
       document.getElementById('bulkConfirmBtn').disabled = false;
     } catch (err) {
@@ -2763,7 +2765,8 @@ async function confirmBulkImport() {
       whatsapp: g.whatsapp,
       card_id: cardId,
       sequence_number: seqNumber,
-      sms_sent: 'no', wa_sent: 'no', used_count: 0, status: 'Halali'
+      sms_sent: 'no', wa_sent: 'no', used_count: 0, status: 'Halali',
+      vip_status: g.vipStatus || null
     };
   });
 
