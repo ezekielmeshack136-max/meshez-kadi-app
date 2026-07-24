@@ -1320,7 +1320,7 @@
             <h2 style="font-size:18px;font-weight:700;">👥 User Management</h2>
             <p style="font-size:13px;color:var(--gray-400);">Simamia wafanyakazi na wasaidizi</p>
           </div>
-          <button class="btn btn-primary" onclick="showModal('addUserModal')">+ Mtumiaji Mpya</button>
+          <button class="btn btn-primary" onclick="openAddUserModal()">+ Mtumiaji Mpya</button>
         </div>
         <div class="card">
           <div class="table-wrap">
@@ -1849,13 +1849,70 @@
         <select id="newUserRole">
           <option value="scanner">🔍 Scanner (Mlinda mlango)</option>
           <option value="manager">📊 Manager (Msimamizi)</option>
-          <option value="admin">⚙️ Admin (Mkuu)</option>
+          <option value="admin" id="newUserRoleAdminOption">⚙️ Admin (Mkuu)</option>
         </select>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('addUserModal')">Ghairi</button>
       <button class="btn btn-primary" onclick="addUser()">✅ Ongeza Mtumiaji</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT USER MODAL -->
+<div class="modal-overlay" id="editUserModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Hariri Mtumiaji</div>
+      <button class="modal-close" onclick="closeModal('editUserModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editUserId">
+      <div class="input-row">
+        <div class="form-group">
+          <label>Jina la Kwanza</label>
+          <input type="text" id="editUserFirst" placeholder="Jina">
+        </div>
+        <div class="form-group">
+          <label>Jina la Familia</label>
+          <input type="text" id="editUserLast" placeholder="Familia">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Namba ya Simu</label>
+        <input type="text" id="editUserPhone" placeholder="0712345678">
+      </div>
+      <p style="font-size:11px;color:var(--gray-400);">Barua pepe na role hazibadilishwi hapa - role inabadilishwa kwenye dropdown ya Users table, na barua pepe haiwezi kubadilishwa kwa sasa.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('editUserModal')">Ghairi</button>
+      <button class="btn btn-primary" onclick="saveEditUser()">💾 Hifadhi</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESET PASSWORD MODAL -->
+<div class="modal-overlay" id="resetPasswordModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🔑 Weka Password Mpya</div>
+      <button class="modal-close" onclick="closeModal('resetPasswordModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="resetPwdUserId">
+      <p style="font-size:13px;">Unaweka password mpya kwa: <strong id="resetPwdUserName"></strong></p>
+      <p style="font-size:11px;color:#92400E;background:#FEF3C7;padding:8px;border-radius:6px;">
+        ⚠️ Kwa usalama, hatuwezi kuonyesha password ya sasa ya mtumiaji (haihifadhiwi popote kwa namna inayosomeka). Unaweka password MPYA badala yake - mwambie mtumiaji hii ndiyo password yake ijayo.
+      </p>
+      <div class="form-group">
+        <label>Password Mpya</label>
+        <input type="password" id="resetPwdNewPassword" placeholder="Herufi 6 au zaidi">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('resetPasswordModal')">Ghairi</button>
+      <button class="btn btn-primary" onclick="confirmResetPassword()">🔑 Weka Password</button>
     </div>
   </div>
 </div>
@@ -3321,9 +3378,18 @@ async function exportEventCSV(eventId, eventName) {
 }
 
 // ===== USERS =====
+function openAddUserModal() {
+  const adminOption = document.getElementById('newUserRoleAdminOption');
+  if (adminOption) adminOption.style.display = currentProfile?.is_owner ? '' : 'none';
+  showModal('addUserModal');
+}
+
+let _loadedUsersCache = [];
+
 async function loadUsers() {
   const { data } = await sb.from('profiles').select('*').order('created_at', { ascending: false });
   const tbody = document.getElementById('usersTable');
+  _loadedUsersCache = data || [];
 
   if (!data || data.length === 0) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna watumiaji</td></tr>`;
@@ -3331,27 +3397,46 @@ async function loadUsers() {
   }
 
   const myRole = currentProfile?.role || 'admin';
-  const roleOptions = ['scanner', 'manager', 'admin'];
+  const iAmOwner = !!currentProfile?.is_owner;
+  // Owner pekee anaweza kutoa hadhi ya Admin - roleOptions za dropdown zinabadilika kutegemea hilo
+  const roleOptions = iAmOwner ? ['scanner', 'manager', 'admin'] : ['scanner', 'manager'];
 
   tbody.innerHTML = data.map(u => {
     const isSelf = u.id === currentUser?.id;
-    // Manager haruhusiwi kumfuta Admin. Admin anaweza kufuta yeyote isipokuwa yeye mwenyewe.
-    const canDelete = !isSelf && (myRole === 'admin' || u.role !== 'admin');
+    const isOwnerRow = !!u.is_owner;
 
-    // Role badge: admin pekee anaweza kubadilisha role ya mtu (isipokuwa yake mwenyewe)
-    const roleCell = (myRole === 'admin' && !isSelf)
+    // Owner haifutiki na yeyote. Manager haruhusiwi kumfuta Admin.
+    // Admin wa kawaida (siyo owner) hawezi kumfuta Admin mwingine.
+    const canDelete = !isSelf && !isOwnerRow &&
+      (myRole === 'admin' ? (u.role !== 'admin' || iAmOwner) : u.role !== 'admin');
+
+    // Role badge: owner row haiwezi kuhaririwa kabisa. Admin wa kawaida
+    // hawezi kubadilisha role ya Admin mwingine isipokuwa yeye ni owner.
+    const canEditRole = myRole === 'admin' && !isSelf && !isOwnerRow && (u.role !== 'admin' || iAmOwner);
+    const roleCell = isOwnerRow
+      ? `<span class="badge badge-blue">👑 Owner</span>`
+      : canEditRole
       ? `<select onchange="changeUserRole('${u.id}', this.value)" style="font-size:12px;padding:4px 6px;border-radius:6px;">
            ${roleOptions.map(r => `<option value="${r}" ${r === (u.role||'scanner') ? 'selected' : ''}>${r}</option>`).join('')}
          </select>`
       : `<span class="badge ${u.role==='admin'?'badge-blue':u.role==='manager'?'badge-orange':'badge-green'}">${u.role || 'scanner'}</span>`;
 
+    const actionButtons = [];
+    if (myRole === 'admin') {
+      actionButtons.push(`<button class="btn btn-outline btn-sm" onclick="openEditUserModal('${u.id}')" title="Hariri">✏️</button>`);
+      actionButtons.push(`<button class="btn btn-outline btn-sm" onclick="openResetPasswordModal('${u.id}')" title="Weka Password Mpya">🔑</button>`);
+    }
+    if (canDelete) {
+      actionButtons.push(`<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')" title="Futa">🗑️</button>`);
+    }
+
     return `
     <tr>
-      <td><strong>${u.first_name || ''} ${u.last_name || ''}</strong>${isSelf ? ' <span style="font-size:11px;color:var(--gray-400);">(wewe)</span>' : ''}</td>
+      <td><strong>${u.first_name || ''} ${u.last_name || ''}</strong>${isSelf ? ' <span style="font-size:11px;color:var(--gray-400);">(wewe)</span>' : ''}${u.phone ? `<div style="font-size:11px;color:var(--gray-400);">${u.phone}</div>` : ''}</td>
       <td>${u.email || '-'}</td>
       <td>${roleCell}</td>
       <td style="font-size:12px;color:var(--gray-400);">${new Date(u.created_at).toLocaleDateString('sw')}</td>
-      <td>${canDelete ? `<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">🗑️ Futa</button>` : `<span style="font-size:11px;color:var(--gray-400);">-</span>`}</td>
+      <td style="white-space:nowrap;">${actionButtons.join(' ') || '<span style="font-size:11px;color:var(--gray-400);">-</span>'}</td>
     </tr>
   `;
   }).join('');
@@ -3360,12 +3445,92 @@ async function loadUsers() {
 // Admin pekee: badilisha role ya mtumiaji (scanner/manager/admin). Hii ni
 // UPDATE ya kawaida ya row (si admin API), hivyo haihitaji service_role key -
 // inategemea RLS policy kwenye jedwali la 'profiles' iruhusu admin ku-update
-// row za wengine.
+// row za wengine. Ulinzi wa ziada (owner-only kwa role=admin, owner
+// haiwezi kubadilishwa) upo pia kwenye database trigger (protect_owner_account).
 async function changeUserRole(userId, newRole) {
   const { error } = await sb.from('profiles').update({ role: newRole }).eq('id', userId);
   if (error) return showToast('Kosa kubadilisha role: ' + error.message, 'error');
   showToast('Role imebadilishwa', 'success');
   loadUsers();
+}
+
+// ===== EDIT USER (jina, namba ya simu) =====
+function openEditUserModal(userId) {
+  const u = _loadedUsersCache.find(x => x.id === userId);
+  if (!u) return showToast('Mtumiaji hajapatikana, jaribu kupakia upya ukurasa', 'error');
+  document.getElementById('editUserId').value = u.id;
+  document.getElementById('editUserFirst').value = u.first_name || '';
+  document.getElementById('editUserLast').value = u.last_name || '';
+  document.getElementById('editUserPhone').value = u.phone || '';
+  showModal('editUserModal');
+}
+
+async function saveEditUser() {
+  const id = document.getElementById('editUserId').value;
+  const first = document.getElementById('editUserFirst').value.trim();
+  const last = document.getElementById('editUserLast').value.trim();
+  const phone = document.getElementById('editUserPhone').value.trim();
+
+  if (!first) return showToast('Jina la kwanza linahitajika', 'error');
+
+  const { error } = await sb.from('profiles').update({
+    first_name: first,
+    last_name: last,
+    phone: phone
+  }).eq('id', id);
+
+  if (error) return showToast('Kosa: ' + error.message, 'error');
+  showToast('Taarifa zimehifadhiwa', 'success');
+  closeModal('editUserModal');
+  loadUsers();
+}
+
+// ===== RESET PASSWORD (mbadala salama wa "kuona password") =====
+function openResetPasswordModal(userId) {
+  const u = _loadedUsersCache.find(x => x.id === userId);
+  document.getElementById('resetPwdUserId').value = userId;
+  document.getElementById('resetPwdUserName').textContent = u ? `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email : 'mtumiaji huyu';
+  document.getElementById('resetPwdNewPassword').value = '';
+  showModal('resetPasswordModal');
+}
+
+async function confirmResetPassword() {
+  const userId = document.getElementById('resetPwdUserId').value;
+  const newPassword = document.getElementById('resetPwdNewPassword').value;
+
+  if (!newPassword || newPassword.length < 6) {
+    return showToast('Password iwe angalau herufi 6', 'error');
+  }
+
+  const { data: sessionData } = await sb.auth.getSession();
+  const token = sessionData?.session?.access_token;
+  if (!token) return showToast('Session imeisha, ingia tena', 'error');
+
+  showToast('Inaweka password mpya...', 'info');
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/reset-user-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'apikey': SUPABASE_KEY
+      },
+      body: JSON.stringify({ user_id: userId, new_password: newPassword })
+    });
+
+    let result = {};
+    try { result = await res.json(); } catch (e) { /* jibu si JSON */ }
+
+    if (!res.ok) {
+      return showToast(result.error || `Imeshindwa (status ${res.status})`, 'error');
+    }
+  } catch (e) {
+    return showToast('Kosa la mtandao: ' + e.message, 'error');
+  }
+
+  showToast('Password mpya imewekwa. Mwambie mtumiaji atumie hiyo kuingia.', 'success');
+  closeModal('resetPasswordModal');
 }
 
 async function addUser() {
