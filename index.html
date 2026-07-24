@@ -2491,7 +2491,8 @@ function renderGuestsTable(guests) {
   tbody.innerHTML = guests.map(g => {
     const rank = (g.vip_status || '').trim();
     const rankLower = rank.toLowerCase();
-    const vipBadge = !rank ? ''
+    const hasRank = rank && rankLower !== 'none';
+    const vipBadge = !hasRank ? ''
       : rankLower === 'vvip'
         ? '<span class="badge" style="background:#FEF3C7;color:#92400E;margin-left:6px;">👑 VVIP</span>'
       : rankLower === 'vip'
@@ -2598,7 +2599,7 @@ async function openEditGuestModal(guestId) {
   document.getElementById('editGuestWhatsapp').value = guest.whatsapp || 'no';
   document.getElementById('editGuestSmsSent').value = guest.sms_sent || 'no';
   document.getElementById('editGuestWaSent').value = guest.wa_sent || 'no';
-  document.getElementById('editGuestVipStatus').value = guest.vip_status || '';
+  document.getElementById('editGuestVipStatus').value = (guest.vip_status && guest.vip_status.toLowerCase() !== 'none') ? guest.vip_status : '';
 
   showModal('editGuestModal');
 }
@@ -4176,8 +4177,8 @@ function drawGuestLabelWithVip(ctx, guest, pos, boxY) {
 
   // Cheo/VIP/VVIP - juu zaidi ya label ya kawaida (sasa inakubali maandishi yoyote)
   const rank = (guest.vip_status || '').trim();
-  if (rank) {
-    const rankLower = rank.toLowerCase();
+  const rankLower = rank.toLowerCase();
+  if (rank && rankLower !== 'none') {
     const isVvip = rankLower === 'vvip';
     const isVip = rankLower === 'vip';
     const vipText = isVvip ? '👑 VVIP' : isVip ? '⭐ VIP' : rank;
