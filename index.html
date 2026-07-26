@@ -1636,6 +1636,27 @@
   </div>
 </div>
 
+<!-- USER EVENT ACCESS MODAL (kwa mtumiaji mmoja - chagua events zake) -->
+<div class="modal-overlay" id="userEventAccessModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🎫 Events za <span id="userEventAccessUserName"></span></div>
+      <button class="modal-close" onclick="closeModal('userEventAccessModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="userEventAccessUserId">
+      <p style="font-size:12px;color:var(--gray-400);margin-bottom:12px;">Chagua events ambazo mtumiaji huyu anaruhusiwa kufanya kazi nazo.</p>
+      <div id="userEventAccessList" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+        <!-- imejazwa na JS -->
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('userEventAccessModal')">Ghairi</button>
+      <button class="btn btn-primary" onclick="saveUserEventAccess()">💾 Hifadhi</button>
+    </div>
+  </div>
+</div>
+
 <!-- WhatsApp Sending Queue Modal -->
 <div class="modal-overlay" id="waQueueModal">
   <div class="modal" style="max-width:420px;">
@@ -3577,6 +3598,9 @@ async function loadUsers() {
     if (myRole === 'admin') {
       actionButtons.push(`<button class="btn btn-outline btn-sm" onclick="openEditUserModal('${u.id}')" title="Hariri">✏️</button>`);
       actionButtons.push(`<button class="btn btn-outline btn-sm" onclick="openResetPasswordModal('${u.id}')" title="Weka Password Mpya">🔑</button>`);
+      if (u.role === 'manager' || u.role === 'scanner') {
+        actionButtons.push(`<button class="btn btn-outline btn-sm" onclick="openUserEventAccessModal('${u.id}')" title="Chagua Events atakazofanyia kazi">🎫 Events</button>`);
+      }
     }
     if (canDelete) {
       actionButtons.push(`<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')" title="Futa">🗑️</button>`);
@@ -3592,6 +3616,59 @@ async function loadUsers() {
     </tr>
   `;
   }).join('');
+}
+
+// ===== USER EVENT ACCESS (kwa mtumiaji mmoja - chagua events zake zote) =====
+async function openUserEventAccessModal(userId) {
+  const u = _loadedUsersCache.find(x => x.id === userId);
+  document.getElementById('userEventAccessUserId').value = userId;
+  document.getElementById('userEventAccessUserName').textContent = u ? `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email : 'mtumiaji';
+
+  const listEl = document.getElementById('userEventAccessList');
+  listEl.innerHTML = '<p style="color:var(--gray-400);">Inapakia...</p>';
+  showModal('userEventAccessModal');
+
+  const [{ data: allEvents }, { data: grants }] = await Promise.all([
+    sb.from('events').select('id,name,event_date').eq('user_id', ORG_OWNER_ID).order('created_at', { ascending: false }),
+    sb.from('event_access').select('event_id').eq('profile_id', userId)
+  ]);
+
+  const grantedIds = new Set((grants || []).map(g => g.event_id));
+
+  if (!allEvents || allEvents.length === 0) {
+    listEl.innerHTML = '<p style="color:var(--gray-400);">Hakuna events bado kwenye mfumo.</p>';
+    return;
+  }
+
+  listEl.innerHTML = allEvents.map(e => `
+    <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--gray-200,#E5E7EB);border-radius:8px;cursor:pointer;">
+      <input type="checkbox" value="${e.id}" ${grantedIds.has(e.id) ? 'checked' : ''} style="width:18px;height:18px;">
+      <span>
+        <strong>${e.name}</strong>
+        <span style="font-size:11px;color:var(--gray-400);"> - ${e.event_date || 'Tarehe haijawekwa'}</span>
+      </span>
+    </label>
+  `).join('');
+}
+
+async function saveUserEventAccess() {
+  const userId = document.getElementById('userEventAccessUserId').value;
+  const checkboxes = document.querySelectorAll('#userEventAccessList input[type=checkbox]');
+  const selectedIds = Array.from(checkboxes).filter(c => c.checked).map(c => c.value);
+
+  showToast('Inahifadhi...', 'info');
+
+  const { error: delError } = await sb.from('event_access').delete().eq('profile_id', userId);
+  if (delError) return showToast('Kosa: ' + delError.message, 'error');
+
+  if (selectedIds.length > 0) {
+    const rows = selectedIds.map(eventId => ({ event_id: eventId, profile_id: userId }));
+    const { error: insError } = await sb.from('event_access').insert(rows);
+    if (insError) return showToast('Kosa: ' + insError.message, 'error');
+  }
+
+  showToast('Events zimehifadhiwa', 'success');
+  closeModal('userEventAccessModal');
 }
 
 // Admin pekee: badilisha role ya mtumiaji (scanner/manager/admin). Hii ni
