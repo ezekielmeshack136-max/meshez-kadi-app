@@ -1349,7 +1349,10 @@
             <h2 style="font-size:18px;font-weight:700;">👥 User Management</h2>
             <p style="font-size:13px;color:var(--gray-400);">Simamia wafanyakazi na wasaidizi</p>
           </div>
-          <button class="btn btn-primary" onclick="openAddUserModal()">+ Mtumiaji Mpya</button>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary" onclick="openAddUserModal()">+ Mtumiaji Mpya</button>
+            <button class="btn btn-outline" onclick="shareScannerLink()">🔗 Shiriki Link ya Scanner</button>
+          </div>
         </div>
         <div class="card">
           <div class="table-wrap">
@@ -1990,6 +1993,30 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 let currentUser = null;
 let currentProfile = null;
 let ORG_OWNER_ID = null; // ID ya mwenye mfumo (owner) - events/guests/templates zote ni chake
+
+// ===== SHARE SCANNER LINK =====
+// Inasaidia admin/manager kutuma link ya scanner kwa watu wapya (ma-scanner/walinzi)
+// bila kuhitaji kuunda account mpya kwenye mfumo huu - watatumia email/password
+// walizopewa (kupitia "+ Mtumiaji Mpya") kuingia moja kwa moja kwenye scanner.
+const SCANNER_APP_LINK = 'https://ezekielmeshack136-max.github.io/meshez-kadi-scanner/';
+
+async function shareScannerLink() {
+  const message = `Karibu Meshez Kadi Scanner!\n\nTumia link hii kufungua scanner:\n${SCANNER_APP_LINK}\n\nIngia (login) kwa email na password ulizopewa.`;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'Meshez Kadi Scanner', text: message, url: SCANNER_APP_LINK });
+      return;
+    } catch (e) { /* mtumiaji ame-cancel au haipatikani, endelea chini */ }
+  }
+
+  try {
+    await navigator.clipboard.writeText(message);
+    showToast('Link imenakiliwa! Sasa bandika (paste) kwenye WhatsApp', 'success');
+  } catch (e) {
+    prompt('Nakili link hii:', SCANNER_APP_LINK);
+  }
+}
 
 // Inapata ORG_OWNER_ID kupitia RPC (inafanya kazi kwa admin, manager, na scanner
 // wote - function ni SECURITY DEFINER hivyo haitegemei RLS ya profiles)
