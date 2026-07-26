@@ -1164,6 +1164,16 @@
           <p style="font-size:13px;color:var(--gray-400);">Scan QR codes za wageni</p>
         </div>
 
+        <div id="scannerNoAccessBanner" style="display:none;" class="empty-state" style="padding:40px;">
+          <div class="icon">🚫</div>
+          <h3>Bado hujapewa event yoyote</h3>
+          <p>Muulize Admin akuwekee ruhusa ya event kwenye "Event Management → 👥 Ruhusu Watumiaji"</p>
+        </div>
+
+        <div id="scannerMainArea">
+        <div id="scannerEventBanner" style="display:none;background:var(--blue-light,#EFF6FF);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;font-weight:600;color:var(--blue,#1A56DB);">
+          🎉 Unafanya kazi na: <span id="scannerCurrentEventName"></span>
+        </div>
         <div class="grid-2">
           <div>
             <div class="scanner-box">
@@ -1205,6 +1215,7 @@
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
 
@@ -1604,6 +1615,27 @@
   </div>
 </div>
 
+<!-- EVENT ACCESS MODAL (manager/scanner assignment) -->
+<div class="modal-overlay" id="eventAccessModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">👥 Ruhusu Watumiaji - <span id="eventAccessEventName"></span></div>
+      <button class="modal-close" onclick="closeModal('eventAccessModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="eventAccessEventId">
+      <p style="font-size:12px;color:var(--gray-400);margin-bottom:12px;">Chagua Manager/Scanner wanaotakiwa kufanya kazi na event hii. Wasiochaguliwa hawataiona kabisa.</p>
+      <div id="eventAccessStaffList" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+        <!-- imejazwa na JS -->
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('eventAccessModal')">Ghairi</button>
+      <button class="btn btn-primary" onclick="saveEventAccess()">💾 Hifadhi Ruhusa</button>
+    </div>
+  </div>
+</div>
+
 <!-- WhatsApp Sending Queue Modal -->
 <div class="modal-overlay" id="waQueueModal">
   <div class="modal" style="max-width:420px;">
@@ -1918,6 +1950,27 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let currentProfile = null;
+let ORG_OWNER_ID = null; // ID ya mwenye mfumo (owner) - events/guests/templates zote ni chake
+
+// Inapata ORG_OWNER_ID kupitia RPC (inafanya kazi kwa admin, manager, na scanner
+// wote - function ni SECURITY DEFINER hivyo haitegemei RLS ya profiles)
+async function loadOrgOwnerId() {
+  const { data, error } = await sb.rpc('get_org_owner_id');
+  if (error) {
+    console.error('Imeshindwa kupata org owner id:', error);
+    ORG_OWNER_ID = currentUser?.id || null; // fallback salama
+    return;
+  }
+  ORG_OWNER_ID = data || currentUser?.id;
+}
+
+// Inapata orodha ya event_id ambazo mtumiaji wa sasa (manager/scanner) amepewa
+// ruhusa. Admin/owner hawahitaji hii (wanaona zote moja kwa moja kupitia RLS).
+async function getMyAccessibleEventIds() {
+  const { data, error } = await sb.from('event_access').select('event_id').eq('profile_id', currentUser.id);
+  if (error) { console.error('Imeshindwa kupata event_access:', error); return []; }
+  return (data || []).map(r => r.event_id);
+}
 let scanCountOk = 0;
 let scanCountFail = 0;
 let qrScanner = null;
@@ -2053,6 +2106,7 @@ async function loadProfile() {
     document.getElementById('profLastName').value = data.last_name || '';
     document.getElementById('profPhone').value = data.phone || '';
   }
+  await loadOrgOwnerId();
 }
 
 function showApp() {
@@ -2125,12 +2179,48 @@ function showPage(page) {
   if (page === 'payments') { loadPaymentsHistory(); loadPromoImages(); }
   if (page === 'users') loadUsers();
   if (page === 'whatsapp') loadWhatsappMonitor();
-  if (page === 'scanner') initScanner();
+  if (page === 'scanner') openScannerPage();
   if (page === 'templates') { loadTemplates(); renderPositionPreview(); }
 }
 
 // ===== SIDEBAR MOBILE =====
 // ===== SIDEBAR MOBILE =====
+// Inaangalia kama mtumiaji (manager/scanner) amepewa event yoyote kabla ya
+// kufungua scanner - admin/owner huwa hawana kizuizi (wanaona zote).
+async function openScannerPage() {
+  const role = currentProfile?.role || 'admin';
+  const noAccessBanner = document.getElementById('scannerNoAccessBanner');
+  const mainArea = document.getElementById('scannerMainArea');
+  const eventBanner = document.getElementById('scannerEventBanner');
+
+  if (role === 'admin') {
+    noAccessBanner.style.display = 'none';
+    mainArea.style.display = '';
+    eventBanner.style.display = 'none';
+    initScanner();
+    return;
+  }
+
+  const eventIds = await getMyAccessibleEventIds();
+  if (eventIds.length === 0) {
+    noAccessBanner.style.display = '';
+    mainArea.style.display = 'none';
+    return;
+  }
+
+  noAccessBanner.style.display = 'none';
+  mainArea.style.display = '';
+
+  // Kwa scanner: onyesha jina la event MOJA (ya kwanza) aliyopewa
+  const { data: ev } = await sb.from('events').select('name').eq('id', eventIds[0]).single();
+  if (ev) {
+    document.getElementById('scannerCurrentEventName').textContent = ev.name + (eventIds.length > 1 ? ` (+${eventIds.length - 1} nyingine)` : '');
+    eventBanner.style.display = '';
+  }
+
+  initScanner();
+}
+
 function openSidebar() {
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('sidebarOverlay').classList.add('open');
@@ -2158,8 +2248,8 @@ function showToast(msg, type = 'info') {
 async function loadDashboard() {
   if (!currentUser) return;
 
-  const { data: events } = await sb.from('events').select('*').eq('user_id', currentUser.id);
-  const { data: guests } = await sb.from('guests').select('*').eq('user_id', currentUser.id);
+  const { data: events } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID);
+  const { data: guests } = await sb.from('guests').select('*').eq('user_id', ORG_OWNER_ID);
 
   const evCount = events?.length || 0;
   const kadiCount = guests?.length || 0;
@@ -2203,9 +2293,63 @@ async function loadDashboard() {
 }
 
 // ===== EVENTS =====
+// ===== EVENT ACCESS (manager/scanner assignment kwa event mahususi) =====
+async function openEventAccessModal(eventId, eventName) {
+  document.getElementById('eventAccessEventId').value = eventId;
+  document.getElementById('eventAccessEventName').textContent = eventName;
+
+  const listEl = document.getElementById('eventAccessStaffList');
+  listEl.innerHTML = '<p style="color:var(--gray-400);">Inapakia...</p>';
+  showModal('eventAccessModal');
+
+  const [{ data: staff }, { data: grants }] = await Promise.all([
+    sb.from('profiles').select('id,first_name,last_name,email,role').in('role', ['manager', 'scanner']).order('first_name'),
+    sb.from('event_access').select('profile_id').eq('event_id', eventId)
+  ]);
+
+  const grantedIds = new Set((grants || []).map(g => g.profile_id));
+
+  if (!staff || staff.length === 0) {
+    listEl.innerHTML = '<p style="color:var(--gray-400);">Hakuna Manager/Scanner bado - waongeze kwenye User Management kwanza.</p>';
+    return;
+  }
+
+  listEl.innerHTML = staff.map(s => `
+    <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--gray-200,#E5E7EB);border-radius:8px;cursor:pointer;">
+      <input type="checkbox" value="${s.id}" ${grantedIds.has(s.id) ? 'checked' : ''} style="width:18px;height:18px;">
+      <span>
+        <strong>${s.first_name || ''} ${s.last_name || ''}</strong>
+        <span style="font-size:11px;color:var(--gray-400);"> - ${s.role === 'manager' ? '📊 Manager' : '🔍 Scanner'} - ${s.email || ''}</span>
+      </span>
+    </label>
+  `).join('');
+}
+
+async function saveEventAccess() {
+  const eventId = document.getElementById('eventAccessEventId').value;
+  const checkboxes = document.querySelectorAll('#eventAccessStaffList input[type=checkbox]');
+  const selectedIds = Array.from(checkboxes).filter(c => c.checked).map(c => c.value);
+
+  showToast('Inahifadhi ruhusa...', 'info');
+
+  // Njia rahisi na salama: futa grants zote za event hii, kisha ongeza upya
+  // zilizochaguliwa - inaepuka mantiki changamano ya diffing.
+  const { error: delError } = await sb.from('event_access').delete().eq('event_id', eventId);
+  if (delError) return showToast('Kosa: ' + delError.message, 'error');
+
+  if (selectedIds.length > 0) {
+    const rows = selectedIds.map(profileId => ({ event_id: eventId, profile_id: profileId }));
+    const { error: insError } = await sb.from('event_access').insert(rows);
+    if (insError) return showToast('Kosa: ' + insError.message, 'error');
+  }
+
+  showToast('Ruhusa zimehifadhiwa', 'success');
+  closeModal('eventAccessModal');
+}
+
 async function loadEvents() {
   if (!currentUser) return;
-  const { data: events } = await sb.from('events').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
+  const { data: events } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID).order('created_at', {ascending: false});
   const grid = document.getElementById('eventsGrid');
 
   if (!events || events.length === 0) {
@@ -2243,6 +2387,7 @@ async function loadEvents() {
         <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();selectEventForInvitations('${e.id}')">📨 Tuma</button>
         <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openEditEventModal('${e.id}')" title="Hariri taarifa za event">✏️</button>
         <button class="btn btn-outline btn-sm" onclick='event.stopPropagation();openLocationModal("${e.id}", ${JSON.stringify(e.host_name || '')}, ${JSON.stringify(e.coordinates || '')})' title="${e.coordinates ? 'Location imewekwa - bonyeza kubadilisha' : 'Weka location ya tukio'}">${e.coordinates ? '📍✅' : '📍'}</button>
+        ${(currentProfile?.role === 'admin') ? `<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openEventAccessModal('${e.id}', ${JSON.stringify(e.name)})" title="Ruhusu Manager/Scanner kufikia event hii">👥</button>` : ''}
         <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();deleteEvent('${e.id}')">🗑️</button>
       </div>
     </div>
@@ -2324,7 +2469,7 @@ async function saveNewEvent() {
   } else {
     // --- TENGENEZA event mpya ---
     ({ error } = await sb.from('events').insert({
-      user_id: currentUser.id,
+      user_id: ORG_OWNER_ID,
       ...eventFields,
       total_guests: 0, attended: 0, sms_sent_count: 0
     }));
@@ -2384,16 +2529,16 @@ async function deleteEvent(id) {
   showToast('Inafuta event na data zake zote...', 'info');
 
   // 1. Futa templates zilizounganishwa na event hii (picha kwenye storage + rows)
-  const { data: eventTemplates } = await sb.from('templates').select('id,file_path').eq('user_id', currentUser.id).eq('event_id', id);
+  const { data: eventTemplates } = await sb.from('templates').select('id,file_path').eq('user_id', ORG_OWNER_ID).eq('event_id', id);
   if (eventTemplates && eventTemplates.length > 0) {
     const tplPaths = eventTemplates.map(t => t.file_path).filter(Boolean);
     if (tplPaths.length > 0) await sb.storage.from('templates').remove(tplPaths);
-    await sb.from('templates').delete().eq('user_id', currentUser.id).eq('event_id', id);
+    await sb.from('templates').delete().eq('user_id', ORG_OWNER_ID).eq('event_id', id);
   }
 
   // 2. Futa kadi zilizotengenezwa (picha) kwenye storage kwa event hii (folder: userId/eventId/...)
   try {
-    const cardsFolder = `${currentUser.id}/${id}`;
+    const cardsFolder = `${ORG_OWNER_ID}/${id}`;
     const { data: cardFiles } = await sb.storage.from(CARDS_BUCKET).list(cardsFolder);
     if (cardFiles && cardFiles.length > 0) {
       const cardPaths = cardFiles.map(f => `${cardsFolder}/${f.name}`);
@@ -2424,7 +2569,7 @@ function openEvent(id) {
 // ===== GUESTS / INVITATIONS =====
 async function loadEventsDropdown() {
   if (!currentUser) return;
-  const { data } = await sb.from('events').select('*').eq('user_id', currentUser.id);
+  const { data } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID);
   const sel = document.getElementById('invEventSelect');
   sel.innerHTML = '<option value="">-- Chagua Event --</option>';
 
@@ -2571,7 +2716,7 @@ async function addGuest() {
 const seqNumber = (count || 0) + 1;
 
 const { error } = await sb.from('guests').insert({
-  user_id: currentUser.id,
+  user_id: ORG_OWNER_ID,
   event_id: eventId,
   name, phone: phoneFixed, group_size: groupSize,
   whatsapp, card_id: cardId, sequence_number: seqNumber,
@@ -2754,7 +2899,7 @@ async function confirmBulkImport() {
     const cardId = prefix + '-' + Math.random().toString(36).substr(2, 6).toUpperCase();
 
     return {
-      user_id: currentUser.id,
+      user_id: ORG_OWNER_ID,
       event_id: eventId,
       name: g.name,
       phone: phoneFixed,
@@ -3245,8 +3390,8 @@ function playBeep(type) {
 // ===== WHATSAPP MONITOR =====
 async function loadWhatsappMonitor() {
   if (!currentUser) return;
-  const { data: guests } = await sb.from('guests').select('*').eq('user_id', currentUser.id);
-  const { data: events } = await sb.from('events').select('id, name').eq('user_id', currentUser.id);
+  const { data: guests } = await sb.from('guests').select('*').eq('user_id', ORG_OWNER_ID);
+  const { data: events } = await sb.from('events').select('id, name').eq('user_id', ORG_OWNER_ID);
   const eventNameById = {};
   (events || []).forEach(e => { eventNameById[e.id] = e.name; });
 
@@ -3297,8 +3442,8 @@ async function loadWhatsappMonitor() {
 // ===== REPORTS =====
 async function loadReports() {
   if (!currentUser) return;
-  const { data: events } = await sb.from('events').select('*').eq('user_id', currentUser.id);
-  const { data: guests } = await sb.from('guests').select('*').eq('user_id', currentUser.id);
+  const { data: events } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID);
+  const { data: guests } = await sb.from('guests').select('*').eq('user_id', ORG_OWNER_ID);
 
   document.getElementById('repEvents').textContent = events?.length || 0;
   document.getElementById('repKadi').textContent   = guests?.length || 0;
@@ -3362,10 +3507,10 @@ function downloadCSVBlob(csvContent, filename) {
 }
 
 async function exportReport() {
-  const { data: guests } = await sb.from('guests').select('*').eq('user_id', currentUser.id);
+  const { data: guests } = await sb.from('guests').select('*').eq('user_id', ORG_OWNER_ID);
   if (!guests || guests.length === 0) return showToast('Hakuna data ya export', 'error');
 
-  const { data: events } = await sb.from('events').select('id,name').eq('user_id', currentUser.id);
+  const { data: events } = await sb.from('events').select('id,name').eq('user_id', ORG_OWNER_ID);
   const eventNameById = {};
   (events || []).forEach(e => eventNameById[e.id] = e.name);
 
@@ -3684,7 +3829,7 @@ async function savePaymentInfo() {
 
 async function loadPaymentsHistory() {
   if (!currentUser) return;
-  const { data: events } = await sb.from('events').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  const { data: events } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID).order('created_at', { ascending: false });
   const tbody = document.getElementById('paymentsTable');
 
   if (!events || events.length === 0) {
@@ -3717,7 +3862,7 @@ async function loadPaymentsHistory() {
 
 async function exportPaymentsCSV() {
   if (!currentUser) return;
-  const { data: events } = await sb.from('events').select('*').eq('user_id', currentUser.id);
+  const { data: events } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID);
   if (!events || events.length === 0) return showToast('Hakuna data ya export', 'error');
 
   const rows = await Promise.all(events.map(async e => {
@@ -3741,7 +3886,7 @@ const CARDS_BUCKET = 'generated-cards';
 
 async function loadPromoImages() {
   if (!currentUser) return;
-  const { data, error } = await sb.from('promo_images').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  const { data, error } = await sb.from('promo_images').select('*').eq('user_id', ORG_OWNER_ID).order('created_at', { ascending: false });
   const gallery = document.getElementById('promoImagesGallery');
   if (!gallery) return;
 
@@ -3766,13 +3911,13 @@ async function uploadPromoImage() {
   const file = document.getElementById('promoImageFile').files[0];
   if (!file) return showToast('Chagua picha kwanza', 'error');
 
-  const path = `${currentUser.id}/${Date.now()}_${file.name}`;
+  const path = `${ORG_OWNER_ID}/${Date.now()}_${file.name}`;
   const { error: upErr } = await sb.storage.from(PROMO_BUCKET).upload(path, file);
   if (upErr) return showToast('Kosa la upload: ' + upErr.message + ' (Hakikisha bucket "promo-images" ipo na ni public)', 'error');
 
   const { data: { publicUrl } } = sb.storage.from(PROMO_BUCKET).getPublicUrl(path);
 
-  const { error: insErr } = await sb.from('promo_images').insert({ user_id: currentUser.id, url: publicUrl, file_path: path });
+  const { error: insErr } = await sb.from('promo_images').insert({ user_id: ORG_OWNER_ID, url: publicUrl, file_path: path });
   if (insErr) return showToast('Kosa: ' + insErr.message + ' (Angalia kama jedwali la promo_images limeundwa)', 'error');
 
   showToast('Picha imepakiwa!', 'success');
@@ -4055,7 +4200,7 @@ async function uploadTemplate() {
   // Hakikisha event bado ipo (dropdown huenda ilikuwa "stale" - mfano event
   // ilifutwa kwenye tab/kifaa kingine) - hii inazuia kosa la database
   // (foreign key constraint) na kutoa ujumbe rahisi kueleweka badala yake.
-  const { data: eventCheck } = await sb.from('events').select('id').eq('id', eventId).eq('user_id', currentUser.id).single();
+  const { data: eventCheck } = await sb.from('events').select('id').eq('id', eventId).eq('user_id', ORG_OWNER_ID).single();
   if (!eventCheck) {
     loadEventsDropdown();
     return showToast('Event uliyochagua haipo tena (huenda ilifutwa). Orodha imesasishwa - chagua tena.', 'error');
@@ -4064,21 +4209,21 @@ async function uploadTemplate() {
   // Futa templates za zamani zilizounganishwa na event hii KABLA ya kuongeza mpya,
   // ili "kuhariri" kubadilishe kabisa badala ya kuacha nakala za zamani zikichanganya
   // (hii ndiyo iliyokuwa ikisababisha kadi kuendelea kutumia template ya mwanzo).
-  const { data: oldTemplates } = await sb.from('templates').select('id,file_path').eq('user_id', currentUser.id).eq('event_id', eventId);
+  const { data: oldTemplates } = await sb.from('templates').select('id,file_path').eq('user_id', ORG_OWNER_ID).eq('event_id', eventId);
   if (oldTemplates && oldTemplates.length > 0) {
     const oldPaths = oldTemplates.map(t => t.file_path).filter(Boolean);
     if (oldPaths.length > 0) await sb.storage.from('templates').remove(oldPaths);
-    await sb.from('templates').delete().eq('user_id', currentUser.id).eq('event_id', eventId);
+    await sb.from('templates').delete().eq('user_id', ORG_OWNER_ID).eq('event_id', eventId);
   }
 
-  const path = `${currentUser.id}/${Date.now()}_${file.name}`;
+  const path = `${ORG_OWNER_ID}/${Date.now()}_${file.name}`;
   const { error: upErr } = await sb.storage.from('templates').upload(path, file);
   if (upErr) return showToast('Kosa la upload: ' + upErr.message, 'error');
 
   const { data: { publicUrl } } = sb.storage.from('templates').getPublicUrl(path);
 
   const { data: inserted, error: insErr } = await sb.from('templates').insert({
-    user_id: currentUser.id, name, type, file_path: path, url: publicUrl, event_id: eventId, positions: DEFAULT_POSITIONS
+    user_id: ORG_OWNER_ID, name, type, file_path: path, url: publicUrl, event_id: eventId, positions: DEFAULT_POSITIONS
   }).select().single();
   if (insErr) return showToast('Kosa: ' + insErr.message + ' (Huenda column ya event_id/positions haipo kwenye jedwali la templates - angalia maelezo)', 'error');
 
@@ -4091,13 +4236,13 @@ async function uploadTemplate() {
 }
 
 async function loadTemplates() {
-  const { data } = await sb.from('templates').select('*').eq('user_id', currentUser.id);
+  const { data } = await sb.from('templates').select('*').eq('user_id', ORG_OWNER_ID);
   const div = document.getElementById('templatesList');
   if (!data || data.length === 0) {
     div.innerHTML = `<div class="empty-state"><div class="icon">🎨</div><h3>Hakuna templates bado</h3></div>`;
     return;
   }
-  const { data: allEvents } = await sb.from('events').select('id,name').eq('user_id', currentUser.id);
+  const { data: allEvents } = await sb.from('events').select('id,name').eq('user_id', ORG_OWNER_ID);
   const eventNameById = {};
   (allEvents || []).forEach(e => eventNameById[e.id] = e.name);
 
@@ -4149,11 +4294,10 @@ async function changePassword() {
 }
 
 async function saveSettings() {
-  const settings = {
-    sender_id: document.getElementById('settSenderId').value,
-    at_username: document.getElementById('settAtUser').value,
-  };
-  await sb.from('profiles').update({ settings: JSON.stringify(settings) }).eq('id', currentUser.id);
+  const senderId = document.getElementById('settSenderId').value;
+  const atUsername = document.getElementById('settAtUser').value;
+  const { error } = await sb.from('settings').update({ sender_id: senderId, at_username: atUsername }).eq('user_id', ORG_OWNER_ID);
+  if (error) return showToast('Kosa: ' + error.message, 'error');
   showToast('Mipangilio imehifadhiwa!', 'success');
 }
   // ===== GENERATE CARD (Template + Jina + QR) =====
@@ -4200,11 +4344,11 @@ function loadPositions() {
 // Hutafuta template ILIYOUNGANISHWA na event maalum kwanza (haiingiliani na events nyingine).
 // Ikikosekana, inarudi kwenye template ya zamani iliyowekwa kwa 'type' (backward-compatibility).
 async function getTemplateForEvent(eventId, eventType) {
-  const { data: byEvent } = await sb.from('templates').select('*').eq('user_id', currentUser.id).eq('event_id', eventId).order('created_at', { ascending: false });
+  const { data: byEvent } = await sb.from('templates').select('*').eq('user_id', ORG_OWNER_ID).eq('event_id', eventId).order('created_at', { ascending: false });
   if (byEvent && byEvent[0]) return byEvent[0];
 
   if (eventType) {
-    const { data: byType } = await sb.from('templates').select('*').eq('user_id', currentUser.id).eq('type', eventType).is('event_id', null).order('created_at', { ascending: false });
+    const { data: byType } = await sb.from('templates').select('*').eq('user_id', ORG_OWNER_ID).eq('type', eventType).is('event_id', null).order('created_at', { ascending: false });
     if (byType && byType[0]) return byType[0];
   }
   return null;
@@ -4342,7 +4486,7 @@ async function generateAndUploadCard(guestId, forceRegenerate = false) {
   const blob = await generateSingleCardBlob(guest, template, pos);
 
   const safeName = guest.name.replace(/[^a-zA-Z0-9]/g, '_');
-  const path = `${currentUser.id}/${guest.event_id}/${safeName}_${guest.card_id}.png`;
+  const path = `${ORG_OWNER_ID}/${guest.event_id}/${safeName}_${guest.card_id}.png`;
 
   const { error: upErr } = await sb.storage.from(CARDS_BUCKET).upload(path, blob, {
     contentType: 'image/png',
