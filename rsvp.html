@@ -88,6 +88,8 @@ async function submitRsvp() {
     return;
   }
 
+  // "Last click wins": tunatuma hali mpya kila mara - hata kama alishajibu awali,
+  // jibu la MWISHO alilobonyeza ndilo litakalobaki kwenye mfumo.
   const { data, error } = await sb.rpc('submit_rsvp', {
     card_id_input: cardId,
     status_input: status
@@ -104,13 +106,13 @@ async function submitRsvp() {
   if (status === 'yes') {
     card.innerHTML = `
       <div class="icon">🎉</div>
-      <h1 class="status-yes">Asante, ${data.name || ''}!</h1>
-      <p>Umethibitisha kuwa <strong>UTAHUDHURIA</strong> tukio hili. Tunakusubiri kwa hamu!</p>`;
+      <h1 class="status-yes">Tunashukuru kwa uwepo wako</h1>
+      <p><strong>Karibu sana!</strong></p>`;
   } else {
     card.innerHTML = `
       <div class="icon">🙏</div>
-      <h1 class="status-no">Asante, ${data.name || ''}</h1>
-      <p>Umethibitisha kuwa <strong>HUTOHUDHURIA</strong> tukio hili. Asante kwa kutuarifu.</p>`;
+      <h1 class="status-no">Pole kwa dharura</h1>
+      <p><strong>Karibu Tena</strong></p>`;
   }
 }
 
