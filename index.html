@@ -1988,7 +1988,12 @@
 const SUPABASE_URL = 'https://fymjjqembyrlwgktbcgf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_SMflxbKh4452586Q4ojrow_L4ZGq2uu';
 const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+// persistSession: false + autoRefreshToken: false = usalama zaidi. Session HAIHIFADHIWI
+// kwenye kifaa - mtu akifunga app/tab, au simu ikizima, au aki-refresh ukurasa,
+// atahitaji kuingia (login) upya na password yake.
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: false, autoRefreshToken: false }
+});
 
 let currentUser = null;
 let currentProfile = null;
@@ -2001,7 +2006,7 @@ let ORG_OWNER_ID = null; // ID ya mwenye mfumo (owner) - events/guests/templates
 const SCANNER_APP_LINK = 'https://ezekielmeshack136-max.github.io/meshez-kadi-scanner/';
 
 async function shareScannerLink() {
-  const message = `Karibu Meshez Kadi Scanner!\n\nTumia link hii kufungua scanner:\n${SCANNER_APP_LINK}\n\nIngia (login) kwa email na password ulizopewa.`;
+  const message = `Karibu Meshez Kadi Scanner! Tumia link hii kufungua scanner Ingia (login) kwa email na password ulizopewa: ${SCANNER_APP_LINK} .`;
 
   if (navigator.share) {
     try {
