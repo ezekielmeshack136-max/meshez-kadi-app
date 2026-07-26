@@ -1128,8 +1128,9 @@
         <div class="card">
           <div class="card-header">
            <div class="card-title">👥 Orodha ya Wageni</div>
-<div style="display:flex;gap:8px;">
+<div style="display:flex;gap:8px;flex-wrap:wrap;">
   <button class="btn btn-outline btn-sm" onclick="loadEventGuests()" title="Sasisha - ona mabadiliko ya wenzako">🔄 Sasisha</button>
+  <button class="btn btn-outline btn-sm" onclick="downloadGuestsListCSV()" title="Pakua orodha ya wageni pamoja na RSVP">📥 Pakua Wageni (CSV)</button>
   <button class="btn btn-orange btn-sm" onclick="generateAllCards()">📦 Pakua Kadi Zote (ZIP)</button>
   <button class="btn btn-outline btn-sm" id="uploadAllCardsBtn" onclick="handleUploadAllCards()">☁️ Pakia Kadi Zote Bucket</button>
   <button class="btn btn-outline btn-sm" onclick="openBulkImportModal()">📥 Bulk Import (Excel)</button>
@@ -1150,11 +1151,12 @@
                   <th>WhatsApp</th>
                   <th>SMS</th>
                   <th>WA Status</th>
+                  <th>RSVP</th>
                   <th>Vitendo</th>
                 </tr>
               </thead>
               <tbody id="guestsTable">
-                <tr><td colspan="8" style="text-align:center;color:var(--gray-400);padding:32px;">Chagua event kuona wageni</td></tr>
+                <tr><td colspan="9" style="text-align:center;color:var(--gray-400);padding:32px;">Chagua event kuona wageni</td></tr>
               </tbody>
             </table>
           </div>
@@ -2265,7 +2267,7 @@ let pageAutoRefreshInterval = null;
 
 const AUTO_REFRESH_LOADERS = {
   events: () => loadEvents(),
-  invitations: () => { if (document.getElementById('invEventSelect')?.value) loadEventGuests(); },
+  invitations: () => { if (document.getElementById('invEventSelect')?.value) loadEventGuests(false); },
   whatsapp: () => loadWhatsappMonitor(),
 };
 
@@ -2781,7 +2783,7 @@ async function selectEventForInvitations(eventId) {
   await loadEventGuests();
 }
 
-async function loadEventGuests() {
+async function loadEventGuests(clearSearch = true) {
   const eventId = document.getElementById('invEventSelect').value;
   if (!eventId) return;
 
@@ -2797,8 +2799,11 @@ async function loadEventGuests() {
 
   allGuestsCache = guests || [];
   const searchInput = document.getElementById('guestSearchInput');
-  if (searchInput) searchInput.value = '';
-  renderGuestsTable(allGuestsCache);
+  // clearSearch=true ni pale mtumiaji anapobadilisha event kwa makusudi (search ya
+  // zamani haina maana tena). Auto-refresh (kila sekunde 15) inatumia clearSearch=false
+  // ili isimfute mtumiaji search yake anayoendelea kuandika/kuisoma.
+  if (clearSearch && searchInput) searchInput.value = '';
+  filterGuestsTable();
 }
 
 // Cache ya wageni wa event iliyochaguliwa - inatumika kwa search/filter bila kuita database tena
@@ -2821,7 +2826,7 @@ function guestCardTypeLabelFriendly(g) {
 function renderGuestsTable(guests) {
   const tbody = document.getElementById('guestsTable');
   if (!guests || guests.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna wageni bado - ongeza wageni</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna wageni bado - ongeza wageni</td></tr>`;
     return;
   }
 
@@ -2837,6 +2842,11 @@ function renderGuestsTable(guests) {
         : `<span class="badge" style="background:#E5E7EB;color:#374151;margin-left:6px;">${rank}</span>`;
     
     const label = guestCardTypeLabel(g);
+    const rsvpBadge = g.rsvp === 'yes'
+      ? '<span class="badge badge-green">🙋 Atahudhuria</span>'
+      : g.rsvp === 'no'
+        ? '<span class="badge" style="background:#FEE2E2;color:#991B1B;">🙅 Hatohudhuria</span>'
+        : '<span class="badge badge-gray">❔ Bado</span>';
     return `
     
     <tr>
@@ -2850,6 +2860,7 @@ function renderGuestsTable(guests) {
       <td>${g.whatsapp === 'yes' ? '<span class="badge badge-green">✅ Ndiyo</span>' : '<span class="badge badge-gray">❌ Hapana</span>'}</td>
       <td>${g.sms_sent === 'yes' ? '<span class="badge badge-green">Imetumwa</span>' : '<span class="badge badge-yellow">Haijatumwa</span>'}</td>
       <td>${g.wa_sent === 'yes' ? '<span class="badge badge-green">Imetumwa</span>' : '<span class="badge badge-yellow">Haijatumwa</span>'}</td>
+      <td>${rsvpBadge}</td>
       <td>
   <button class="btn btn-outline btn-sm" onclick="generateCard('${g.id}')" title="Zalisha Kadi">🎫</button>
   ${g.whatsapp === 'yes' ? `<button class="btn btn-outline btn-sm" onclick="sendWhatsAppInvite('${g.id}')" title="Tuma WhatsApp">💬</button>` : ''}
@@ -2859,6 +2870,38 @@ function renderGuestsTable(guests) {
 </td>
     </tr>`;
   }).join('');
+}
+
+// Inapakua orodha ya wageni (ya event iliyochaguliwa sasa) kama faili la CSV,
+// ikijumuisha hali ya RSVP - inaweza kufunguliwa Excel.
+function downloadGuestsListCSV() {
+  if (!allGuestsCache.length) {
+    showToast('Hakuna wageni wa kupakua - chagua event kwanza', 'error');
+    return;
+  }
+  const eventName = document.getElementById('invEventSelect')?.selectedOptions?.[0]?.text || 'Event';
+  const headers = ['Jina','Guest ID','Namba','Aina','WhatsApp','SMS','WA Status','RSVP','Muda wa RSVP'];
+  const rsvpLabel = g => g.rsvp === 'yes' ? 'Atahudhuria' : g.rsvp === 'no' ? 'Hatohudhuria' : 'Bado hajajibu';
+  const rows = allGuestsCache.map(g => [
+    g.name || '', g.card_id || '', g.phone || '', guestCardTypeLabel(g),
+    g.whatsapp === 'yes' ? 'Ndiyo' : 'Hapana',
+    g.sms_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa',
+    g.wa_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa',
+    rsvpLabel(g),
+    g.rsvp_date ? new Date(g.rsvp_date).toLocaleString('sw') : ''
+  ]);
+
+  const csvEscape = v => `"${String(v).replace(/"/g,'""')}"`;
+  const csv = [headers, ...rows].map(r => r.map(csvEscape).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Wageni_${eventName}.csv`.replace(/[^a-zA-Z0-9_\-\.]/g, '_');
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function filterGuestsTable() {
