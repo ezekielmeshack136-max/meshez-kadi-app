@@ -971,7 +971,10 @@
             <h2 style="font-size:18px;font-weight:700;">Events Zako</h2>
             <p style="font-size:13px;color:var(--gray-400);margin-top:2px;">Simamia matukio yako yote</p>
           </div>
-          <button class="btn btn-primary" onclick="openNewEventModal()">+ Event Mpya</button>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline" onclick="loadEvents()" title="Sasisha - ona mabadiliko ya wenzako">🔄 Sasisha</button>
+            <button class="btn btn-primary" onclick="openNewEventModal()">+ Event Mpya</button>
+          </div>
         </div>
 
         <div class="event-grid" id="eventsGrid">
@@ -1126,6 +1129,7 @@
           <div class="card-header">
            <div class="card-title">👥 Orodha ya Wageni</div>
 <div style="display:flex;gap:8px;">
+  <button class="btn btn-outline btn-sm" onclick="loadEventGuests()" title="Sasisha - ona mabadiliko ya wenzako">🔄 Sasisha</button>
   <button class="btn btn-orange btn-sm" onclick="generateAllCards()">📦 Pakua Kadi Zote (ZIP)</button>
   <button class="btn btn-outline btn-sm" id="uploadAllCardsBtn" onclick="handleUploadAllCards()">☁️ Pakia Kadi Zote Bucket</button>
   <button class="btn btn-outline btn-sm" onclick="openBulkImportModal()">📥 Bulk Import (Excel)</button>
@@ -1164,15 +1168,20 @@
           <p style="font-size:13px;color:var(--gray-400);">Scan QR codes za wageni</p>
         </div>
 
-        <div id="scannerNoAccessBanner" style="display:none;" class="empty-state" style="padding:40px;">
+        <div id="scannerNoAccessBanner" style="display:none;padding:40px;" class="empty-state">
           <div class="icon">🚫</div>
           <h3>Bado hujapewa event yoyote</h3>
           <p>Muulize Admin akuwekee ruhusa ya event kwenye "Event Management → 👥 Ruhusu Watumiaji"</p>
         </div>
 
         <div id="scannerMainArea">
-        <div id="scannerEventBanner" style="display:none;background:var(--blue-light,#EFF6FF);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;font-weight:600;color:var(--blue,#1A56DB);">
-          🎉 Unafanya kazi na: <span id="scannerCurrentEventName"></span>
+        <div id="scannerEventBanner" style="display:none;background:var(--blue-light,#EFF6FF);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
+          <label style="font-size:12px;font-weight:600;color:var(--blue,#1A56DB);display:block;margin-bottom:6px;">
+            🎉 Sasa unafanya kazi na event:
+          </label>
+          <select id="scannerEventSelect" onchange="onScannerEventChange()" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--blue,#1A56DB);font-size:14px;font-weight:600;">
+            <!-- imejazwa na JS -->
+          </select>
         </div>
         <div class="grid-2">
           <div>
@@ -1201,8 +1210,16 @@
               </div>
             </div>
 
+            <div class="card" style="margin-top:16px;background:#F0FDF4;border:1.5px solid var(--green,#16A34A);">
+              <div class="card-title" style="margin-bottom:8px;">🔴 LIVE - Jumla ya Event Nzima (vifaa vyote)</div>
+              <div style="text-align:center;">
+                <div style="font-size:28px;font-weight:800;color:var(--green,#16A34A);" id="liveAttendedCount">0 / 0</div>
+                <div style="font-size:11px;color:var(--gray-400);">Wamehudhuria kwenye event hii - namba hii ni sawa kwenye scanner ZOTE, si kifaa hiki tu</div>
+              </div>
+            </div>
+
             <div class="card" style="margin-top:16px;">
-              <div class="card-title" style="margin-bottom:12px;">📊 Takwimu za Leo</div>
+              <div class="card-title" style="margin-bottom:12px;">📊 Scans za Kifaa Hiki (leo)</div>
               <div style="display:flex;gap:12px;">
                 <div style="flex:1;text-align:center;padding:12px;background:var(--blue-light);border-radius:8px;">
                   <div style="font-size:22px;font-weight:700;color:var(--blue);" id="scanCountOk">0</div>
@@ -1213,6 +1230,7 @@
                   <div style="font-size:11px;color:var(--gray-400);">Zilizokataliwa</div>
                 </div>
               </div>
+              <p style="font-size:10.5px;color:var(--gray-400);margin-top:8px;">ℹ️ Hizi ni idadi ya scans ulizofanya kwenye KIFAA HIKI pekee tangu ufungue ukurasa - kila kifaa kina zake. Tumia kadi ya LIVE hapo juu kuona jumla halisi ya event.</p>
             </div>
           </div>
         </div>
@@ -2202,44 +2220,111 @@ function showPage(page) {
   if (page === 'whatsapp') loadWhatsappMonitor();
   if (page === 'scanner') openScannerPage();
   if (page === 'templates') { loadTemplates(); renderPositionPreview(); }
+
+  startAutoRefresh(page);
+}
+
+// ===== AUTO-REFRESH (ushirikiano wa watumiaji wengi kwenye event moja) =====
+// Bila hii, watumiaji wawili wakifanya kazi na event moja hawaonani mabadiliko
+// ya mwenzake mpaka wabadilishe ukurasa na kurudi. Hii inasasisha data kiotomatiki
+// kila sekunde 15, ili kila mtu aone hali halisi kutoka database - bila ku-duplicate
+// wala kuharibu kazi ya mwenzake.
+let pageAutoRefreshInterval = null;
+
+const AUTO_REFRESH_LOADERS = {
+  events: () => loadEvents(),
+  invitations: () => { if (document.getElementById('invEventSelect')?.value) loadEventGuests(); },
+  whatsapp: () => loadWhatsappMonitor(),
+};
+
+function stopAutoRefresh() {
+  if (pageAutoRefreshInterval) {
+    clearInterval(pageAutoRefreshInterval);
+    pageAutoRefreshInterval = null;
+  }
+}
+
+function startAutoRefresh(page) {
+  stopAutoRefresh();
+  const loader = AUTO_REFRESH_LOADERS[page];
+  if (!loader) return;
+  pageAutoRefreshInterval = setInterval(() => {
+    // Usisumbue mtumiaji kama ana modal wazi (huenda anahariri kitu sasa hivi)
+    const anyModalOpen = document.querySelector('.modal-overlay.open');
+    if (!anyModalOpen) loader();
+  }, 15000);
 }
 
 // ===== SIDEBAR MOBILE =====
 // ===== SIDEBAR MOBILE =====
 // Inaangalia kama mtumiaji (manager/scanner) amepewa event yoyote kabla ya
 // kufungua scanner - admin/owner huwa hawana kizuizi (wanaona zote).
+let scannerSelectedEventId = null;
+
 async function openScannerPage() {
   const role = currentProfile?.role || 'admin';
   const noAccessBanner = document.getElementById('scannerNoAccessBanner');
   const mainArea = document.getElementById('scannerMainArea');
   const eventBanner = document.getElementById('scannerEventBanner');
+  const eventSelect = document.getElementById('scannerEventSelect');
+
+  let myEvents = [];
 
   if (role === 'admin') {
-    noAccessBanner.style.display = 'none';
-    mainArea.style.display = '';
-    eventBanner.style.display = 'none';
-    initScanner();
-    return;
-  }
-
-  const eventIds = await getMyAccessibleEventIds();
-  if (eventIds.length === 0) {
-    noAccessBanner.style.display = '';
-    mainArea.style.display = 'none';
-    return;
+    // Admin anaona events zote
+    const { data: allEvents } = await sb.from('events').select('id,name,event_date').eq('user_id', ORG_OWNER_ID).order('created_at', { ascending: false });
+    myEvents = allEvents || [];
+  } else {
+    const eventIds = await getMyAccessibleEventIds();
+    if (eventIds.length === 0) {
+      noAccessBanner.style.display = '';
+      mainArea.style.display = 'none';
+      return;
+    }
+    const { data: allowedEvents } = await sb.from('events').select('id,name,event_date').in('id', eventIds).order('created_at', { ascending: false });
+    myEvents = allowedEvents || [];
   }
 
   noAccessBanner.style.display = 'none';
   mainArea.style.display = '';
 
-  // Kwa scanner: onyesha jina la event MOJA (ya kwanza) aliyopewa
-  const { data: ev } = await sb.from('events').select('name').eq('id', eventIds[0]).single();
-  if (ev) {
-    document.getElementById('scannerCurrentEventName').textContent = ev.name + (eventIds.length > 1 ? ` (+${eventIds.length - 1} nyingine)` : '');
+  if (myEvents.length === 0) {
+    eventBanner.style.display = 'none';
+    scannerSelectedEventId = null;
+  } else {
     eventBanner.style.display = '';
+    // Kumbuka uchaguzi wa mwisho (kwa kifaa hiki) ikiwa bado ni event halali kwa mtumiaji huyu
+    const remembered = localStorage.getItem('scannerSelectedEventId_' + currentUser.id);
+    const validRemembered = myEvents.find(e => e.id === remembered);
+    scannerSelectedEventId = validRemembered ? remembered : myEvents[0].id;
+
+    eventSelect.innerHTML = myEvents.map(e =>
+      `<option value="${e.id}" ${e.id === scannerSelectedEventId ? 'selected' : ''}>${e.name}${e.event_date ? ' - ' + e.event_date : ''}</option>`
+    ).join('');
   }
 
   initScanner();
+  refreshLiveAttendedCount();
+}
+// kutoka database (si kumbukumbu ya kifaa). Kwa sababu inasoma fresh kila mara,
+// scanner zote (vifaa vyote) zitaonyesha NAMBA ILE ILE - hakuna "huku na huku".
+async function refreshLiveAttendedCount() {
+  const el = document.getElementById('liveAttendedCount');
+  if (!el) return;
+  if (!scannerSelectedEventId) { el.textContent = '0 / 0'; return; }
+
+  const { data: guests } = await sb.from('guests').select('used_count,group_size').eq('event_id', scannerSelectedEventId);
+  const attended = (guests || []).reduce((s, g) => s + (g.used_count || 0), 0);
+  const total    = (guests || []).reduce((s, g) => s + (g.group_size || 1), 0);
+  el.textContent = `${attended} / ${total}`;
+}
+
+function onScannerEventChange() {
+  const eventSelect = document.getElementById('scannerEventSelect');
+  scannerSelectedEventId = eventSelect.value;
+  localStorage.setItem('scannerSelectedEventId_' + currentUser.id, scannerSelectedEventId);
+  showToast('Sasa unafanya kazi na: ' + eventSelect.options[eventSelect.selectedIndex].text, 'info');
+  refreshLiveAttendedCount();
 }
 
 function openSidebar() {
@@ -2808,6 +2893,16 @@ const { error } = await sb.from('guests').insert({
   loadEventGuests();
 }
 
+let editGuestSnapshot = null; // "picha" ya taarifa wakati modal ilipofunguliwa - kwa kugundua kama mtu mwingine ameshabadilisha
+
+function buildGuestSnapshot(g) {
+  return JSON.stringify({
+    name: g.name || '', phone: g.phone || '', group_size: g.group_size || 1,
+    whatsapp: g.whatsapp || 'no', sms_sent: g.sms_sent || 'no', wa_sent: g.wa_sent || 'no',
+    vip_status: g.vip_status || ''
+  });
+}
+
 async function openEditGuestModal(guestId) {
   const { data: guest, error } = await sb.from('guests').select('*').eq('id', guestId).single();
   if (error || !guest) return showToast('Imeshindwa kupata taarifa za mgeni', 'error');
@@ -2820,6 +2915,8 @@ async function openEditGuestModal(guestId) {
   document.getElementById('editGuestSmsSent').value = guest.sms_sent || 'no';
   document.getElementById('editGuestWaSent').value = guest.wa_sent || 'no';
   document.getElementById('editGuestVipStatus').value = (guest.vip_status && guest.vip_status.toLowerCase() !== 'none') ? guest.vip_status : '';
+
+  editGuestSnapshot = buildGuestSnapshot(guest);
 
   showModal('editGuestModal');
 }
@@ -2836,6 +2933,28 @@ async function saveEditGuest() {
 
   if (!name) return showToast('Weka jina la mgeni', 'error');
 
+  // MUHIMU: kabla ya kuandika, angalia kama mtu mwingine ameshabadilisha taarifa
+  // za mgeni huyu tangu ulipofungua fomu hii (mfano manager mwenzako amemhariri
+  // mgeni huyu huyu wakati wewe pia unamhariri). Hii inazuia kuandikiana bila kujua.
+  const { data: freshGuest, error: fetchErr } = await sb.from('guests').select('*').eq('id', id).single();
+  if (fetchErr || !freshGuest) return showToast('Kosa: imeshindwa kuthibitisha taarifa za sasa - jaribu tena', 'error');
+
+  const freshSnapshot = buildGuestSnapshot(freshGuest);
+  if (editGuestSnapshot && freshSnapshot !== editGuestSnapshot) {
+    // Mgongano umegundulika - jaza fomu na taarifa MPYA, kisha zuia save hii moja
+    // ili mtumiaji aone kilichobadilika na aamue mwenyewe kabla ya kuendelea.
+    document.getElementById('editGuestName').value = freshGuest.name || '';
+    document.getElementById('editGuestPhone').value = freshGuest.phone || '';
+    document.getElementById('editGuestGroupSize').value = freshGuest.group_size || 1;
+    document.getElementById('editGuestWhatsapp').value = freshGuest.whatsapp || 'no';
+    document.getElementById('editGuestSmsSent').value = freshGuest.sms_sent || 'no';
+    document.getElementById('editGuestWaSent').value = freshGuest.wa_sent || 'no';
+    document.getElementById('editGuestVipStatus').value = (freshGuest.vip_status && freshGuest.vip_status.toLowerCase() !== 'none') ? freshGuest.vip_status : '';
+    editGuestSnapshot = freshSnapshot;
+
+    return showToast('⚠️ Taarifa za mgeni huyu tayari zimeshabadilishwa na mtu mwingine! Tumesasisha fomu na taarifa mpya - angalia kisha ubofye "Hifadhi" tena ukitaka kuendelea na mabadiliko yako.', 'error');
+  }
+
   let phoneFixed = phone.replace(/\s|-/g, '');
   if (phoneFixed.startsWith('0')) phoneFixed = '255' + phoneFixed.slice(1);
   else if (phoneFixed && !phoneFixed.startsWith('255')) phoneFixed = '255' + phoneFixed;
@@ -2849,6 +2968,7 @@ async function saveEditGuest() {
 
  if (error) return showToast('Kosa: ' + error.message, 'error');
   showToast('Taarifa za mgeni zimesasishwa!', 'success');
+  editGuestSnapshot = null;
   closeModal('editGuestModal');
   loadEventGuests();
 }
@@ -3392,6 +3512,24 @@ async function verifyScan() {
 
   const resultDiv = document.getElementById('scanResult');
 
+  // Kama kuna event iliyochaguliwa, hakikisha kadi hii ni ya event hiyo hiyo -
+  // hii inazuia kukubali kimakosa mgeni wa event nyingine kwenye mlango tofauti.
+  if (guest && scannerSelectedEventId && guest.event_id !== scannerSelectedEventId) {
+    const { data: correctEvent } = await sb.from('events').select('name').eq('id', guest.event_id).single();
+    playBeep('err');
+    scanCountFail++;
+    resultDiv.innerHTML = `
+      <div class="scan-result-fail">
+        <div class="scan-icon">⚠️</div>
+        <div class="scan-title" style="color:#DC2626;">KADI YA EVENT TOFAUTI</div>
+        <div class="scan-sub">${guest.name}</div>
+        <div style="font-size:13px;margin-top:8px;color:#888;">Kadi hii ni ya event <strong>"${correctEvent?.name || 'nyingine'}"</strong>, si event uliyochagua sasa.</div>
+      </div>`;
+    document.getElementById('scanCountOk').textContent   = scanCountOk;
+    document.getElementById('scanCountFail').textContent = scanCountFail;
+    return;
+  }
+
   // Beep
   playBeep(guest ? (guest.used_count >= guest.group_size ? 'warn' : 'ok') : 'err');
 
@@ -3436,18 +3574,35 @@ async function verifyScan() {
 }
 
 async function confirmEntry(guestId, usedCount, groupSize) {
-  const extra    = parseInt(document.getElementById('confirmCount').value) || 1;
-  const newCount = usedCount + extra;
-  const newStatus = newCount >= groupSize ? 'Imekamilika' : 'Halali';
+  const extra = parseInt(document.getElementById('confirmCount').value) || 1;
+
+  // MUHIMU: soma used_count HALISI kutoka database papo hapo kabla ya kuandika -
+  // hii inapunguza sana hatari ya "race condition" endapo scanner NYINGINE
+  // ime-confirm mgeni huyu huyu sekunde chache tu zilizopita (mfano milango
+  // miwili tofauti ikithibitisha kadi moja karibu wakati mmoja).
+  const { data: freshGuest } = await sb.from('guests').select('used_count,group_size').eq('id', guestId).single();
+  const currentUsed = freshGuest?.used_count ?? usedCount;
+  const currentGroupSize = freshGuest?.group_size ?? groupSize;
+
+  if (currentUsed >= currentGroupSize) {
+    showToast('Onyo: mgeni huyu tayari amekamilisha group yake - huenda scanner nyingine imeshamthibitisha!', 'error');
+    document.getElementById('manualScanInput').value = '';
+    refreshLiveAttendedCount();
+    return;
+  }
+
+  const newCount = Math.min(currentUsed + extra, currentGroupSize);
+  const newStatus = newCount >= currentGroupSize ? 'Imekamilika' : 'Halali';
 
   await sb.from('guests').update({ used_count: newCount, status: newStatus }).eq('id', guestId);
-  showToast(`Wameingia ${extra}! Jumla: ${newCount}/${groupSize}`, 'success');
+  showToast(`Wameingia ${extra}! Jumla: ${newCount}/${currentGroupSize}`, 'success');
   document.getElementById('manualScanInput').value = '';
   document.getElementById('scanResult').innerHTML = `
     <div class="empty-state" style="padding:32px;">
       <div class="icon">🔍</div>
       <h3>Tayari! Scan inayofuata...</h3>
     </div>`;
+  refreshLiveAttendedCount();
 }
 
 function playBeep(type) {
