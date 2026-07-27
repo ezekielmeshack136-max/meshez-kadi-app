@@ -418,6 +418,21 @@
   }
   tr:hover td { background: var(--gray-50); }
 
+  /* Bandika (pin) column ya mwisho - "Vitendo" - upande wa kulia
+     ili vitufe vya edit/send/kadi vionekane muda wote bila
+     kuhitaji ku-scroll kulia kutafuta scrollbar chini. */
+  .table-wrap table th:last-child,
+  .table-wrap table td:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    background: white;
+    box-shadow: -6px 0 8px -6px rgba(0,0,0,0.12);
+    white-space: nowrap;
+  }
+  .table-wrap table th:last-child { background: var(--gray-50); z-index: 3; }
+  .table-wrap table tr:hover td:last-child { background: var(--gray-50); }
+
   /* Badge */
   .badge {
     display: inline-flex;
