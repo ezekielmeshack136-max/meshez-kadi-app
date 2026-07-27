@@ -44,6 +44,13 @@
     line-height: 1.6;
   }
 
+  .guest-name {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1A56DB;
+    margin: 6px 0 20px;
+  }
+
   .status-yes { color: #16A34A; }
   .status-no  { color: #DC2626; }
   .status-err { color: #CA8A04; }
@@ -58,13 +65,36 @@
   }
 
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  .btn-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .rsvp-btn {
+    padding: 14px 18px;
+    border-radius: 12px;
+    border: none;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: transform 0.15s, opacity 0.15s;
+  }
+  .rsvp-btn:active { transform: scale(0.97); }
+  .rsvp-btn:disabled { opacity: 0.6; cursor: default; }
+
+  .btn-yes { background: #DCFCE7; color: #16A34A; }
+  .btn-no  { background: #FEE2E2; color: #DC2626; }
 </style>
 </head>
 <body>
 
 <div class="card" id="card">
   <div class="spinner"></div>
-  <h1>Inathibitisha...</h1>
+  <h1>Inapakia...</h1>
   <p>Tafadhali subiri kidogo</p>
 </div>
 
@@ -74,24 +104,38 @@ const SUPABASE_KEY = 'sb_publishable_SMflxbKh4452586Q4ojrow_L4ZGq2uu';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-async function submitRsvp() {
-  const params = new URLSearchParams(window.location.search);
-  const cardId = params.get('id');
-  const status = params.get('status');
-  const card = document.getElementById('card');
+const card = document.getElementById('card');
+let currentCardId = null;
 
-  if (!cardId || !['yes', 'no'].includes(status)) {
-    card.innerHTML = `
-      <div class="icon">⚠️</div>
-      <h1 class="status-err">Link Batili</h1>
-      <p>Link hii haina taarifa sahihi. Tafadhali tumia link uliyotumiwa kwenye ujumbe wa WhatsApp.</p>`;
-    return;
-  }
+function showInvalidLink() {
+  card.innerHTML = `
+    <div class="icon">⚠️</div>
+    <h1 class="status-err">Link Batili</h1>
+    <p>Link hii haina taarifa sahihi. Tafadhali tumia link uliyotumiwa kwenye ujumbe wa WhatsApp.</p>`;
+}
+
+function showChoiceScreen(guestName) {
+  card.innerHTML = `
+    <div class="icon">📩</div>
+    <h1>Thibitisha Uwepo Wako</h1>
+    ${guestName ? `<div class="guest-name">${guestName}</div>` : ''}
+    <p>Tafadhali chagua moja kati ya chaguo hapa chini:</p>
+    <div class="btn-row">
+      <button class="rsvp-btn btn-yes" id="btnYes" onclick="submitChoice('yes')">✅ Nitahudhuria</button>
+      <button class="rsvp-btn btn-no" id="btnNo" onclick="submitChoice('no')">❌ Sitahudhuria</button>
+    </div>
+  `;
+}
+
+async function submitChoice(status) {
+  document.getElementById('btnYes').disabled = true;
+  document.getElementById('btnNo').disabled = true;
+  document.getElementById(status === 'yes' ? 'btnYes' : 'btnNo').textContent = 'Inatuma...';
 
   // "Last click wins": tunatuma hali mpya kila mara - hata kama alishajibu awali,
   // jibu la MWISHO alilobonyeza ndilo litakalobaki kwenye mfumo.
   const { data, error } = await sb.rpc('submit_rsvp', {
-    card_id_input: cardId,
+    card_id_input: currentCardId,
     status_input: status
   });
 
@@ -116,7 +160,23 @@ async function submitRsvp() {
   }
 }
 
-submitRsvp();
+function init() {
+  const params = new URLSearchParams(window.location.search);
+  const cardId = params.get('id');
+
+  if (!cardId) {
+    showInvalidLink();
+    return;
+  }
+
+  currentCardId = cardId;
+  // Hakuna haja ya kupata jina la mgeni kabla - moja kwa moja tunaonyesha
+  // chaguo mbili. Ukitaka jina lionekane hapo juu, unaweza kuongeza RPC
+  // ya kusoma jina peke yake (bila taarifa nyingine nyeti) baadaye.
+  showChoiceScreen(null);
+}
+
+init();
 </script>
 
 </body>
