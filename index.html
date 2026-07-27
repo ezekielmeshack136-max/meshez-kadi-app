@@ -3214,12 +3214,9 @@ function getBaseUrl() {
   return location.origin + location.pathname.replace(/[^/]*$/, '');
 }
 
-function getRsvpLinks(guest) {
+function getRsvpLink(guest) {
   const base = getBaseUrl();
-  return {
-    yes: `${base}rsvp.html?id=${encodeURIComponent(guest.card_id)}&status=yes`,
-    no:  `${base}rsvp.html?id=${encodeURIComponent(guest.card_id)}&status=no`
-  };
+  return `${base}rsvp.html?id=${encodeURIComponent(guest.card_id)}`;
 }
 
 function formatTimeAMPM(time24) {
@@ -3238,16 +3235,14 @@ function buildInvitationMessage(guest, eventData) {
   const date       = eventData?.event_date || '';
   const time       = formatTimeAMPM(eventData?.event_time || '');
   const locationUrl = eventData?.location_url || '';
-  const rsvp       = getRsvpLinks(guest);
+  const rsvpLink   = getRsvpLink(guest);
 
   let msg = `Habari *${guest.name}*\n`;
   msg += `Umealikwa kwenye *${eventName}*\n`;
   if (date) msg += `Tarehe: ${date}\n`;
   if (time) msg += `Saa: ${time}\n`;
   if (locationUrl) msg += `📍 Maelekezo (njia) ya kufika: ${locationUrl}\n`;
-  msg += `\nTafadhali thibitisha uwepo wako kwa kujibu ujumbe huu:\n`;
-  msg += `NITAHUDHURIA: ${rsvp.yes}\n`;
-  msg += `SITAHUDHURIA: ${rsvp.no}\n`;
+  msg += `\nTafadhali thibitisha uwepo wako: ${rsvpLink}\n`;
   msg += `\nTafadhali ihifadhi na uionyeshe mlangoni siku ya tukio.\n`;
   msg += `\nKaribu sana!`;
   return msg;
@@ -3385,8 +3380,9 @@ async function processWaQueueStep() {
       const imageUrl = await generateAndUploadCard(g.id);
       const phone = formatPhoneForWhatsApp(g.phone);
       const bodyParams = buildWhatsAppBodyParams(g, waQueueEventData);
-      const buttonUrlSuffix = buildLocationButtonSuffix(waQueueEventData);
-      const outcome = await callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, buttonUrlSuffix);
+      const rsvpButtonSuffix = buildRsvpButtonSuffix(g);
+      const locationButtonSuffix = buildLocationButtonSuffix(waQueueEventData);
+      const outcome = await callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, rsvpButtonSuffix, locationButtonSuffix);
 
       if (outcome.ok) {
         await sb.from('guests').update({ wa_sent: 'yes' }).eq('id', g.id);
@@ -3412,10 +3408,11 @@ async function sendWhatsAppInvite(guestId) {
   const template = await getTemplateForEvent(guest.event_id, eventData?.type);
   if (!template) return showToast('Hakuna template ya kadi kwa event hii - Meta inahitaji picha ya header', 'error');
 
-  const buttonUrlSuffix = buildLocationButtonSuffix(eventData);
-  if (!buttonUrlSuffix) {
+  const locationButtonSuffix = buildLocationButtonSuffix(eventData);
+  if (!locationButtonSuffix) {
     return showToast('Weka "Coordinates" za event hii kwanza (bonyeza 📍) - template inahitaji link ya location', 'error');
   }
+  const rsvpButtonSuffix = buildRsvpButtonSuffix(guest);
 
   showToast('Inatengeneza kadi na kutuma...', 'info');
 
@@ -3429,7 +3426,7 @@ async function sendWhatsAppInvite(guestId) {
   const phone = formatPhoneForWhatsApp(guest.phone);
   const bodyParams = buildWhatsAppBodyParams(guest, eventData);
 
-  const outcome = await callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, buttonUrlSuffix);
+  const outcome = await callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, rsvpButtonSuffix, locationButtonSuffix);
   if (!outcome.ok) {
     return showToast('Imeshindwa kutuma WhatsApp: ' + outcome.error, 'error');
   }
@@ -3494,7 +3491,14 @@ function buildLocationButtonSuffix(eventData) {
   return url;
 }
 
-async function callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, buttonUrlSuffix) {
+// Kitufe cha 1 (index 0) - "Thibitisha Uwepo" - hufungua rsvp.html?id=<card_id>
+// ambapo mgeni anachagua Nitahudhuria/Sitahudhuria HUKO HUKO kwenye ukurasa,
+// badala ya Quick Reply buttons za zamani (zilizoondolewa kwenye template).
+function buildRsvpButtonSuffix(guest) {
+  return guest?.card_id || '';
+}
+
+async function callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, rsvpButtonSuffix, locationButtonSuffix) {
   const { data: sessionData } = await sb.auth.getSession();
   const token = sessionData?.session?.access_token || SUPABASE_KEY;
 
@@ -3505,7 +3509,7 @@ async function callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, buttonU
       'Authorization': `Bearer ${token}`,
       'apikey': SUPABASE_KEY
     },
-    body: JSON.stringify({ phone, imageUrl, bodyParams, buttonUrlSuffix })
+    body: JSON.stringify({ phone, imageUrl, bodyParams, rsvpButtonSuffix, locationButtonSuffix })
   });
 
   let result = {};
