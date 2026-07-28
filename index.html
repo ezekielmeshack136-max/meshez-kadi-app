@@ -2802,7 +2802,7 @@ async function loadEventGuests(clearSearch = true) {
   const eventId = document.getElementById('invEventSelect').value;
   if (!eventId) return;
 
-  const { data: guests } = await sb.from('guests').select('*').eq('event_id', eventId);
+  const { data: guests } = await sb.from('guests').select('*').eq('event_id', eventId).order('sequence_number', { ascending: true });
   const total   = guests?.length || 0;
   const sent    = guests?.filter(g => g.sms_sent === 'yes' || g.wa_sent === 'yes').length || 0;
   const pending = total - sent;
@@ -3234,6 +3234,17 @@ function getRsvpLink(guest) {
   return `${base}rsvp.html?id=${encodeURIComponent(guest.card_id)}`;
 }
 
+// Link ya ukurasa wetu wenyewe (location.html) - kama vile RSVP, mgeni anafungua
+// ukurasa huu kwanza kisha anabonyeza kitufe cha "Fungua Maelekezo" HUKO HUKO.
+// Hii inaepuka tatizo la kivinjari cha ndani cha WhatsApp (in-app browser) kushindwa
+// kupata GPS sahihi linapofungua link ya Google Maps moja kwa moja kutoka kwenye
+// template button - badala yake mgeni anabonyeza anchor tag halisi ndani ya ukurasa
+// wa kawaida wa wavuti, jambo linalofanya simu ifungue app halisi ya Maps kwa uhakika.
+function getLocationLink(guest) {
+  const base = getBaseUrl();
+  return `${base}location.html?id=${encodeURIComponent(guest.card_id)}`;
+}
+
 function formatTimeAMPM(time24) {
   if (!time24) return '';
   const [hStr, mStr] = time24.split(':');
@@ -3348,7 +3359,7 @@ async function sendInvitations() {
       showToast('Onyo: hakuna template ya kadi kwa event hii - ujumbe utatumwa bila picha ya kadi', 'info');
     }
 
-    if (!buildLocationButtonSuffix(eventData)) {
+    if (!hasEventCoordinates(eventData)) {
       return showToast('Weka "Coordinates" za event hii kwanza (bonyeza 📍 kwenye event) - template ya WhatsApp inahitaji link ya location', 'error');
     }
 
@@ -3396,7 +3407,7 @@ async function processWaQueueStep() {
       const phone = formatPhoneForWhatsApp(g.phone);
       const bodyParams = buildWhatsAppBodyParams(g, waQueueEventData);
       const rsvpButtonSuffix = buildRsvpButtonSuffix(g);
-      const locationButtonSuffix = buildLocationButtonSuffix(waQueueEventData);
+      const locationButtonSuffix = buildLocationButtonSuffix(g);
       const outcome = await callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, rsvpButtonSuffix, locationButtonSuffix);
 
       if (outcome.ok) {
@@ -3423,10 +3434,10 @@ async function sendWhatsAppInvite(guestId) {
   const template = await getTemplateForEvent(guest.event_id, eventData?.type);
   if (!template) return showToast('Hakuna template ya kadi kwa event hii - Meta inahitaji picha ya header', 'error');
 
-  const locationButtonSuffix = buildLocationButtonSuffix(eventData);
-  if (!locationButtonSuffix) {
+  if (!hasEventCoordinates(eventData)) {
     return showToast('Weka "Coordinates" za event hii kwanza (bonyeza 📍) - template inahitaji link ya location', 'error');
   }
+  const locationButtonSuffix = buildLocationButtonSuffix(guest);
   const rsvpButtonSuffix = buildRsvpButtonSuffix(guest);
 
   showToast('Inatengeneza kadi na kutuma...', 'info');
@@ -3490,20 +3501,23 @@ function buildWhatsAppBodyParams(guest, eventData) {
 }
 
 // Hujenga suffix ya kitufe cha "location" (Dynamic URL button, index 2 = kitufe cha 3).
-// Kwa chaguo-msingi hutumia 'coordinates' (lat,lng) kama query kwenye Google Maps.
-//
-// MUHIMU SANA: Ili guest aone MAELEKEZO/NJIA (directions) kutoka alipo hadi eneo la
-// tukio (badala ya kuona pini tu), Template yako kwenye Meta Business Manager LAZIMA
-// itumie DIRECTIONS API kama Base URL ya kitufe, si SEARCH API:
-//   SAHIHI (directions):  https://www.google.com/maps/dir/?api=1&destination={{1}}
-//   SI SAHIHI (pini tu):  https://www.google.com/maps/search/?api=1&query={{1}}
-// Hii inabadilishwa Meta Business Manager > WhatsApp Manager > Message Templates,
-// SIYO humu kwenye code - code hii inatuma tu coordinates kama {{1}}.
-function buildLocationButtonSuffix(eventData) {
-  const coords = (eventData?.coordinates || '').trim();
-  if (coords) return coords;
-  const url = (eventData?.location_url || '').trim();
-  return url;
+// SASA: badala ya kutuma coordinates moja kwa moja kwa Google Maps (ambako
+// kivinjari cha ndani cha WhatsApp mara nyingi hushindwa kupata GPS sahihi na
+// kuonyesha "ulipo wewe" badala ya njia), tunatuma card_id ya mgeni - kama vile
+// kitufe cha RSVP. Meta Business Manager > WhatsApp Manager > Message Templates
+// Base URL ya kitufe cha Location LAZIMA sasa iwe (badilisha huko, SIYO humu):
+//   https://<domain-yako>/<folda-ya-app>/location.html?id={{1}}
+// Mgeni akifungua ukurasa huo, anabonyeza kitufe cha "Fungua Maelekezo" HUKO
+// HUKO - hilo ndilo linalofanya simu ifungue app halisi ya Google Maps kwa uhakika.
+function buildLocationButtonSuffix(guest) {
+  return guest?.card_id || '';
+}
+
+// Inarudisha true tu ikiwa event ina coordinates zilizowekwa - hii ndiyo lazima
+// ithibitishwe kabla ya kutuma (bila coordinates, location.html haitaweza
+// kuonyesha maelekezo kwa mgeni).
+function hasEventCoordinates(eventData) {
+  return !!(eventData?.coordinates || '').trim();
 }
 
 // Kitufe cha 1 (index 0) - "Thibitisha Uwepo" - hufungua rsvp.html?id=<card_id>
