@@ -398,7 +398,7 @@
 
   /* Cards */
   .card {
-    background: rgba(255,255,255,0.85);
+    background: linear-gradient(165deg, rgba(255,255,255,0.92), rgba(238,244,255,0.85));
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     border-radius: var(--radius);
@@ -444,6 +444,15 @@
   }
   .stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(15,23,42,0.06), 0 16px 28px -12px rgba(15,23,42,0.16); }
 
+  .stats-grid .stat-card:nth-child(4n+1) { background: linear-gradient(160deg, #F0F6FF, #E4EDFF); }
+  .stats-grid .stat-card:nth-child(4n+1)::before { background: linear-gradient(90deg, #1A56DB, #3B82F6); }
+  .stats-grid .stat-card:nth-child(4n+2) { background: linear-gradient(160deg, #FFF6ED, #FFE9D5); }
+  .stats-grid .stat-card:nth-child(4n+2)::before { background: linear-gradient(90deg, #F97316, #FB923C); }
+  .stats-grid .stat-card:nth-child(4n+3) { background: linear-gradient(160deg, #F0FDF4, #DCFCE7); }
+  .stats-grid .stat-card:nth-child(4n+3)::before { background: linear-gradient(90deg, #16A34A, #22C55E); }
+  .stats-grid .stat-card:nth-child(4n+4) { background: linear-gradient(160deg, #FBF0FF, #F3E4FF); }
+  .stats-grid .stat-card:nth-child(4n+4)::before { background: linear-gradient(90deg, #A855F7, #C084FC); }
+
   .stat-icon svg { width: 20px; height: 20px; stroke-width: 2px; }
 
   .stat-icon {
@@ -474,12 +483,12 @@
     text-align: left;
     padding: 10px 14px;
     font-size: 11px;
-    font-weight: 600;
-    color: var(--gray-400);
+    font-weight: 700;
+    color: var(--blue-dark);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     border-bottom: 1px solid var(--gray-200);
-    background: var(--gray-50);
+    background: linear-gradient(180deg, var(--blue-light), #F2F6FF);
   }
   td {
     padding: 12px 14px;
@@ -487,7 +496,7 @@
     border-bottom: 1px solid var(--gray-100);
     color: var(--gray-800);
   }
-  tr:hover td { background: var(--gray-50); }
+  tr:hover td { background: var(--blue-light); }
 
   /* Bandika (pin) column ya mwisho - "Vitendo" - upande wa kulia
      ili vitufe vya edit/send/kadi vionekane muda wote bila
@@ -501,8 +510,8 @@
     box-shadow: -6px 0 8px -6px rgba(0,0,0,0.12);
     white-space: nowrap;
   }
-  .table-wrap table th:last-child { background: var(--gray-50); z-index: 3; }
-  .table-wrap table tr:hover td:last-child { background: var(--gray-50); }
+  .table-wrap table th:last-child { background: var(--blue-light); z-index: 3; }
+  .table-wrap table tr:hover td:last-child { background: var(--blue-light); }
 
   /* Badge */
   .badge {
@@ -618,7 +627,7 @@
   .modal-overlay.open { display: flex; }
 
   .modal {
-    background: white;
+    background: linear-gradient(165deg, #FFFFFF 0%, #F5F8FF 100%);
     border-radius: 16px;
     width: 100%;
     max-width: 500px;
@@ -635,7 +644,7 @@
     justify-content: space-between;
     position: sticky;
     top: 0;
-    background: white;
+    background: linear-gradient(90deg, var(--blue-light), #F5F8FF);
     border-radius: 16px 16px 0 0;
   }
 
@@ -973,22 +982,22 @@
       <div class="page active" id="page-dashboard">
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-icon" style="background:#EBF2FF;">🎉</div>
+            <div class="stat-icon" style="background:linear-gradient(135deg,#EBF2FF,#DCE9FF);"><i data-lucide="calendar-days" style="color:#1A56DB"></i></div>
             <div class="stat-value" id="statEvents">0</div>
             <div class="stat-label">Events Zote</div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon" style="background:#DCFCE7;">🎫</div>
+            <div class="stat-icon" style="background:linear-gradient(135deg,#DCFCE7,#BBF7D0);"><i data-lucide="ticket" style="color:#16A34A"></i></div>
             <div class="stat-value" id="statKadi">0</div>
             <div class="stat-label">Kadi Zilizotengenezwa</div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon" style="background:#FFF4ED;">👥</div>
+            <div class="stat-icon" style="background:linear-gradient(135deg,#FFF4ED,#FFE4D1);"><i data-lucide="users" style="color:#F97316"></i></div>
             <div class="stat-value" id="statWageni">0</div>
             <div class="stat-label">Wageni Wote</div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon" style="background:#F0FDF4;">✅</div>
+            <div class="stat-icon" style="background:linear-gradient(135deg,#F0FDF4,#DCFCE7);"><i data-lucide="check-circle-2" style="color:#16A34A"></i></div>
             <div class="stat-value" id="statWaliofika">0</div>
             <div class="stat-label">Waliofika</div>
           </div>
@@ -1335,34 +1344,34 @@
         </div>
         <div class="grid-3" style="margin-bottom:16px;">
           <div class="stat-card">
-            <div class="stat-icon" style="background:#DCFCE7;">✅</div>
+            <div class="stat-icon" style="background:linear-gradient(135deg,#DCFCE7,#BBF7D0);"><i data-lucide="check-circle-2" style="color:#16A34A"></i></div>
             <div class="stat-value" id="waOk">0</div>
             <div class="stat-label">Zilizotumwa</div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon" style="background:#FEE2E2;">❌</div>
+            <div class="stat-icon" style="background:linear-gradient(135deg,#FEE2E2,#FECACA);"><i data-lucide="x-circle" style="color:#DC2626"></i></div>
             <div class="stat-value" id="waFail">0</div>
             <div class="stat-label">Zilizoshindwa</div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon" style="background:#FEF9C3;">⏳</div>
+            <div class="stat-icon" style="background:linear-gradient(135deg,#FEF9C3,#FEF08A);"><i data-lucide="clock" style="color:#D97706"></i></div>
             <div class="stat-value" id="waPending">0</div>
             <div class="stat-label">Zinasubiri</div>
           </div>
         </div>
         <div class="grid-3" style="margin-bottom:16px;">
           <div class="stat-card">
-            <div class="stat-icon" style="background:#DCFCE7;">🙋</div>
+            <div class="stat-icon" style="background:linear-gradient(135deg,#DCFCE7,#BBF7D0);"><i data-lucide="user-check" style="color:#16A34A"></i></div>
             <div class="stat-value" id="rsvpYes">0</div>
             <div class="stat-label">Watahudhuria</div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon" style="background:#FEE2E2;">🙅</div>
+            <div class="stat-icon" style="background:linear-gradient(135deg,#FEE2E2,#FECACA);"><i data-lucide="user-x" style="color:#DC2626"></i></div>
             <div class="stat-value" id="rsvpNo">0</div>
             <div class="stat-label">Hawatohudhuria</div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon" style="background:var(--gray-100);">❔</div>
+            <div class="stat-icon" style="background:var(--gray-100);"><i data-lucide="help-circle" style="color:#64748B"></i></div>
             <div class="stat-value" id="rsvpPending">0</div>
             <div class="stat-label">Bado Hawajajibu</div>
           </div>
@@ -1394,22 +1403,22 @@
         </div>
         <div class="stats-grid" style="margin-bottom:20px;">
           <div class="stat-card">
-            <div class="stat-icon" style="background:var(--blue-light);">🎉</div>
+            <div class="stat-icon" style="background:linear-gradient(135deg,#EBF2FF,#DCE9FF);"><i data-lucide="calendar-days" style="color:#1A56DB"></i></div>
             <div class="stat-value" id="repEvents">0</div>
             <div class="stat-label">Events Zote</div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon" style="background:#DCFCE7;">🎫</div>
+            <div class="stat-icon" style="background:linear-gradient(135deg,#DCFCE7,#BBF7D0);"><i data-lucide="ticket" style="color:#16A34A"></i></div>
             <div class="stat-value" id="repKadi">0</div>
             <div class="stat-label">Kadi Zote</div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon" style="background:#FFF4ED;">📨</div>
+            <div class="stat-icon" style="background:linear-gradient(135deg,#FFF4ED,#FFE4D1);"><i data-lucide="send" style="color:#F97316"></i></div>
             <div class="stat-value" id="repSms">0</div>
             <div class="stat-label">SMS Zilizotumwa</div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon" style="background:#F0FDF4;">💬</div>
+            <div class="stat-icon" style="background:linear-gradient(135deg,#F0FDF4,#DCFCE7);"><i data-lucide="message-circle" style="color:#16A34A"></i></div>
             <div class="stat-value" id="repWa">0</div>
             <div class="stat-label">WA Zilizotumwa</div>
           </div>
