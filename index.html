@@ -1095,10 +1095,10 @@
 
         <div class="card" style="margin-bottom:16px;" id="positionEditorCard">
           <div class="card-header">
-            <div class="card-title">🎨 Mipangilio ya Kadi (Positions)</div>
+            <div class="card-title"><i data-lucide="palette" class="icon" style="color:#A855F7"></i> Mipangilio ya Kadi (Positions)</div>
           </div>
           <div id="editingTemplateLabel" style="font-size:13px;color:var(--orange);font-weight:600;margin-bottom:10px;padding:8px 12px;background:#FFF7ED;border-radius:8px;">
-            👇 Chagua template kwenye orodha ya chini ili kuanza kuhariri mpangilio wake
+            <i data-lucide="arrow-down" style="color:#F97316;width:14px;height:14px;vertical-align:-2px;"></i> Chagua template kwenye orodha ya chini ili kuanza kuhariri mpangilio wake
           </div>
           <p style="font-size:13px;color:var(--gray-600);margin-bottom:16px;">
             Weka positions za jina, QR code, na label kwenye template yako
@@ -1134,10 +1134,10 @@
             </div>
           </div>
           <button class="btn btn-primary" style="width:auto;" onclick="savePositions()">
-            💾 Hifadhi Mipangilio
+            <i data-lucide="save" style="width:16px;height:16px;"></i> Hifadhi Mipangilio
           </button>
           <div style="margin-top:20px;text-align:center;">
-  <p style="font-size:13px;color:var(--gray-600);margin-bottom:10px;">🔍 Preview ya Moja kwa Moja</p>
+  <p style="font-size:13px;color:var(--gray-600);margin-bottom:10px;"><i data-lucide="search" style="color:#3B82F6;width:14px;height:14px;vertical-align:-2px;"></i> Preview ya Moja kwa Moja</p>
   <canvas id="positionPreviewCanvas" style="max-width:100%;border:1px solid var(--gray-200);border-radius:8px;"></canvas>
   <div id="previewEmptyState" class="empty-state" style="display:none;">
     <p>Upload template kwanza ili uone preview</p>
@@ -1146,10 +1146,10 @@
         </div>
 
         <div class="card">
-          <div class="card-title" style="margin-bottom:16px;">📁 Templates Zilizopakiwa</div>
+          <div class="card-title" style="margin-bottom:16px;"><i data-lucide="folder" class="icon" style="color:#3B82F6"></i> Templates Zilizopakiwa</div>
           <div id="templatesList">
             <div class="empty-state">
-              <div class="icon">🎨</div>
+              <div class="icon"><i data-lucide="palette" style="color:#A855F7;width:32px;height:32px;"></i></div>
               <h3>Hakuna templates bado</h3>
               <p>Upload template ya kadi yako</p>
             </div>
@@ -1949,8 +1949,8 @@
 <div class="modal-overlay" id="uploadTemplateModal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">🎨 Upload Template</div>
-      <button class="modal-close" onclick="closeModal('uploadTemplateModal')">✕</button>
+      <div class="modal-title"><i data-lucide="upload" class="icon" style="color:#A855F7"></i> Upload Template</div>
+      <button class="modal-close" onclick="closeModal('uploadTemplateModal')"><i data-lucide="x" style="width:16px;height:16px;"></i></button>
     </div>
     <div class="modal-body">
       <div class="form-group">
@@ -1970,15 +1970,15 @@
       <div class="form-group">
         <label>Aina (kwa lebo tu)</label>
         <select id="tplType">
-          <option value="harusi">💍 Harusi</option>
-          <option value="sendoff">🎊 Sendoff</option>
-          <option value="birthday">🎂 Birthday</option>
+          <option value="harusi">Harusi</option>
+          <option value="sendoff">Sendoff</option>
+          <option value="birthday">Birthday</option>
         </select>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('uploadTemplateModal')">Ghairi</button>
-      <button class="btn btn-primary" onclick="uploadTemplate()">📤 Upload</button>
+      <button class="btn btn-primary" onclick="uploadTemplate()"><i data-lucide="upload" style="width:16px;height:16px;"></i> Upload</button>
     </div>
   </div>
 </div>
@@ -4590,7 +4590,8 @@ async function selectTemplateForEditing(templateId) {
   fillPositionInputs(pos);
 
   const label = document.getElementById('editingTemplateLabel');
-  if (label) label.innerHTML = `✏️ Unahariri mpangilio wa: <strong>${t.name}</strong>`;
+  if (label) label.innerHTML = `<i data-lucide="pencil" style="color:#F97316;width:14px;height:14px;vertical-align:-2px;"></i> Unahariri mpangilio wa: <strong>${t.name}</strong>`;
+  try { lucide.createIcons(); } catch(e) {}
 
   renderPositionPreview();
   document.getElementById('positionEditorCard')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -4739,7 +4740,8 @@ async function loadTemplates() {
   const { data } = await sb.from('templates').select('*').eq('user_id', ORG_OWNER_ID);
   const div = document.getElementById('templatesList');
   if (!data || data.length === 0) {
-    div.innerHTML = `<div class="empty-state"><div class="icon">🎨</div><h3>Hakuna templates bado</h3></div>`;
+    div.innerHTML = `<div class="empty-state"><div class="icon"><i data-lucide="palette" style="color:#A855F7;width:32px;height:32px;"></i></div><h3>Hakuna templates bado</h3></div>`;
+    try { lucide.createIcons(); } catch(e) {}
     return;
   }
   const { data: allEvents } = await sb.from('events').select('id,name').eq('user_id', ORG_OWNER_ID);
@@ -4752,13 +4754,14 @@ async function loadTemplates() {
       <div style="flex:1;">
         <div style="font-size:13px;font-weight:600;">${t.name}</div>
         <span class="badge badge-blue" style="font-size:10px;">${t.type}</span>
-        ${t.event_id ? `<span class="badge badge-green" style="font-size:10px;">📌 ${eventNameById[t.event_id] || 'Event'}</span>` : `<span class="badge" style="font-size:10px;background:#FEF3C7;color:#92400E;">⚠️ Hakuna event (ya zamani)</span>`}
-        ${t.positions ? `<span class="badge" style="font-size:10px;background:#DBEAFE;color:#1E40AF;">✓ Mpangilio umewekwa</span>` : `<span class="badge" style="font-size:10px;background:#FEE2E2;color:#991B1B;">Mpangilio bado (default)</span>`}
+        ${t.event_id ? `<span class="badge badge-green" style="font-size:10px;"><i data-lucide="pin" style="width:10px;height:10px;vertical-align:-1px;"></i> ${eventNameById[t.event_id] || 'Event'}</span>` : `<span class="badge" style="font-size:10px;background:#FEF3C7;color:#92400E;"><i data-lucide="triangle-alert" style="width:10px;height:10px;vertical-align:-1px;"></i> Hakuna event (ya zamani)</span>`}
+        ${t.positions ? `<span class="badge" style="font-size:10px;background:#DBEAFE;color:#1E40AF;"><i data-lucide="check" style="width:10px;height:10px;vertical-align:-1px;"></i> Mpangilio umewekwa</span>` : `<span class="badge" style="font-size:10px;background:#FEE2E2;color:#991B1B;">Mpangilio bado (default)</span>`}
       </div>
-      <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();selectTemplateForEditing('${t.id}')">✏️ Hariri</button>
-      <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteTemplate('${t.id}','${t.file_path}')">🗑️</button>
+      <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();selectTemplateForEditing('${t.id}')" title="Hariri"><i data-lucide="pencil" style="color:#A855F7;width:14px;height:14px;"></i></button>
+      <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteTemplate('${t.id}','${t.file_path}')" title="Futa"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
     </div>
   `).join('');
+  try { lucide.createIcons(); } catch(e) {}
 }
 
 async function deleteTemplate(id, path) {
