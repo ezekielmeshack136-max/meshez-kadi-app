@@ -2999,6 +2999,20 @@ async function toggleEventDisplayFlag(eventId, field, currentlyOn) {
   const newVal = !currentlyOn;
   const { error } = await sb.from('events').update({ [field]: newVal }).eq('id', eventId);
   if (error) return showToast('Kosa: ' + error.message, 'error');
+
+  // USANISI: sasisha templates zote za event hii (vipShow/labelShow ndani ya positions
+  // JSON) ili zifanane KABISA na kitufe hiki cha haraka cha board - ili "board",
+  // "Hariri Event" na "Template Position Editor" zisiwahi kutofautiana.
+  const posKey = field === 'show_vip_badge' ? 'vipShow' : 'labelShow';
+  const { data: tpls } = await sb.from('templates').select('id,positions').eq('event_id', eventId);
+  if (tpls && tpls.length) {
+    for (const t of tpls) {
+      const mergedPos = { ...(t.positions || DEFAULT_POSITIONS), [posKey]: newVal };
+      const { error: tplErr } = await sb.from('templates').update({ positions: mergedPos }).eq('id', t.id);
+      if (tplErr) console.error('Imeshindwa kusasisha template', t.id, tplErr.message);
+    }
+  }
+
   const label = field === 'show_vip_badge' ? 'Badge ya VIP/VVIP' : 'Group Size Label';
   showToast(`${label} ${newVal ? 'imewashwa ✅' : 'imezimwa ❌'}`, 'success');
   loadEvents();
@@ -3104,7 +3118,8 @@ async function saveNewEvent() {
     if (tpls && tpls.length) {
       for (const t of tpls) {
         const mergedPos = { ...(t.positions || DEFAULT_POSITIONS), vipShow: showVipBadge, labelShow: showGroupLabel };
-        await sb.from('templates').update({ positions: mergedPos }).eq('id', t.id);
+        const { error: tplErr } = await sb.from('templates').update({ positions: mergedPos }).eq('id', t.id);
+        if (tplErr) console.error('Imeshindwa kusasisha template', t.id, tplErr.message);
       }
     }
   }
@@ -5304,10 +5319,11 @@ async function savePositions() {
   // show_vip_badge/show_group_label ya Event hiyo ili zifanane KABISA na hapa - ili
   // "Event Management" (Hariri Event) na "Template" zisiwahi kutofautiana tena.
   if (selectedTemplateForEdit.event_id) {
-    await sb.from('events').update({
+    const { error: evErr } = await sb.from('events').update({
       show_vip_badge: pos.vipShow,
       show_group_label: pos.labelShow,
     }).eq('id', selectedTemplateForEdit.event_id);
+    if (evErr) console.error('Imeshindwa kusasisha event', selectedTemplateForEdit.event_id, evErr.message);
   }
 
   showToast(`Mpangilio wa "${selectedTemplateForEdit.name}" umehifadhiwa!`, 'success');
