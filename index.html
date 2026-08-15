@@ -1117,6 +1117,21 @@
                 <label>Font Size ya Jina</label>
                 <input type="number" id="posJinaFont" value="75" placeholder="75" oninput="renderPositionPreview()">
               </div>
+              <div class="form-group">
+                <label><i data-lucide="palette" class="icon" style="color:#A855F7;width:14px;height:14px;vertical-align:-2px;"></i> Rangi ya Jina</label>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <select id="posJinaColor" onchange="document.getElementById('jinaColorSwatch').style.background=this.value;renderPositionPreview()" style="flex:1;">
+                    <option value="#FFFFFF">White</option>
+                    <option value="#000000" selected>Black</option>
+                    <option value="#EF4444">Red</option>
+                    <option value="#16A34A">Green</option>
+                    <option value="#3B82F6">Blue</option>
+                    <option value="#1E3A8A">Dark Blue</option>
+                    <option value="#EAB308">Yellow</option>
+                  </select>
+                  <span id="jinaColorSwatch" title="Muonekano wa rangi" style="display:inline-block;width:30px;height:30px;border-radius:6px;border:1px solid var(--gray-200);background:#000000;flex-shrink:0;"></span>
+                </div>
+              </div>
             </div>
             <div>
               <div class="form-group">
@@ -4568,13 +4583,15 @@ async function downloadEventInvoice(eventId) {
 }
 
 // ===== TEMPLATES =====
-const DEFAULT_POSITIONS = { jinaX: 709, jinaY: 381, jinaFont: 75, qrX: 872, qrY: 1662, qrSize: 250 };
+const DEFAULT_POSITIONS = { jinaX: 709, jinaY: 381, jinaFont: 75, jinaColor: '#000000', qrX: 872, qrY: 1662, qrSize: 250 };
 let selectedTemplateForEdit = null; // template inayohaririwa sasa kwenye Position Management
 
 function fillPositionInputs(pos) {
   document.getElementById('posJinaX').value = pos.jinaX;
   document.getElementById('posJinaY').value = pos.jinaY;
   document.getElementById('posJinaFont').value = pos.jinaFont;
+  document.getElementById('posJinaColor').value = pos.jinaColor || '#000000';
+  document.getElementById('jinaColorSwatch').style.background = pos.jinaColor || '#000000';
   document.getElementById('posQrX').value = pos.qrX;
   document.getElementById('posQrY').value = pos.qrY;
   document.getElementById('posQrSize').value = pos.qrSize;
@@ -4602,6 +4619,7 @@ async function savePositions() {
     jinaX: document.getElementById('posJinaX').value,
     jinaY: document.getElementById('posJinaY').value,
     jinaFont: document.getElementById('posJinaFont').value,
+    jinaColor: document.getElementById('posJinaColor').value,
     qrX: document.getElementById('posQrX').value,
     qrY: document.getElementById('posQrY').value,
     qrSize: document.getElementById('posQrSize').value,
@@ -4638,6 +4656,7 @@ async function renderPositionPreview() {
     jinaX: parseInt(document.getElementById('posJinaX').value) || 0,
     jinaY: parseInt(document.getElementById('posJinaY').value) || 0,
     jinaFont: parseInt(document.getElementById('posJinaFont').value) || 40,
+    jinaColor: document.getElementById('posJinaColor').value || '#000000',
     qrX: parseInt(document.getElementById('posQrX').value) || 0,
     qrY: parseInt(document.getElementById('posQrY').value) || 0,
     qrSize: parseInt(document.getElementById('posQrSize').value) || 100,
@@ -4651,7 +4670,7 @@ async function renderPositionPreview() {
     canvas.height = bgImg.height;
     ctx.drawImage(bgImg, 0, 0);
 
-    ctx.fillStyle = '#1E293B';
+    ctx.fillStyle = pos.jinaColor;
     ctx.font = `bold ${pos.jinaFont}px Inter, sans-serif`;
     ctx.textAlign = 'center';
     ctx.fillText('Jina Mfano', pos.jinaX, pos.jinaY);
@@ -4890,7 +4909,7 @@ async function generateCard(guestId) {
     ctx.drawImage(bgImg, 0, 0);
 
     // Andika jina la mgeni
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = pos.jinaColor || '#000000';
     ctx.font = `bold ${pos.jinaFont}px Inter, sans-serif`;
     ctx.textAlign = 'center';
     ctx.fillText(guest.name, parseInt(pos.jinaX), parseInt(pos.jinaY));
@@ -4934,7 +4953,7 @@ function generateSingleCardBlob(guest, template, pos) {
       canvas.height = bgImg.height;
       ctx.drawImage(bgImg, 0, 0);
 
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = pos.jinaColor || '#000000';
       ctx.font = `bold ${pos.jinaFont}px Inter, sans-serif`;
       ctx.textAlign = 'center';
       ctx.fillText(guest.name, parseInt(pos.jinaX), parseInt(pos.jinaY));
