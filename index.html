@@ -1342,8 +1342,8 @@
   <button class="btn btn-outline btn-sm" onclick="downloadGuestsListCSV()" title="Pakua orodha ya wageni pamoja na RSVP">📥 Pakua Wageni (CSV)</button>
   <button class="btn btn-orange btn-sm" onclick="generateAllCards()">📦 Pakua Kadi Zote (ZIP)</button>
   <button class="btn btn-outline btn-sm" id="uploadAllCardsBtn" onclick="handleUploadAllCards()">☁️ Pakia Kadi Zote Bucket</button>
-  <button class="btn btn-outline btn-sm" onclick="openBulkImportModal()">📥 Bulk Import (Excel)</button>
-  <button class="btn btn-outline btn-sm" onclick="showModal('addGuestModal')">+ Mgeni Mpya</button>
+  <button class="btn btn-outline btn-sm" onclick="openBulkImportModal('invitations')">📥 Bulk Import (Excel)</button>
+  <button class="btn btn-outline btn-sm" onclick="openAddGuestModal('invitations')">+ Mgeni Mpya</button>
 </div>
           </div>
           <div style="padding:0 0 12px;">
@@ -1376,24 +1376,26 @@
       <div class="page" id="page-rsvp">
         <div style="margin-bottom:20px;">
           <h2 style="font-size:18px;font-weight:700;">RSVP - Ujumbe wa Shukrani</h2>
-          <p style="font-size:13px;color:var(--gray-400);margin-top:2px;">Andika na tuma SMS za shukrani kwa wageni wa event husika</p>
+          <p style="font-size:13px;color:var(--gray-400);margin-top:2px;">Andika na tuma SMS kwa wageni wa event, au kwa "Folder" huru (mfano: SMS za michango) hata kama event bado halijatengenezwa</p>
         </div>
 
         <div class="card" style="margin-bottom:16px;">
           <div class="card-header">
-            <div class="card-title">📋 Chagua Event</div>
+            <div class="card-title">📋 Chagua Event au Folder</div>
+            <button class="btn btn-outline btn-sm" onclick="openNewFolderModal()">📁 + Folder Mpya</button>
           </div>
           <div class="form-group">
-            <label>Event</label>
+            <label>Event / Folder</label>
             <select id="rsvpEventSelect" onchange="onRsvpEventChange()">
-              <option value="">-- Chagua Event --</option>
+              <option value="">-- Chagua Event au Folder --</option>
             </select>
+            <p style="font-size:11px;color:var(--gray-400);margin-top:6px;">Huna event bado? Tengeneza "Folder" - inakuwezesha kupakia/kuongeza contacts na kutuma SMS moja kwa moja, bila kuhitaji kutengeneza event kamili.</p>
           </div>
           <div id="rsvpEventStats" style="display:none;">
             <div style="display:flex;gap:12px;margin-top:12px;">
               <div style="flex:1;text-align:center;padding:12px;background:var(--gray-50);border-radius:8px;">
                 <div style="font-size:20px;font-weight:700;" id="rsvpStatTotal">0</div>
-                <div style="font-size:11px;color:var(--gray-400);">Wageni</div>
+                <div style="font-size:11px;color:var(--gray-400);">Wageni/Contacts</div>
               </div>
               <div style="flex:1;text-align:center;padding:12px;background:#DCFCE7;border-radius:8px;">
                 <div style="font-size:20px;font-weight:700;color:var(--green);" id="rsvpStatWa">0</div>
@@ -1403,6 +1405,10 @@
                 <div style="font-size:20px;font-weight:700;color:var(--red);" id="rsvpStatNoWa">0</div>
                 <div style="font-size:11px;color:var(--gray-400);">Wasio na WhatsApp</div>
               </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+              <button class="btn btn-outline btn-sm" onclick="openAddGuestModal('rsvp')">+ Ongeza Mgeni/Mchangiaji Mmoja</button>
+              <button class="btn btn-outline btn-sm" onclick="openBulkImportModal('rsvp')">📥 Pakia Contacts (Excel)</button>
             </div>
           </div>
         </div>
@@ -2044,6 +2050,27 @@
 </div>
 </div>
 
+<!-- New RSVP Folder Modal -->
+<div class="modal-overlay" id="newFolderModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📁 Folder Mpya (SMS)</div>
+      <button class="modal-close" onclick="closeModal('newFolderModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Jina la Folder</label>
+        <input type="text" id="folderName" placeholder="Mfano: Michango - Harusi ya Neema">
+        <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Folder haihitaji tarehe wala venue - ni kwa ajili ya kuhifadhi contacts na kutuma SMS pekee (mfano: michango), hata kama event bado haijatengenezwa.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('newFolderModal')">Ghairi</button>
+      <button class="btn btn-primary" onclick="saveNewFolder()">✅ Tengeneza Folder</button>
+    </div>
+  </div>
+</div>
+
 <!-- Bulk Import Modal -->
 <div class="modal-overlay" id="bulkImportModal">
   <div class="modal">
@@ -2052,12 +2079,12 @@
       <button class="modal-close" onclick="closeModal('bulkImportModal')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="form-group">
-        <label>1️⃣ Chagua Event Husika</label>
+      <div class="form-group" id="bulkEventSelectorRow">
+        <label>1️⃣ Chagua Event/Folder Husika</label>
         <select id="bulkEventSelect">
           <option value="">-- Chagua Event --</option>
         </select>
-        <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Wageni wote kwenye faili hili wataenda kwenye event hii TU.</p>
+        <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Wageni/contacts wote kwenye faili hili wataenda kwenye event au folder hii TU.</p>
       </div>
 
       <div class="form-group">
@@ -2605,7 +2632,7 @@ async function openScannerPage() {
 
   if (role === 'admin') {
     // Admin anaona events zote
-    const { data: allEvents } = await sb.from('events').select('id,name,event_date').eq('user_id', ORG_OWNER_ID).order('created_at', { ascending: false });
+    const { data: allEvents } = await sb.from('events').select('id,name,event_date').eq('user_id', ORG_OWNER_ID).eq('is_folder', false).order('created_at', { ascending: false });
     myEvents = allEvents || [];
   } else {
     const eventIds = await getMyAccessibleEventIds();
@@ -2687,8 +2714,13 @@ function showToast(msg, type = 'info') {
 async function loadDashboard() {
   if (!currentUser) return;
 
-  const { data: events } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID);
-  const { data: guests } = await sb.from('guests').select('*').eq('user_id', ORG_OWNER_ID);
+  const { data: rawEvents } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID);
+  const { data: allGuests } = await sb.from('guests').select('*').eq('user_id', ORG_OWNER_ID);
+
+  // Folders (SMS pekee, mfano michango) hazihesabiwi kwenye takwimu za "Events" za dashboard
+  const events = (rawEvents || []).filter(e => !e.is_folder);
+  const folderIds = new Set((rawEvents || []).filter(e => e.is_folder).map(e => e.id));
+  const guests = (allGuests || []).filter(g => !folderIds.has(g.event_id));
 
   const evCount = events?.length || 0;
   const kadiCount = guests?.length || 0;
@@ -2742,7 +2774,7 @@ async function getEventAccessSummary() {
   const [{ data: grants }, { data: profiles }, { data: events }] = await Promise.all([
     sb.from('event_access').select('event_id,profile_id'),
     sb.from('profiles').select('id,first_name,last_name,role'),
-    sb.from('events').select('id,name').eq('user_id', ORG_OWNER_ID)
+    sb.from('events').select('id,name').eq('user_id', ORG_OWNER_ID).eq('is_folder', false)
   ]);
 
   const profileById = new Map((profiles || []).map(p => [p.id, p]));
@@ -2825,7 +2857,7 @@ async function saveEventAccess() {
 
 async function loadEvents() {
   if (!currentUser) return;
-  const { data: events } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID).order('created_at', {ascending: false});
+  const { data: events } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID).eq('is_folder', false).order('created_at', {ascending: false});
   const grid = document.getElementById('eventsGrid');
 
   if (!events || events.length === 0) {
@@ -3073,7 +3105,10 @@ function openEvent(id) {
 // ===== GUESTS / INVITATIONS =====
 async function loadEventsDropdown() {
   if (!currentUser) return;
-  const { data } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID);
+  const { data: rawData } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID);
+  // Folders (is_folder = true) ni "matukio membamba" ya RSVP/SMS pekee - hazionekani
+  // kwenye dropdown za Events halisi (Invitations, Templates, Bulk Import ya kawaida, Payments).
+  const data = (rawData || []).filter(e => !e.is_folder);
   const sel = document.getElementById('invEventSelect');
   sel.innerHTML = '<option value="">-- Chagua Event --</option>';
 
@@ -3081,21 +3116,76 @@ async function loadEventsDropdown() {
   const tplSel = document.getElementById('tplEventSelect');
   const bulkSel = document.getElementById('bulkEventSelect');
   const paySel = document.getElementById('paymentEventSelect');
-  const rsvpSel = document.getElementById('rsvpEventSelect');
   if (tplSel) tplSel.innerHTML = '<option value="">-- Chagua Event --</option>';
   if (bulkSel) bulkSel.innerHTML = '<option value="">-- Chagua Event --</option>';
   if (paySel) paySel.innerHTML = '<option value="">-- Chagua Event --</option>';
-  if (rsvpSel) rsvpSel.innerHTML = '<option value="">-- Chagua Event --</option>';
-  (data || []).forEach(e => {
+  data.forEach(e => {
     if (tplSel) tplSel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
     if (bulkSel) bulkSel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
     if (paySel) paySel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
-    if (rsvpSel) rsvpSel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
   });
 
-  (data || []).forEach(e => {
+  data.forEach(e => {
     sel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
   });
+
+  // RSVP dropdown ni tofauti - ina Events NA Folders zote pamoja
+  loadRsvpEventsAndFolders();
+}
+
+// RSVP inahitaji kuonyesha Events halisi NA Folders (folders ni za SMS pekee,
+// hazina venue/tarehe/malipo - kwa ajili ya watu wanaohitaji kutuma SMS
+// (mfano: za michango) kabla event halisi halijatengenezwa).
+async function loadRsvpEventsAndFolders() {
+  if (!currentUser) return;
+  const rsvpSel = document.getElementById('rsvpEventSelect');
+  if (!rsvpSel) return;
+  const { data } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID).order('created_at', { ascending: false });
+  const events = (data || []).filter(e => !e.is_folder);
+  const folders = (data || []).filter(e => e.is_folder);
+
+  const currentVal = rsvpSel.value;
+  let html = '<option value="">-- Chagua Event au Folder --</option>';
+  if (events.length) {
+    html += '<optgroup label="🎉 Matukio (Events)">';
+    events.forEach(e => { html += `<option value="${e.id}">${e.name}</option>`; });
+    html += '</optgroup>';
+  }
+  if (folders.length) {
+    html += '<optgroup label="📁 Folders (SMS pekee)">';
+    folders.forEach(f => { html += `<option value="${f.id}">📁 ${f.name}</option>`; });
+    html += '</optgroup>';
+  }
+  rsvpSel.innerHTML = html;
+  if (currentVal && rsvpSel.querySelector(`option[value="${currentVal}"]`)) rsvpSel.value = currentVal;
+}
+
+function openNewFolderModal() {
+  document.getElementById('folderName').value = '';
+  showModal('newFolderModal');
+}
+
+async function saveNewFolder() {
+  const name = document.getElementById('folderName').value.trim();
+  if (!name) return showToast('Weka jina la folder', 'error');
+
+  const prefix = 'FLD' + Math.random().toString(36).substr(2, 5).toUpperCase();
+  const { data, error } = await sb.from('events').insert({
+    user_id: ORG_OWNER_ID,
+    name, type: 'other', prefix,
+    is_folder: true,
+    total_guests: 0, attended: 0, sms_sent_count: 0
+  }).select('id').single();
+
+  if (error) return showToast('Kosa: ' + error.message + ' (Huenda column ya is_folder haipo kwenye database - angalia maelezo)', 'error');
+
+  showToast('Folder imetengenezwa!', 'success');
+  closeModal('newFolderModal');
+  await loadRsvpEventsAndFolders();
+  if (data?.id) {
+    document.getElementById('rsvpEventSelect').value = data.id;
+    onRsvpEventChange();
+  }
 }
 
 async function selectEventForInvitations(eventId) {
@@ -3248,9 +3338,33 @@ function copyGuestId(cardId) {
   });
 }
 
+// Modal za "Ongeza Mgeni" na "Bulk Import" zinatumika kwenye kurasa mbili tofauti:
+// Guest Management (invEventSelect) na RSVP (rsvpEventSelect, ikiwemo Folders).
+// Variable hii inaonyesha ukurasa upi ndio "chanzo" cha sasa cha modal.
+let modalGuestTargetSource = 'invitations'; // 'invitations' | 'rsvp'
+
+function openAddGuestModal(source) {
+  modalGuestTargetSource = source === 'rsvp' ? 'rsvp' : 'invitations';
+  const titleEl = document.querySelector('#addGuestModal .modal-title');
+  if (modalGuestTargetSource === 'rsvp') {
+    const sel = document.getElementById('rsvpEventSelect');
+    const name = sel?.options[sel.selectedIndex]?.text || '';
+    if (titleEl) titleEl.textContent = '👤 Ongeza kwenye: ' + name;
+  } else if (titleEl) {
+    titleEl.textContent = '👤 Ongeza Mgeni';
+  }
+  showModal('addGuestModal');
+}
+
+function currentGuestModalEventId() {
+  return modalGuestTargetSource === 'rsvp'
+    ? document.getElementById('rsvpEventSelect').value
+    : document.getElementById('invEventSelect').value;
+}
+
 async function addGuest() {
-  const eventId = document.getElementById('invEventSelect').value;
-  if (!eventId) return showToast('Chagua event kwanza', 'error');
+  const eventId = currentGuestModalEventId();
+  if (!eventId) return showToast('Chagua event/folder kwanza', 'error');
 
   const name      = document.getElementById('guestName').value.trim();
   const phone     = document.getElementById('guestPhone').value.trim();
@@ -3285,7 +3399,13 @@ const { error } = await sb.from('guests').insert({
   if (error) return showToast('Kosa: ' + error.message, 'error');
   showToast(`${name} ameongezwa! Kadi: ${cardId}`, 'success');
   closeModal('addGuestModal');
-  loadEventGuests();
+  document.getElementById('guestName').value = '';
+  document.getElementById('guestPhone').value = '';
+  if (modalGuestTargetSource === 'rsvp') {
+    onRsvpEventChange();
+  } else {
+    loadEventGuests();
+  }
 }
 
 let editGuestSnapshot = null; // "picha" ya taarifa wakati modal ilipofunguliwa - kwa kugundua kama mtu mwingine ameshabadilisha
@@ -3378,16 +3498,39 @@ async function deleteGuest(id) {
 // ===== BULK IMPORT (Excel/CSV) =====
 let bulkImportData = [];
 
-function openBulkImportModal() {
-  // Kama tayari kuna event iliyochaguliwa kwenye ukurasa wa wageni, ijaze moja kwa moja
-  const currentEvent = document.getElementById('invEventSelect').value;
+async function openBulkImportModal(source) {
+  modalGuestTargetSource = source === 'rsvp' ? 'rsvp' : 'invitations';
+  const bulkSel = document.getElementById('bulkEventSelect');
+  const selectorRow = document.getElementById('bulkEventSelectorRow');
+  const titleEl = document.querySelector('#bulkImportModal .modal-title');
+
+  if (modalGuestTargetSource === 'rsvp') {
+    // Event/Folder tayari imechaguliwa kwenye ukurasa wa RSVP - dropdown hii
+    // inajazwa na kufungwa (disabled) ili isibadilishwe kimakosa.
+    const rsvpSel = document.getElementById('rsvpEventSelect');
+    const id = rsvpSel.value;
+    const name = rsvpSel.options[rsvpSel.selectedIndex]?.text || '';
+    if (!id) return showToast('Chagua event/folder kwanza', 'error');
+    bulkSel.innerHTML = `<option value="${id}" selected>${name}</option>`;
+    bulkSel.disabled = true;
+    if (selectorRow) selectorRow.style.opacity = '0.7';
+    if (titleEl) titleEl.textContent = '📥 Bulk Import kwenye: ' + name;
+  } else {
+    bulkSel.disabled = false;
+    if (selectorRow) selectorRow.style.opacity = '1';
+    if (titleEl) titleEl.textContent = '📥 Bulk Import Wageni (Excel/CSV)';
+    const { data } = await sb.from('events').select('id,name').eq('user_id', ORG_OWNER_ID).eq('is_folder', false).order('created_at', { ascending: false });
+    bulkSel.innerHTML = '<option value="">-- Chagua Event --</option>' + (data || []).map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+    const currentEvent = document.getElementById('invEventSelect').value;
+    if (currentEvent) bulkSel.value = currentEvent;
+  }
+
   bulkImportData = [];
   document.getElementById('bulkFile').value = '';
   document.getElementById('bulkPreviewArea').style.display = 'none';
   document.getElementById('bulkErrorArea').style.display = 'none';
   document.getElementById('bulkConfirmBtn').disabled = true;
   showModal('bulkImportModal');
-  if (currentEvent) document.getElementById('bulkEventSelect').value = currentEvent;
 }
 
 function downloadGuestExcelTemplate() {
@@ -3520,12 +3663,16 @@ async function confirmBulkImport() {
     insertedTotal += chunk.length;
   }
 
-  showToast(`Wageni ${insertedTotal} wameingizwa kwenye event kikamilifu! ✅`, 'success');
+  showToast(`Wageni/contacts ${insertedTotal} wameingizwa kikamilifu! ✅`, 'success');
   btn.disabled = false;
   btn.textContent = '✅ Ingiza Wageni Wote';
   closeModal('bulkImportModal');
-  document.getElementById('invEventSelect').value = eventId;
-  loadEventGuests();
+  if (modalGuestTargetSource === 'rsvp') {
+    onRsvpEventChange();
+  } else {
+    document.getElementById('invEventSelect').value = eventId;
+    loadEventGuests();
+  }
 }
 
 // ===== UJUMBE WA MWALIKO (RSVP + Location) =====
@@ -4166,7 +4313,7 @@ async function loadWhatsappMonitor() {
 // ===== REPORTS =====
 async function loadReports() {
   if (!currentUser) return;
-  const { data: events } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID);
+  const { data: events } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID).eq('is_folder', false);
   const { data: guests } = await sb.from('guests').select('*').eq('user_id', ORG_OWNER_ID);
 
   document.getElementById('repEvents').textContent = events?.length || 0;
@@ -4618,7 +4765,7 @@ async function savePaymentInfo() {
 
 async function loadPaymentsHistory() {
   if (!currentUser) return;
-  const { data: events } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID).order('created_at', { ascending: false });
+  const { data: events } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID).eq('is_folder', false).order('created_at', { ascending: false });
   const tbody = document.getElementById('paymentsTable');
 
   if (!events || events.length === 0) {
@@ -4651,7 +4798,7 @@ async function loadPaymentsHistory() {
 
 async function exportPaymentsCSV() {
   if (!currentUser) return;
-  const { data: events } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID);
+  const { data: events } = await sb.from('events').select('*').eq('user_id', ORG_OWNER_ID).eq('is_folder', false);
   if (!events || events.length === 0) return showToast('Hakuna data ya export', 'error');
 
   const rows = await Promise.all(events.map(async e => {
