@@ -924,6 +924,9 @@
       <button class="nav-item" data-roles="admin,manager" onclick="showPage('invitations')">
         <i data-lucide="send" class="icon" style="color:#10B981"></i> Send Invitations
       </button>
+      <button class="nav-item" data-roles="admin,manager" onclick="showPage('rsvp')">
+        <i data-lucide="heart-handshake" class="icon" style="color:#EC4899"></i> RSVP - Shukrani
+      </button>
 
       <div class="nav-section" data-roles="admin,manager,scanner">Ufuatiliaji</div>
       <button class="nav-item" data-roles="admin,manager,scanner" onclick="showPage('scanner')">
@@ -1165,6 +1168,33 @@
                   <span id="jinaColorSwatch" title="Muonekano wa rangi" style="display:inline-block;width:30px;height:30px;border-radius:6px;border:1px solid var(--gray-200);background:#000000;flex-shrink:0;"></span>
                 </div>
               </div>
+              <div class="input-row">
+                <div class="form-group">
+                  <label><i data-lucide="move" class="icon" style="color:#B8860B;width:14px;height:14px;vertical-align:-2px;"></i> VIP/VVIP Badge - Position X</label>
+                  <input type="number" id="posVipX" placeholder="Default: juu ya Label" oninput="renderPositionPreview()">
+                </div>
+                <div class="form-group">
+                  <label>VIP/VVIP Badge - Position Y</label>
+                  <input type="number" id="posVipY" placeholder="Default: juu ya Label" oninput="renderPositionPreview()">
+                </div>
+              </div>
+              <p style="font-size:11px;color:var(--gray-400);margin-top:-8px;margin-bottom:12px;">Acha wazi kubaki na mpangilio wa default (juu kabisa ya Group Size Label). Jaza namba kuhamishia badge ya VIP/VVIP mahali pengine.</p>
+              <div class="form-group">
+                <label><i data-lucide="palette" class="icon" style="color:#A855F7;width:14px;height:14px;vertical-align:-2px;"></i> Rangi ya VIP/VVIP Badge</label>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <select id="posVipColor" onchange="const v=this.value;const sw=document.getElementById('vipColorSwatch');sw.style.background = v==='auto' ? 'linear-gradient(135deg,#B8860B,#1A56DB)' : v;renderPositionPreview()" style="flex:1;">
+                    <option value="auto" selected>Auto (VVIP=Dhahabu, VIP=Bluu)</option>
+                    <option value="#FFFFFF">White</option>
+                    <option value="#000000">Black</option>
+                    <option value="#EF4444">Red</option>
+                    <option value="#16A34A">Green</option>
+                    <option value="#3B82F6">Blue</option>
+                    <option value="#1E3A8A">Dark Blue</option>
+                    <option value="#EAB308">Yellow</option>
+                  </select>
+                  <span id="vipColorSwatch" title="Muonekano wa rangi" style="display:inline-block;width:30px;height:30px;border-radius:6px;border:1px solid var(--gray-200);background:linear-gradient(135deg,#B8860B,#1A56DB);flex-shrink:0;"></span>
+                </div>
+              </div>
             </div>
             <div>
               <div class="form-group">
@@ -1213,33 +1243,6 @@
                 </div>
               </div>
               <p style="font-size:11px;color:var(--gray-400);margin-top:-8px;margin-bottom:12px;">Acha wazi kubaki na mpangilio wa default (juu kabisa ya QR Code). Jaza namba kuhamishia label mahali pengine kwenye kadi.</p>
-              <div class="input-row">
-                <div class="form-group">
-                  <label><i data-lucide="move" class="icon" style="color:#B8860B;width:14px;height:14px;vertical-align:-2px;"></i> VIP/VVIP Badge - Position X</label>
-                  <input type="number" id="posVipX" placeholder="Default: juu ya Label" oninput="renderPositionPreview()">
-                </div>
-                <div class="form-group">
-                  <label>VIP/VVIP Badge - Position Y</label>
-                  <input type="number" id="posVipY" placeholder="Default: juu ya Label" oninput="renderPositionPreview()">
-                </div>
-              </div>
-              <p style="font-size:11px;color:var(--gray-400);margin-top:-8px;margin-bottom:12px;">Acha wazi kubaki na mpangilio wa default (juu kabisa ya Group Size Label). Jaza namba kuhamishia badge ya VIP/VVIP mahali pengine.</p>
-              <div class="form-group">
-                <label><i data-lucide="palette" class="icon" style="color:#A855F7;width:14px;height:14px;vertical-align:-2px;"></i> Rangi ya VIP/VVIP Badge</label>
-                <div style="display:flex;align-items:center;gap:8px;">
-                  <select id="posVipColor" onchange="const v=this.value;const sw=document.getElementById('vipColorSwatch');sw.style.background = v==='auto' ? 'linear-gradient(135deg,#B8860B,#1A56DB)' : v;renderPositionPreview()" style="flex:1;">
-                    <option value="auto" selected>Auto (VVIP=Dhahabu, VIP=Bluu)</option>
-                    <option value="#FFFFFF">White</option>
-                    <option value="#000000">Black</option>
-                    <option value="#EF4444">Red</option>
-                    <option value="#16A34A">Green</option>
-                    <option value="#3B82F6">Blue</option>
-                    <option value="#1E3A8A">Dark Blue</option>
-                    <option value="#EAB308">Yellow</option>
-                  </select>
-                  <span id="vipColorSwatch" title="Muonekano wa rangi" style="display:inline-block;width:30px;height:30px;border-radius:6px;border:1px solid var(--gray-200);background:linear-gradient(135deg,#B8860B,#1A56DB);flex-shrink:0;"></span>
-                </div>
-              </div>
             </div>
           </div>
           <button class="btn btn-primary" style="width:auto;" onclick="savePositions()">
@@ -1366,6 +1369,73 @@
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+
+      <!-- ===== RSVP - UJUMBE WA SHUKRANI PAGE ===== -->
+      <div class="page" id="page-rsvp">
+        <div style="margin-bottom:20px;">
+          <h2 style="font-size:18px;font-weight:700;">RSVP - Ujumbe wa Shukrani</h2>
+          <p style="font-size:13px;color:var(--gray-400);margin-top:2px;">Andika na tuma SMS za shukrani kwa wageni wa event husika</p>
+        </div>
+
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-header">
+            <div class="card-title">📋 Chagua Event</div>
+          </div>
+          <div class="form-group">
+            <label>Event</label>
+            <select id="rsvpEventSelect" onchange="onRsvpEventChange()">
+              <option value="">-- Chagua Event --</option>
+            </select>
+          </div>
+          <div id="rsvpEventStats" style="display:none;">
+            <div style="display:flex;gap:12px;margin-top:12px;">
+              <div style="flex:1;text-align:center;padding:12px;background:var(--gray-50);border-radius:8px;">
+                <div style="font-size:20px;font-weight:700;" id="rsvpStatTotal">0</div>
+                <div style="font-size:11px;color:var(--gray-400);">Wageni</div>
+              </div>
+              <div style="flex:1;text-align:center;padding:12px;background:#DCFCE7;border-radius:8px;">
+                <div style="font-size:20px;font-weight:700;color:var(--green);" id="rsvpStatWa">0</div>
+                <div style="font-size:11px;color:var(--gray-400);">Wenye WhatsApp</div>
+              </div>
+              <div style="flex:1;text-align:center;padding:12px;background:#FEE2E2;border-radius:8px;">
+                <div style="font-size:20px;font-weight:700;color:var(--red);" id="rsvpStatNoWa">0</div>
+                <div style="font-size:11px;color:var(--gray-400);">Wasio na WhatsApp</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-header">
+            <div class="card-title">✍️ Andika Ujumbe wa Shukrani</div>
+          </div>
+          <div class="form-group">
+            <label>Ujumbe (utatumwa kama SMS kwa wageni)</label>
+            <textarea id="rsvpMessageText" rows="8" placeholder="Mfano: Habari Rafiki, asante sana kwa kuja/kutuunga mkono kwenye tukio letu. Tunathamini sana uwepo/mchango wako. Karibu tena!" style="width:100%;padding:12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+            <p style="font-size:11px;color:var(--gray-400);margin-top:6px;">Ujumbe huu unahifadhiwa kwa event iliyochaguliwa tu - events nyingine hazitagusa.</p>
+          </div>
+          <button class="btn btn-primary" style="width:auto;" onclick="saveRsvpMessage()">
+            <i data-lucide="save" style="width:16px;height:16px;"></i> Hifadhi Ujumbe
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🚀 Tuma Ujumbe</div>
+          </div>
+          <div class="form-group">
+            <label>Tuma kwa</label>
+            <select id="rsvpSendTarget">
+              <option value="all">Wote</option>
+              <option value="no-whatsapp">Wasio na WhatsApp</option>
+              <option value="whatsapp">Walio na WhatsApp</option>
+            </select>
+          </div>
+          <button class="btn btn-orange" style="width:100%;" onclick="sendRsvpBulkMessage()">
+            📨 Tuma SMS za Shukrani
+          </button>
         </div>
       </div>
 
@@ -1805,6 +1875,26 @@
       <div class="form-group">
         <label>Event Prefix (kwa kadi IDs)</label>
         <input type="text" id="evtPrefix" placeholder="HARUSI2026" maxlength="15">
+      </div>
+      <div class="form-group">
+        <label><i data-lucide="sliders-horizontal" class="icon" style="color:#B8860B;width:14px;height:14px;"></i> Muonekano wa Kadi</label>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">
+            <input type="checkbox" id="evtShowVipBadge" checked style="width:16px;height:16px;">
+            <div>
+              <div style="font-size:13px;font-weight:600;">👑 Onyesha Badge ya VIP/VVIP</div>
+              <div style="font-size:11px;color:var(--gray-400);">Zima kama event hii haihitaji badge ya VIP/VVIP kwenye kadi</div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">
+            <input type="checkbox" id="evtShowGroupLabel" checked style="width:16px;height:16px;">
+            <div>
+              <div style="font-size:13px;font-weight:600;">👥 Onyesha Group Size Label</div>
+              <div style="font-size:11px;color:var(--gray-400);">Zima kama event hii haihitaji lebo ya #SINGLE/#DOUBLE/#GROUP kwenye kadi</div>
+            </div>
+          </label>
+        </div>
+        <p style="font-size:11px;color:var(--gray-400);margin-top:6px;">Mipangilio hii ni ya event hii tu, haiathiri events nyingine.</p>
       </div>
     </div>
     <div class="modal-footer">
@@ -2324,6 +2414,7 @@ const PAGE_ROLES = {
   events:      ['admin','manager'],
   templates:   ['admin','manager'],
   invitations: ['admin','manager'],
+  rsvp:        ['admin','manager'],
   scanner:     ['admin','manager','scanner'],
   whatsapp:    ['admin','manager'],
   reports:     ['admin','manager'],
@@ -2439,6 +2530,7 @@ function showPage(page) {
     events: ['Event Management', 'Simamia matukio yako'],
     templates: ['Template Management', 'Simamia templates za kadi'],
     invitations: ['Send Invitations', 'Tuma mialiko kwa wageni'],
+    rsvp: ['RSVP - Ujumbe wa Shukrani', 'Tuma SMS za shukrani kwa wageni'],
     scanner: ['Scanner', 'Kagua kadi za wageni mlangoni'],
     whatsapp: ['WhatsApp Monitor', 'Fuatilia WhatsApp za wageni'],
     reports: ['Ripoti za Mfumo', 'Takwimu kamili'],
@@ -2460,6 +2552,7 @@ function showPage(page) {
   if (page === 'whatsapp') loadWhatsappMonitor();
   if (page === 'scanner') openScannerPage();
   if (page === 'templates') { loadTemplates(); renderPositionPreview(); }
+  if (page === 'rsvp') loadEventsDropdown();
 
   startAutoRefresh(page);
 }
@@ -2817,6 +2910,8 @@ function openNewEventModal() {
   document.getElementById('evtTime').value = '12:00';
   document.getElementById('evtPhone').value = '';
   document.getElementById('evtPrefix').value = '';
+  document.getElementById('evtShowVipBadge').checked = true;
+  document.getElementById('evtShowGroupLabel').checked = true;
   document.getElementById('newEventModalTitle').innerHTML = '<i data-lucide="party-popper" class="icon" style="color:#F97316"></i> Event Mpya';
   document.getElementById('evtSaveBtn').innerHTML = '<i data-lucide="check" style="width:16px;height:16px;"></i> Tengeneza Event';
   try { lucide.createIcons(); } catch(e) {}
@@ -2838,6 +2933,8 @@ async function openEditEventModal(eventId) {
   document.getElementById('evtTime').value = e.event_time || '12:00';
   document.getElementById('evtPhone').value = e.contact_phone || '';
   document.getElementById('evtPrefix').value = e.prefix || '';
+  document.getElementById('evtShowVipBadge').checked = e.show_vip_badge !== false;
+  document.getElementById('evtShowGroupLabel').checked = e.show_group_label !== false;
   document.getElementById('newEventModalTitle').innerHTML = '<i data-lucide="pencil" class="icon" style="color:#A855F7"></i> Hariri Event';
   document.getElementById('evtSaveBtn').innerHTML = '<i data-lucide="save" style="width:16px;height:16px;"></i> Hifadhi Mabadiliko';
   try { lucide.createIcons(); } catch(e) {}
@@ -2855,6 +2952,8 @@ async function saveNewEvent() {
   const time        = document.getElementById('evtTime').value;
   const phone       = document.getElementById('evtPhone').value.trim();
   const prefix      = document.getElementById('evtPrefix').value.trim().toUpperCase();
+  const showVipBadge   = document.getElementById('evtShowVipBadge').checked;
+  const showGroupLabel = document.getElementById('evtShowGroupLabel').checked;
 
   if (!name) return showToast('Weka jina la event', 'error');
 
@@ -2864,6 +2963,7 @@ async function saveNewEvent() {
     name, type, event_date: date, venue, host_name: hostName,
     location_url: buildDirectionsUrl(coordinates), coordinates, event_time: time,
     contact_phone: phone, prefix: prefix || 'EVENT2026',
+    show_vip_badge: showVipBadge, show_group_label: showGroupLabel,
   };
 
   let error;
@@ -2981,13 +3081,16 @@ async function loadEventsDropdown() {
   const tplSel = document.getElementById('tplEventSelect');
   const bulkSel = document.getElementById('bulkEventSelect');
   const paySel = document.getElementById('paymentEventSelect');
+  const rsvpSel = document.getElementById('rsvpEventSelect');
   if (tplSel) tplSel.innerHTML = '<option value="">-- Chagua Event --</option>';
   if (bulkSel) bulkSel.innerHTML = '<option value="">-- Chagua Event --</option>';
   if (paySel) paySel.innerHTML = '<option value="">-- Chagua Event --</option>';
+  if (rsvpSel) rsvpSel.innerHTML = '<option value="">-- Chagua Event --</option>';
   (data || []).forEach(e => {
     if (tplSel) tplSel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
     if (bulkSel) bulkSel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
     if (paySel) paySel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
+    if (rsvpSel) rsvpSel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
   });
 
   (data || []).forEach(e => {
@@ -3794,6 +3897,83 @@ async function sendSmsInvite(guestId) {
   await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', guestId);
   showToast('SMS imetumwa kwa ' + guest.name + '!', 'success');
   loadEventGuests();
+}
+
+// ===== RSVP - UJUMBE WA SHUKRANI (SMS kwa event husika) =====
+async function onRsvpEventChange() {
+  const eventId = document.getElementById('rsvpEventSelect').value;
+  const statsBox = document.getElementById('rsvpEventStats');
+  const textarea = document.getElementById('rsvpMessageText');
+
+  if (!eventId) {
+    statsBox.style.display = 'none';
+    textarea.value = '';
+    return;
+  }
+
+  const { data: eventData } = await sb.from('events').select('*').eq('id', eventId).single();
+  textarea.value = eventData?.rsvp_message || '';
+
+  const { data: guests } = await sb.from('guests').select('phone,whatsapp').eq('event_id', eventId);
+  const total = guests?.length || 0;
+  const withWa = guests?.filter(g => g.whatsapp === 'yes').length || 0;
+  const withoutWa = total - withWa;
+
+  document.getElementById('rsvpStatTotal').textContent = total;
+  document.getElementById('rsvpStatWa').textContent = withWa;
+  document.getElementById('rsvpStatNoWa').textContent = withoutWa;
+  statsBox.style.display = 'block';
+}
+
+async function saveRsvpMessage() {
+  const eventId = document.getElementById('rsvpEventSelect').value;
+  if (!eventId) return showToast('Chagua event kwanza', 'error');
+
+  const message = document.getElementById('rsvpMessageText').value.trim();
+  if (!message) return showToast('Andika ujumbe kwanza', 'error');
+
+  const { error } = await sb.from('events').update({ rsvp_message: message }).eq('id', eventId);
+  if (error) return showToast('Kosa: ' + error.message + ' (Huenda column ya rsvp_message haipo - angalia maelezo)', 'error');
+
+  showToast('Ujumbe umehifadhiwa kwa event hii!', 'success');
+}
+
+async function sendRsvpBulkMessage() {
+  const eventId = document.getElementById('rsvpEventSelect').value;
+  if (!eventId) return showToast('Chagua event kwanza', 'error');
+
+  const message = document.getElementById('rsvpMessageText').value.trim();
+  if (!message) return showToast('Andika ujumbe kwanza (au uhifadhi mmoja uliopo)', 'error');
+
+  const target = document.getElementById('rsvpSendTarget').value; // all | no-whatsapp | whatsapp
+  const { data: guests } = await sb.from('guests').select('*').eq('event_id', eventId);
+  const recipients = (guests || []).filter(g => {
+    if (!g.phone) return false;
+    if (target === 'no-whatsapp') return g.whatsapp !== 'yes';
+    if (target === 'whatsapp') return g.whatsapp === 'yes';
+    return true; // all
+  });
+
+  if (recipients.length === 0) return showToast('Hakuna wageni wenye namba ya simu kwa kigezo hiki', 'info');
+
+  showToast(`Inatuma SMS za shukrani kwa wageni ${recipients.length}...`, 'info');
+
+  let okCount = 0, failCount = 0, firstError = null;
+  for (const g of recipients) {
+    const outcome = await callSendSmsFunction(g.phone, message);
+    if (outcome.ok) {
+      okCount++;
+    } else {
+      failCount++;
+      if (!firstError) firstError = outcome.error;
+    }
+  }
+  if (firstError) console.error('Sababu ya kushindwa SMS ya shukrani:', firstError);
+
+  const bulkMsg = failCount > 0
+    ? `Zimetumwa ${okCount}, zimeshindwa ${failCount}. Sababu: ${firstError}`
+    : `Zimetumwa ${okCount} kwa mafanikio!`;
+  showToast(bulkMsg, okCount > 0 ? 'success' : 'error');
 }
 
 // ===== SCANNER =====
@@ -5017,12 +5197,16 @@ function drawGuestLabelWithVip(ctx, guest, pos, boxY) {
   const labelBaselineY = hasLabelY ? parseInt(pos.labelY) : (boxY - 12);
 
   // Line ya #SINGLE / #DOUBLE / #GROUP (au icon, kutegemea format) - juu ya QR kwa default, au mahali ulipoweka
-  drawGroupSizeLabel(ctx, guest, guest.sequence_number || 1, pos.labelFormat, pos.labelColor || '#000000', centerX, labelBaselineY, 24);
+  // Inaweza kuzimwa kwa event maalum (pos.showGroupLabel === false)
+  if (pos.showGroupLabel !== false) {
+    drawGroupSizeLabel(ctx, guest, guest.sequence_number || 1, pos.labelFormat, pos.labelColor || '#000000', centerX, labelBaselineY, 24);
+  }
 
   // Cheo/VIP/VVIP - JUU ya Group Size Label kwa default, au mahali ulipoweka (Position X/Y)
+  // Inaweza kuzimwa kwa event maalum (pos.showVip === false)
   const rank = (guest.vip_status || '').trim();
   const rankLower = rank.toLowerCase();
-  if (rank && rankLower !== 'none') {
+  if (pos.showVip !== false && rank && rankLower !== 'none') {
     const isVvip = rankLower === 'vvip';
     const isVip = rankLower === 'vip';
     const vipText = isVvip ? '👑 VVIP' : isVip ? '⭐ VIP' : rank;
@@ -5080,7 +5264,7 @@ async function generateCard(guestId) {
     return;
   }
 
-  const pos = template.positions || DEFAULT_POSITIONS;
+  const pos = { ...(template.positions || DEFAULT_POSITIONS), showVip: eventData?.show_vip_badge !== false, showGroupLabel: eventData?.show_group_label !== false };
   const canvas = document.getElementById('cardCanvas');
   const ctx = canvas.getContext('2d');
 
@@ -5190,7 +5374,7 @@ async function generateAndUploadCard(guestId, forceRegenerate = false) {
   const template = await getTemplateForEvent(guest.event_id, eventData?.type);
   if (!template) throw new Error('Hakuna template kwa event "' + (eventData?.name || '') + '"');
 
-  const pos = template.positions || DEFAULT_POSITIONS;
+  const pos = { ...(template.positions || DEFAULT_POSITIONS), showVip: eventData?.show_vip_badge !== false, showGroupLabel: eventData?.show_group_label !== false };
   const blob = await generateSingleCardBlob(guest, template, pos);
 
   const safeName = guest.name.replace(/[^a-zA-Z0-9]/g, '_');
@@ -5267,7 +5451,7 @@ async function generateAllCards() {
 
   showToast(`Inatengeneza kadi ${guests.length}... subiri`, 'info');
 
-  const pos = template.positions || DEFAULT_POSITIONS;
+  const pos = { ...(template.positions || DEFAULT_POSITIONS), showVip: eventData?.show_vip_badge !== false, showGroupLabel: eventData?.show_group_label !== false };
   const zip = new JSZip();
 
   for (let i = 0; i < guests.length; i++) {
