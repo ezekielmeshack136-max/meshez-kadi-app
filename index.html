@@ -1443,6 +1443,32 @@
             📨 Tuma SMS za Shukrani
           </button>
         </div>
+
+        <div class="card" style="margin-top:16px;">
+          <div class="card-header">
+            <div class="card-title">👥 Orodha ya Wageni/Wachangiaji (SMS)</div>
+            <button class="btn btn-outline btn-sm" onclick="onRsvpEventChange()" title="Sasisha - ona mabadiliko ya wenzako">🔄 Sasisha</button>
+          </div>
+          <div style="padding:0 0 12px;">
+            <input type="text" id="rsvpGuestSearchInput" oninput="filterRsvpGuestsTable()" placeholder="🔍 Tafuta kwa jina au namba ya simu..." style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px;">
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Jina</th>
+                  <th>Namba</th>
+                  <th>Idadi</th>
+                  <th>SMS</th>
+                  <th>Vitendo</th>
+                </tr>
+              </thead>
+              <tbody id="rsvpGuestsTable">
+                <tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:32px;">Chagua event au folder kuona orodha</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <!-- ===== SCANNER PAGE ===== -->
@@ -2912,6 +2938,8 @@ async function loadEvents() {
         <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();selectEventForInvitations('${e.id}')" title="Tuma mialiko"><i data-lucide="send" style="color:#10B981;width:14px;height:14px;"></i> Tuma</button>
         <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openEditEventModal('${e.id}')" title="Hariri taarifa za event"><i data-lucide="pencil" style="color:#A855F7;width:14px;height:14px;"></i></button>
         <button class="btn btn-outline btn-sm" onclick='event.stopPropagation();openLocationModal("${e.id}", ${JSON.stringify(e.host_name || '')}, ${JSON.stringify(e.coordinates || '')})' title="${e.coordinates ? 'Location imewekwa - bonyeza kubadilisha' : 'Weka location ya tukio'}"><i data-lucide="map-pin" style="color:${e.coordinates ? '#16A34A' : '#EF4444'};width:14px;height:14px;"></i></button>
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();toggleEventDisplayFlag('${e.id}','show_vip_badge',${e.show_vip_badge !== false})" title="${e.show_vip_badge !== false ? 'Badge ya VIP/VVIP: INAONYESHWA kwenye kadi (bonyeza kuzima)' : 'Badge ya VIP/VVIP: IMEZIMWA kwenye kadi (bonyeza kuwasha)'}"><i data-lucide="crown" style="color:${e.show_vip_badge !== false ? '#F59E0B' : '#D1D5DB'};width:14px;height:14px;"></i></button>
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();toggleEventDisplayFlag('${e.id}','show_group_label',${e.show_group_label !== false})" title="${e.show_group_label !== false ? 'Group Size Label: INAONYESHWA kwenye kadi (bonyeza kuzima)' : 'Group Size Label: IMEZIMWA kwenye kadi (bonyeza kuwasha)'}"><i data-lucide="users-round" style="color:${e.show_group_label !== false ? '#3B82F6' : '#D1D5DB'};width:14px;height:14px;"></i></button>
         ${(currentProfile?.role === 'admin') ? `<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openEventAccessModal('${e.id}', ${JSON.stringify(e.name)})" title="Ruhusu Manager/Scanner kufikia event hii"><i data-lucide="users" style="color:#EC4899;width:14px;height:14px;"></i></button>` : ''}
         <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();deleteEvent('${e.id}')" title="Futa event"><i data-lucide="trash-2" style="color:#EF4444;width:14px;height:14px;"></i></button>
       </div>
@@ -2919,6 +2947,18 @@ async function loadEvents() {
   `;
   }).join('');
   try { lucide.createIcons(); } catch(e) {}
+}
+
+// Kitufe cha haraka cha ON/OFF kwenye kadi ya event - kinabadilisha moja kwa moja
+// (bila kufungua modal ya "Hariri Event") kama Badge ya VIP/VVIP au Group Size
+// Label vionekane kwenye kadi za wageni za event hiyo.
+async function toggleEventDisplayFlag(eventId, field, currentlyOn) {
+  const newVal = !currentlyOn;
+  const { error } = await sb.from('events').update({ [field]: newVal }).eq('id', eventId);
+  if (error) return showToast('Kosa: ' + error.message, 'error');
+  const label = field === 'show_vip_badge' ? 'Badge ya VIP/VVIP' : 'Group Size Label';
+  showToast(`${label} ${newVal ? 'imewashwa ✅' : 'imezimwa ❌'}`, 'success');
+  loadEvents();
 }
 
 // Hutengeneza kiungo HALISI cha "maelekezo" (Directions) cha Google Maps
@@ -3418,7 +3458,8 @@ function buildGuestSnapshot(g) {
   });
 }
 
-async function openEditGuestModal(guestId) {
+async function openEditGuestModal(guestId, source) {
+  modalGuestTargetSource = source === 'rsvp' ? 'rsvp' : 'invitations';
   const { data: guest, error } = await sb.from('guests').select('*').eq('id', guestId).single();
   if (error || !guest) return showToast('Imeshindwa kupata taarifa za mgeni', 'error');
 
@@ -3485,14 +3526,22 @@ async function saveEditGuest() {
   showToast('Taarifa za mgeni zimesasishwa!', 'success');
   editGuestSnapshot = null;
   closeModal('editGuestModal');
-  loadEventGuests();
+  if (modalGuestTargetSource === 'rsvp') {
+    onRsvpEventChange();
+  } else {
+    loadEventGuests();
+  }
 }
 
-async function deleteGuest(id) {
+async function deleteGuest(id, source) {
   if (!confirm('Futa mgeni huyu?')) return;
   await sb.from('guests').delete().eq('id', id);
   showToast('Mgeni amefutwa', 'info');
-  loadEventGuests();
+  if (source === 'rsvp') {
+    onRsvpEventChange();
+  } else {
+    loadEventGuests();
+  }
 }
 
 // ===== BULK IMPORT (Excel/CSV) =====
@@ -4046,7 +4095,9 @@ async function sendSmsInvite(guestId) {
   loadEventGuests();
 }
 
-// ===== RSVP - UJUMBE WA SHUKRANI (SMS kwa event husika) =====
+// Cache ya wageni wa event/folder iliyochaguliwa kwenye RSVP - kwa search/filter
+let rsvpGuestsCache = [];
+
 async function onRsvpEventChange() {
   const eventId = document.getElementById('rsvpEventSelect').value;
   const statsBox = document.getElementById('rsvpEventStats');
@@ -4055,13 +4106,15 @@ async function onRsvpEventChange() {
   if (!eventId) {
     statsBox.style.display = 'none';
     textarea.value = '';
+    rsvpGuestsCache = [];
+    filterRsvpGuestsTable();
     return;
   }
 
   const { data: eventData } = await sb.from('events').select('*').eq('id', eventId).single();
   textarea.value = eventData?.rsvp_message || '';
 
-  const { data: guests } = await sb.from('guests').select('phone,whatsapp').eq('event_id', eventId);
+  const { data: guests } = await sb.from('guests').select('*').eq('event_id', eventId).order('sequence_number', { ascending: true });
   const total = guests?.length || 0;
   const withWa = guests?.filter(g => g.whatsapp === 'yes').length || 0;
   const withoutWa = total - withWa;
@@ -4070,6 +4123,67 @@ async function onRsvpEventChange() {
   document.getElementById('rsvpStatWa').textContent = withWa;
   document.getElementById('rsvpStatNoWa').textContent = withoutWa;
   statsBox.style.display = 'block';
+
+  rsvpGuestsCache = guests || [];
+  const searchInput = document.getElementById('rsvpGuestSearchInput');
+  if (searchInput) searchInput.value = '';
+  filterRsvpGuestsTable();
+}
+
+// Tafuta ndani ya orodha ya RSVP (jina/namba) bila kuita database tena
+function filterRsvpGuestsTable() {
+  const q = (document.getElementById('rsvpGuestSearchInput')?.value || '').trim().toLowerCase();
+  const filtered = !q ? rsvpGuestsCache : rsvpGuestsCache.filter(g =>
+    (g.name || '').toLowerCase().includes(q) || (g.phone || '').toLowerCase().includes(q)
+  );
+  renderRsvpGuestsTable(filtered);
+}
+
+function renderRsvpGuestsTable(guests) {
+  const tbody = document.getElementById('rsvpGuestsTable');
+  if (!tbody) return;
+  const eventId = document.getElementById('rsvpEventSelect')?.value;
+  if (!eventId) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:32px;">Chagua event au folder kuona orodha</td></tr>`;
+    return;
+  }
+  if (!guests || guests.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna wageni/wachangiaji bado - ongeza mmoja mmoja au pakia Excel</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = guests.map(g => {
+    const label = guestCardTypeLabel(g);
+    return `
+    <tr>
+      <td><strong>${g.name}</strong></td>
+      <td>${g.phone || '-'}</td>
+      <td><span class="badge badge-gray">${label}</span></td>
+      <td>${g.sms_sent === 'yes' ? '<span class="badge badge-green">Imetumwa</span>' : '<span class="badge badge-yellow">Haijatumwa</span>'}</td>
+      <td>
+        ${g.phone ? `<button class="btn btn-outline btn-sm" onclick="sendRsvpSingleSms('${g.id}')" title="Tuma SMS kwa huyu pekee">📨</button>` : ''}
+        <button class="btn btn-outline btn-sm" onclick="openEditGuestModal('${g.id}','rsvp')" title="Hariri">✏️</button>
+        <button class="btn btn-outline btn-sm" onclick="deleteGuest('${g.id}','rsvp')" title="Futa">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// Tuma SMS ya shukrani/michango kwa MGENI MMOJA pekee (si wote) - inatumia
+// ujumbe uliopo kwenye textarea ya RSVP kwa sasa (hifadhi kwanza kama bado hujahifadhi).
+async function sendRsvpSingleSms(guestId) {
+  const message = document.getElementById('rsvpMessageText').value.trim();
+  if (!message) return showToast('Andika ujumbe kwanza (au uhifadhi mmoja uliopo)', 'error');
+
+  const guest = rsvpGuestsCache.find(g => g.id === guestId);
+  if (!guest || !guest.phone) return showToast('Mgeni huyu hana namba ya simu', 'error');
+
+  showToast('Inatuma SMS kwa ' + guest.name + '...', 'info');
+  const outcome = await callSendSmsFunction(guest.phone, message);
+  if (!outcome.ok) return showToast('Imeshindwa: ' + outcome.error, 'error');
+
+  await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', guestId);
+  showToast('SMS imetumwa kwa ' + guest.name + '!', 'success');
+  onRsvpEventChange();
 }
 
 async function saveRsvpMessage() {
@@ -4110,6 +4224,7 @@ async function sendRsvpBulkMessage() {
     const outcome = await callSendSmsFunction(g.phone, message);
     if (outcome.ok) {
       okCount++;
+      await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', g.id);
     } else {
       failCount++;
       if (!firstError) firstError = outcome.error;
@@ -4121,6 +4236,7 @@ async function sendRsvpBulkMessage() {
     ? `Zimetumwa ${okCount}, zimeshindwa ${failCount}. Sababu: ${firstError}`
     : `Zimetumwa ${okCount} kwa mafanikio!`;
   showToast(bulkMsg, okCount > 0 ? 'success' : 'error');
+  onRsvpEventChange();
 }
 
 // ===== SCANNER =====
