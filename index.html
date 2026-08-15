@@ -1202,6 +1202,44 @@
                   <option value="icon">Yenye Icons (mtu mmoja / watu wengi)</option>
                 </select>
               </div>
+              <div class="input-row">
+                <div class="form-group">
+                  <label><i data-lucide="move" class="icon" style="color:#F97316;width:14px;height:14px;vertical-align:-2px;"></i> Group Size Label - Position X</label>
+                  <input type="number" id="posLabelX" placeholder="Default: juu ya QR" oninput="renderPositionPreview()">
+                </div>
+                <div class="form-group">
+                  <label>Group Size Label - Position Y</label>
+                  <input type="number" id="posLabelY" placeholder="Default: juu ya QR" oninput="renderPositionPreview()">
+                </div>
+              </div>
+              <p style="font-size:11px;color:var(--gray-400);margin-top:-8px;margin-bottom:12px;">Acha wazi kubaki na mpangilio wa default (juu kabisa ya QR Code). Jaza namba kuhamishia label mahali pengine kwenye kadi.</p>
+              <div class="input-row">
+                <div class="form-group">
+                  <label><i data-lucide="move" class="icon" style="color:#B8860B;width:14px;height:14px;vertical-align:-2px;"></i> VIP/VVIP Badge - Position X</label>
+                  <input type="number" id="posVipX" placeholder="Default: juu ya Label" oninput="renderPositionPreview()">
+                </div>
+                <div class="form-group">
+                  <label>VIP/VVIP Badge - Position Y</label>
+                  <input type="number" id="posVipY" placeholder="Default: juu ya Label" oninput="renderPositionPreview()">
+                </div>
+              </div>
+              <p style="font-size:11px;color:var(--gray-400);margin-top:-8px;margin-bottom:12px;">Acha wazi kubaki na mpangilio wa default (juu kabisa ya Group Size Label). Jaza namba kuhamishia badge ya VIP/VVIP mahali pengine.</p>
+              <div class="form-group">
+                <label><i data-lucide="palette" class="icon" style="color:#A855F7;width:14px;height:14px;vertical-align:-2px;"></i> Rangi ya VIP/VVIP Badge</label>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <select id="posVipColor" onchange="const v=this.value;const sw=document.getElementById('vipColorSwatch');sw.style.background = v==='auto' ? 'linear-gradient(135deg,#B8860B,#1A56DB)' : v;renderPositionPreview()" style="flex:1;">
+                    <option value="auto" selected>Auto (VVIP=Dhahabu, VIP=Bluu)</option>
+                    <option value="#FFFFFF">White</option>
+                    <option value="#000000">Black</option>
+                    <option value="#EF4444">Red</option>
+                    <option value="#16A34A">Green</option>
+                    <option value="#3B82F6">Blue</option>
+                    <option value="#1E3A8A">Dark Blue</option>
+                    <option value="#EAB308">Yellow</option>
+                  </select>
+                  <span id="vipColorSwatch" title="Muonekano wa rangi" style="display:inline-block;width:30px;height:30px;border-radius:6px;border:1px solid var(--gray-200);background:linear-gradient(135deg,#B8860B,#1A56DB);flex-shrink:0;"></span>
+                </div>
+              </div>
             </div>
           </div>
           <button class="btn btn-primary" style="width:auto;" onclick="savePositions()">
@@ -4639,7 +4677,7 @@ async function downloadEventInvoice(eventId) {
 }
 
 // ===== TEMPLATES =====
-const DEFAULT_POSITIONS = { jinaX: 709, jinaY: 381, jinaFont: 75, jinaColor: '#000000', jinaFontFamily: 'Inter', qrX: 872, qrY: 1662, qrSize: 250, labelColor: '#000000', labelFormat: 'hash' };
+const DEFAULT_POSITIONS = { jinaX: 709, jinaY: 381, jinaFont: 75, jinaColor: '#000000', jinaFontFamily: 'Inter', qrX: 872, qrY: 1662, qrSize: 250, labelColor: '#000000', labelFormat: 'hash', labelX: null, labelY: null, vipX: null, vipY: null, vipColor: 'auto' };
 let selectedTemplateForEdit = null; // template inayohaririwa sasa kwenye Position Management
 
 function fillPositionInputs(pos) {
@@ -4655,6 +4693,13 @@ function fillPositionInputs(pos) {
   document.getElementById('posLabelColor').value = pos.labelColor || '#000000';
   document.getElementById('labelColorSwatch').style.background = pos.labelColor || '#000000';
   document.getElementById('posLabelFormat').value = pos.labelFormat || 'hash';
+  document.getElementById('posLabelX').value = (pos.labelX === null || pos.labelX === undefined || pos.labelX === '') ? '' : pos.labelX;
+  document.getElementById('posLabelY').value = (pos.labelY === null || pos.labelY === undefined || pos.labelY === '') ? '' : pos.labelY;
+  document.getElementById('posVipX').value = (pos.vipX === null || pos.vipX === undefined || pos.vipX === '') ? '' : pos.vipX;
+  document.getElementById('posVipY').value = (pos.vipY === null || pos.vipY === undefined || pos.vipY === '') ? '' : pos.vipY;
+  const vipColorVal = pos.vipColor || 'auto';
+  document.getElementById('posVipColor').value = vipColorVal;
+  document.getElementById('vipColorSwatch').style.background = vipColorVal === 'auto' ? 'linear-gradient(135deg,#B8860B,#1A56DB)' : vipColorVal;
 }
 
 async function selectTemplateForEditing(templateId) {
@@ -4686,6 +4731,11 @@ async function savePositions() {
     qrSize: document.getElementById('posQrSize').value,
     labelColor: document.getElementById('posLabelColor').value,
     labelFormat: document.getElementById('posLabelFormat').value,
+    labelX: document.getElementById('posLabelX').value === '' ? null : document.getElementById('posLabelX').value,
+    labelY: document.getElementById('posLabelY').value === '' ? null : document.getElementById('posLabelY').value,
+    vipX: document.getElementById('posVipX').value === '' ? null : document.getElementById('posVipX').value,
+    vipY: document.getElementById('posVipY').value === '' ? null : document.getElementById('posVipY').value,
+    vipColor: document.getElementById('posVipColor').value,
   };
 
   if (!selectedTemplateForEdit) {
@@ -4726,6 +4776,11 @@ async function renderPositionPreview() {
     qrSize: parseInt(document.getElementById('posQrSize').value) || 100,
     labelColor: document.getElementById('posLabelColor').value || '#000000',
     labelFormat: document.getElementById('posLabelFormat').value || 'hash',
+    labelX: document.getElementById('posLabelX').value === '' ? null : parseInt(document.getElementById('posLabelX').value),
+    labelY: document.getElementById('posLabelY').value === '' ? null : parseInt(document.getElementById('posLabelY').value),
+    vipX: document.getElementById('posVipX').value === '' ? null : parseInt(document.getElementById('posVipX').value),
+    vipY: document.getElementById('posVipY').value === '' ? null : parseInt(document.getElementById('posVipY').value),
+    vipColor: document.getElementById('posVipColor').value || 'auto',
   };
 
   const ctx = canvas.getContext('2d');
@@ -4764,8 +4819,18 @@ qrImg.onload = () => {
   // Chora QR juu ya hiyo background
   ctx.drawImage(qrImg, pos.qrX, pos.qrY, pos.qrSize, pos.qrSize);
 
-  // Lebo (mfano #SINGLE) JUU ya QR
-  drawGroupSizeLabel(ctx, { group_size: 1 }, 1, pos.labelFormat, pos.labelColor || '#000000', pos.qrX + pos.qrSize / 2, boxY - 12, 24);
+  // Lebo (mfano #SINGLE) JUU ya QR (au mahali ulipoweka kwenye Position X/Y)
+  const previewLabelCx = pos.labelX !== null && !isNaN(pos.labelX) ? pos.labelX : (pos.qrX + pos.qrSize / 2);
+  const previewLabelY = pos.labelY !== null && !isNaN(pos.labelY) ? pos.labelY : (boxY - 12);
+  drawGroupSizeLabel(ctx, { group_size: 1 }, 1, pos.labelFormat, pos.labelColor || '#000000', previewLabelCx, previewLabelY, 24);
+
+  // Sample ya VIP/VVIP badge - JUU ya Group Size Label kwa default, au mahali ulipoweka
+  const previewVipCx = pos.vipX !== null && !isNaN(pos.vipX) ? pos.vipX : previewLabelCx;
+  const previewVipY = pos.vipY !== null && !isNaN(pos.vipY) ? pos.vipY : (previewLabelY - 33);
+  ctx.textAlign = 'center';
+  ctx.font = `bold 28px Inter, sans-serif`;
+  ctx.fillStyle = (pos.vipColor && pos.vipColor !== 'auto') ? pos.vipColor : '#1A56DB';
+  ctx.fillText('⭐ VIP', previewVipCx, previewVipY);
 };
 qrImg.src = qrDataUrl;
   };
@@ -4945,24 +5010,34 @@ function drawGroupSizeLabel(ctx, guest, sequenceNumber, format, color, centerX, 
 }
 
 function drawGuestLabelWithVip(ctx, guest, pos, boxY) {
-  const centerX = parseInt(pos.qrX) + parseInt(pos.qrSize) / 2;
+  const defaultCenterX = parseInt(pos.qrX) + parseInt(pos.qrSize) / 2;
+  const hasLabelX = pos.labelX !== null && pos.labelX !== undefined && pos.labelX !== '' && !isNaN(pos.labelX);
+  const hasLabelY = pos.labelY !== null && pos.labelY !== undefined && pos.labelY !== '' && !isNaN(pos.labelY);
+  const centerX = hasLabelX ? parseInt(pos.labelX) : defaultCenterX;
+  const labelBaselineY = hasLabelY ? parseInt(pos.labelY) : (boxY - 12);
 
-  // Line ya #SINGLE / #DOUBLE / #GROUP (au icon, kutegemea format) - inabaki pale pale
-  drawGroupSizeLabel(ctx, guest, guest.sequence_number || 1, pos.labelFormat, pos.labelColor || '#000000', centerX, boxY - 12, 24);
+  // Line ya #SINGLE / #DOUBLE / #GROUP (au icon, kutegemea format) - juu ya QR kwa default, au mahali ulipoweka
+  drawGroupSizeLabel(ctx, guest, guest.sequence_number || 1, pos.labelFormat, pos.labelColor || '#000000', centerX, labelBaselineY, 24);
 
-  // Cheo/VIP/VVIP - juu zaidi ya label ya kawaida (sasa inakubali maandishi yoyote)
+  // Cheo/VIP/VVIP - JUU ya Group Size Label kwa default, au mahali ulipoweka (Position X/Y)
   const rank = (guest.vip_status || '').trim();
   const rankLower = rank.toLowerCase();
   if (rank && rankLower !== 'none') {
     const isVvip = rankLower === 'vvip';
     const isVip = rankLower === 'vip';
     const vipText = isVvip ? '👑 VVIP' : isVip ? '⭐ VIP' : rank;
-    const vipColor = isVvip ? '#B8860B' : isVip ? '#1A56DB' : '#374151'; // dhahabu VVIP, bluu VIP, kijivu giza kwa cheo kingine chochote
+    const autoColor = isVvip ? '#B8860B' : isVip ? '#1A56DB' : '#374151'; // dhahabu VVIP, bluu VIP, kijivu giza kwa cheo kingine chochote
+    const vipColor = (pos.vipColor && pos.vipColor !== 'auto') ? pos.vipColor : autoColor;
+
+    const hasVipX = pos.vipX !== null && pos.vipX !== undefined && pos.vipX !== '' && !isNaN(pos.vipX);
+    const hasVipY = pos.vipY !== null && pos.vipY !== undefined && pos.vipY !== '' && !isNaN(pos.vipY);
+    const vipCenterX = hasVipX ? parseInt(pos.vipX) : centerX;
+    const vipCenterY = hasVipY ? parseInt(pos.vipY) : (labelBaselineY - 33);
 
     ctx.textAlign = 'center';
     ctx.font = `bold 28px Inter, sans-serif`;
     ctx.fillStyle = vipColor;
-    ctx.fillText(vipText, centerX, boxY - 45); // juu zaidi ya line ya #SINGLE
+    ctx.fillText(vipText, vipCenterX, vipCenterY);
   }
 }
 
