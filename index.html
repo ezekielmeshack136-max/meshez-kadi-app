@@ -1199,7 +1199,7 @@
                 <select id="posLabelFormat" onchange="renderPositionPreview()">
                   <option value="hash">Na # (mfano #SINGLE)</option>
                   <option value="plain">Bila # (mfano SINGLE)</option>
-                  <option value="icon">Yenye Icons (👤 SINGLE / 👥 DOUBLE)</option>
+                  <option value="icon">Yenye Icons (mtu mmoja / watu wengi)</option>
                 </select>
               </div>
             </div>
@@ -4765,10 +4765,7 @@ qrImg.onload = () => {
   ctx.drawImage(qrImg, pos.qrX, pos.qrY, pos.qrSize, pos.qrSize);
 
   // Lebo (mfano #SINGLE) JUU ya QR
-  ctx.fillStyle = pos.labelColor || '#000000';
-  ctx.font = `bold 24px Inter, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.fillText(getGuestLabel({ group_size: 1 }, 1, pos.labelFormat), pos.qrX + pos.qrSize / 2, boxY - 12);
+  drawGroupSizeLabel(ctx, { group_size: 1 }, 1, pos.labelFormat, pos.labelColor || '#000000', pos.qrX + pos.qrSize / 2, boxY - 12, 24);
 };
 qrImg.src = qrDataUrl;
   };
@@ -4890,33 +4887,68 @@ async function saveSettings() {
   showToast('Mipangilio imehifadhiwa!', 'success');
 }
   // ===== GENERATE CARD (Template + Jina + QR) =====
-function getGuestLabel(guest, sequenceNumber, format) {
-  format = format || 'hash';
+function getGroupSizeBaseText(guest, sequenceNumber) {
   const size = guest.group_size;
-  let base;
-  if (size === 1) base = 'SINGLE';
-  else if (size === 2) base = 'DOUBLE';
-  else if (size === 3) base = 'TRIPLE';
-  else base = `GROUP${sequenceNumber}-${size}`;
+  if (size === 1) return 'SINGLE';
+  if (size === 2) return 'DOUBLE';
+  if (size === 3) return 'TRIPLE';
+  return `GROUP${sequenceNumber}-${size}`;
+}
 
-  if (format === 'plain') return base;
+// Icons za vector (path data kutoka Lucide) - huchorwa moja kwa moja kwenye canvas
+// badala ya emoji, hivyo zinabadilika rangi kulingana na labelColor uliyochagua.
+const GROUP_SIZE_ICONS = {
+  user: { paths: ['M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2'], circles: [{ cx: 12, cy: 7, r: 4 }] },
+  users: { paths: ['M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2', 'M22 21v-2a4 4 0 0 0-3-3.87', 'M16 3.13a4 4 0 0 1 0 7.75'], circles: [{ cx: 9, cy: 7, r: 4 }] },
+};
+
+function drawGroupSizeIcon(ctx, iconKey, cx, cy, size, color) {
+  const icon = GROUP_SIZE_ICONS[iconKey];
+  if (!icon) return;
+  ctx.save();
+  ctx.translate(cx - size / 2, cy - size / 2);
+  ctx.scale(size / 24, size / 24);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  icon.paths.forEach(d => ctx.stroke(new Path2D(d)));
+  (icon.circles || []).forEach(c => { ctx.beginPath(); ctx.arc(c.cx, c.cy, c.r, 0, Math.PI * 2); ctx.stroke(); });
+  ctx.restore();
+}
+
+// Huchora label ya group size (#SINGLE/SINGLE/icon+SINGLE kutegemea format) ikiwa
+// na rangi moja (labelColor) kwa maandishi na icon - vyote vinabadilika pamoja.
+function drawGroupSizeLabel(ctx, guest, sequenceNumber, format, color, centerX, baselineY, fontPx) {
+  format = format || 'hash';
+  const base = getGroupSizeBaseText(guest, sequenceNumber);
+  ctx.font = `bold ${fontPx}px Inter, sans-serif`;
+
   if (format === 'icon') {
-    const icon = size === 1 ? '👤' : size === 2 ? '👥' : '👨‍👩‍👧‍👦';
-    return `${icon} ${base}`;
+    const iconKey = guest.group_size === 1 ? 'user' : 'users';
+    const iconSize = fontPx;
+    const gap = 6;
+    const textWidth = ctx.measureText(base).width;
+    const totalWidth = iconSize + gap + textWidth;
+    const startX = centerX - totalWidth / 2;
+    drawGroupSizeIcon(ctx, iconKey, startX + iconSize / 2, baselineY - fontPx * 0.36, iconSize, color);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = color;
+    ctx.fillText(base, startX + iconSize + gap, baselineY);
+    ctx.textAlign = 'center';
+    return;
   }
-  return `#${base}`;
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = color;
+  ctx.fillText(format === 'plain' ? base : `#${base}`, centerX, baselineY);
 }
 
 function drawGuestLabelWithVip(ctx, guest, pos, boxY) {
   const centerX = parseInt(pos.qrX) + parseInt(pos.qrSize) / 2;
-  const label = getGuestLabel(guest, guest.sequence_number || 1, pos.labelFormat);
 
-  ctx.textAlign = 'center';
-
-  // Line ya #SINGLE / #DOUBLE / #GROUP - inabaki pale pale
-  ctx.fillStyle = pos.labelColor || '#000000';
-  ctx.font = `bold 24px Inter, sans-serif`;
-  ctx.fillText(label, centerX, boxY - 12);
+  // Line ya #SINGLE / #DOUBLE / #GROUP (au icon, kutegemea format) - inabaki pale pale
+  drawGroupSizeLabel(ctx, guest, guest.sequence_number || 1, pos.labelFormat, pos.labelColor || '#000000', centerX, boxY - 12, 24);
 
   // Cheo/VIP/VVIP - juu zaidi ya label ya kawaida (sasa inakubali maandishi yoyote)
   const rank = (guest.vip_status || '').trim();
@@ -4927,10 +4959,10 @@ function drawGuestLabelWithVip(ctx, guest, pos, boxY) {
     const vipText = isVvip ? '👑 VVIP' : isVip ? '⭐ VIP' : rank;
     const vipColor = isVvip ? '#B8860B' : isVip ? '#1A56DB' : '#374151'; // dhahabu VVIP, bluu VIP, kijivu giza kwa cheo kingine chochote
 
+    ctx.textAlign = 'center';
     ctx.font = `bold 28px Inter, sans-serif`;
     ctx.fillStyle = vipColor;
     ctx.fillText(vipText, centerX, boxY - 45); // juu zaidi ya line ya #SINGLE
-    ctx.fillStyle = pos.labelColor || '#000000'; // rudisha rangi ya label
   }
 }
 
