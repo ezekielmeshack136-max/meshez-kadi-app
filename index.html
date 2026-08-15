@@ -1168,6 +1168,13 @@
                   <span id="jinaColorSwatch" title="Muonekano wa rangi" style="display:inline-block;width:30px;height:30px;border-radius:6px;border:1px solid var(--gray-200);background:#000000;flex-shrink:0;"></span>
                 </div>
               </div>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;margin-bottom:12px;">
+                <input type="checkbox" id="posVipShow" checked style="width:16px;height:16px;" onchange="renderPositionPreview()">
+                <div>
+                  <div style="font-size:13px;font-weight:600;">👑 Onyesha Badge ya VIP/VVIP (default ya template hii)</div>
+                  <div style="font-size:11px;color:var(--gray-400);">Zima kama template hii haihitaji badge ya VIP/VVIP kwenye kadi. Unaweza pia kuzima/kuwasha kwa event maalum kwenye "Hariri Event".</div>
+                </div>
+              </label>
               <div class="input-row">
                 <div class="form-group">
                   <label><i data-lucide="move" class="icon" style="color:#B8860B;width:14px;height:14px;vertical-align:-2px;"></i> VIP/VVIP Badge - Position X</label>
@@ -1209,6 +1216,13 @@
                 <label>QR Code Ukubwa</label>
                 <input type="number" id="posQrSize" value="250" placeholder="250" oninput="renderPositionPreview()">
               </div>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;margin-bottom:12px;">
+                <input type="checkbox" id="posLabelShow" checked style="width:16px;height:16px;" onchange="renderPositionPreview()">
+                <div>
+                  <div style="font-size:13px;font-weight:600;">👥 Onyesha Group Size Label (default ya template hii)</div>
+                  <div style="font-size:11px;color:var(--gray-400);">Zima kama template hii haihitaji lebo ya #SINGLE/#DOUBLE/#GROUP kwenye kadi. Unaweza pia kuzima/kuwasha kwa event maalum kwenye "Hariri Event".</div>
+                </div>
+              </label>
               <div class="form-group">
                 <label><i data-lucide="palette" class="icon" style="color:#A855F7;width:14px;height:14px;vertical-align:-2px;"></i> Rangi ya Group Size (#SINGLE/#DOUBLE/#GROUP)</label>
                 <div style="display:flex;align-items:center;gap:8px;">
@@ -5120,7 +5134,7 @@ async function downloadEventInvoice(eventId) {
 }
 
 // ===== TEMPLATES =====
-const DEFAULT_POSITIONS = { jinaX: 709, jinaY: 381, jinaFont: 75, jinaColor: '#000000', jinaFontFamily: 'Inter', qrX: 872, qrY: 1662, qrSize: 250, labelColor: '#000000', labelFormat: 'hash', labelX: null, labelY: null, vipX: null, vipY: null, vipColor: 'auto' };
+const DEFAULT_POSITIONS = { jinaX: 709, jinaY: 381, jinaFont: 75, jinaColor: '#000000', jinaFontFamily: 'Inter', qrX: 872, qrY: 1662, qrSize: 250, labelColor: '#000000', labelFormat: 'hash', labelX: null, labelY: null, vipX: null, vipY: null, vipColor: 'auto', vipShow: true, labelShow: true };
 let selectedTemplateForEdit = null; // template inayohaririwa sasa kwenye Position Management
 
 function fillPositionInputs(pos) {
@@ -5143,6 +5157,8 @@ function fillPositionInputs(pos) {
   const vipColorVal = pos.vipColor || 'auto';
   document.getElementById('posVipColor').value = vipColorVal;
   document.getElementById('vipColorSwatch').style.background = vipColorVal === 'auto' ? 'linear-gradient(135deg,#B8860B,#1A56DB)' : vipColorVal;
+  document.getElementById('posVipShow').checked = pos.vipShow !== false;
+  document.getElementById('posLabelShow').checked = pos.labelShow !== false;
 }
 
 async function selectTemplateForEditing(templateId) {
@@ -5179,6 +5195,8 @@ async function savePositions() {
     vipX: document.getElementById('posVipX').value === '' ? null : document.getElementById('posVipX').value,
     vipY: document.getElementById('posVipY').value === '' ? null : document.getElementById('posVipY').value,
     vipColor: document.getElementById('posVipColor').value,
+    vipShow: document.getElementById('posVipShow').checked,
+    labelShow: document.getElementById('posLabelShow').checked,
   };
 
   if (!selectedTemplateForEdit) {
@@ -5224,6 +5242,8 @@ async function renderPositionPreview() {
     vipX: document.getElementById('posVipX').value === '' ? null : parseInt(document.getElementById('posVipX').value),
     vipY: document.getElementById('posVipY').value === '' ? null : parseInt(document.getElementById('posVipY').value),
     vipColor: document.getElementById('posVipColor').value || 'auto',
+    vipShow: document.getElementById('posVipShow').checked,
+    labelShow: document.getElementById('posLabelShow').checked,
   };
 
   const ctx = canvas.getContext('2d');
@@ -5265,15 +5285,19 @@ qrImg.onload = () => {
   // Lebo (mfano #SINGLE) JUU ya QR (au mahali ulipoweka kwenye Position X/Y)
   const previewLabelCx = pos.labelX !== null && !isNaN(pos.labelX) ? pos.labelX : (pos.qrX + pos.qrSize / 2);
   const previewLabelY = pos.labelY !== null && !isNaN(pos.labelY) ? pos.labelY : (boxY - 12);
-  drawGroupSizeLabel(ctx, { group_size: 1 }, 1, pos.labelFormat, pos.labelColor || '#000000', previewLabelCx, previewLabelY, 24);
+  if (pos.labelShow !== false) {
+    drawGroupSizeLabel(ctx, { group_size: 1 }, 1, pos.labelFormat, pos.labelColor || '#000000', previewLabelCx, previewLabelY, 24);
+  }
 
   // Sample ya VIP/VVIP badge - JUU ya Group Size Label kwa default, au mahali ulipoweka
-  const previewVipCx = pos.vipX !== null && !isNaN(pos.vipX) ? pos.vipX : previewLabelCx;
-  const previewVipY = pos.vipY !== null && !isNaN(pos.vipY) ? pos.vipY : (previewLabelY - 33);
-  ctx.textAlign = 'center';
-  ctx.font = `bold 28px Inter, sans-serif`;
-  ctx.fillStyle = (pos.vipColor && pos.vipColor !== 'auto') ? pos.vipColor : '#1A56DB';
-  ctx.fillText('⭐ VIP', previewVipCx, previewVipY);
+  if (pos.vipShow !== false) {
+    const previewVipCx = pos.vipX !== null && !isNaN(pos.vipX) ? pos.vipX : previewLabelCx;
+    const previewVipY = pos.vipY !== null && !isNaN(pos.vipY) ? pos.vipY : (previewLabelY - 33);
+    ctx.textAlign = 'center';
+    ctx.font = `bold 28px Inter, sans-serif`;
+    ctx.fillStyle = (pos.vipColor && pos.vipColor !== 'auto') ? pos.vipColor : '#1A56DB';
+    ctx.fillText('⭐ VIP', previewVipCx, previewVipY);
+  }
 };
 qrImg.src = qrDataUrl;
   };
@@ -5527,7 +5551,8 @@ async function generateCard(guestId) {
     return;
   }
 
-  const pos = { ...(template.positions || DEFAULT_POSITIONS), showVip: eventData?.show_vip_badge !== false, showGroupLabel: eventData?.show_group_label !== false };
+  const tplPos = template.positions || DEFAULT_POSITIONS;
+  const pos = { ...tplPos, showVip: (tplPos.vipShow !== false) && (eventData?.show_vip_badge !== false), showGroupLabel: (tplPos.labelShow !== false) && (eventData?.show_group_label !== false) };
   const canvas = document.getElementById('cardCanvas');
   const ctx = canvas.getContext('2d');
 
@@ -5637,7 +5662,8 @@ async function generateAndUploadCard(guestId, forceRegenerate = false) {
   const template = await getTemplateForEvent(guest.event_id, eventData?.type);
   if (!template) throw new Error('Hakuna template kwa event "' + (eventData?.name || '') + '"');
 
-  const pos = { ...(template.positions || DEFAULT_POSITIONS), showVip: eventData?.show_vip_badge !== false, showGroupLabel: eventData?.show_group_label !== false };
+  const tplPos = template.positions || DEFAULT_POSITIONS;
+  const pos = { ...tplPos, showVip: (tplPos.vipShow !== false) && (eventData?.show_vip_badge !== false), showGroupLabel: (tplPos.labelShow !== false) && (eventData?.show_group_label !== false) };
   const blob = await generateSingleCardBlob(guest, template, pos);
 
   const safeName = guest.name.replace(/[^a-zA-Z0-9]/g, '_');
@@ -5714,7 +5740,8 @@ async function generateAllCards() {
 
   showToast(`Inatengeneza kadi ${guests.length}... subiri`, 'info');
 
-  const pos = { ...(template.positions || DEFAULT_POSITIONS), showVip: eventData?.show_vip_badge !== false, showGroupLabel: eventData?.show_group_label !== false };
+  const tplPos = template.positions || DEFAULT_POSITIONS;
+  const pos = { ...tplPos, showVip: (tplPos.vipShow !== false) && (eventData?.show_vip_badge !== false), showGroupLabel: (tplPos.labelShow !== false) && (eventData?.show_group_label !== false) };
   const zip = new JSZip();
 
   for (let i = 0; i < guests.length; i++) {
