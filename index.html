@@ -1396,10 +1396,7 @@
         <div class="card" style="margin-bottom:16px;">
           <div class="card-header">
             <div class="card-title">📋 Chagua Event au Folder</div>
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-outline btn-sm" style="color:#DC2626;border-color:#FCA5A5;" onclick="openDeleteFolderModal()">🗑️ Futa Folder</button>
-              <button class="btn btn-outline btn-sm" onclick="openNewFolderModal()">📁 + Folder Mpya</button>
-            </div>
+            <button class="btn btn-outline btn-sm" onclick="openNewFolderModal()">📁 + Folder Mpya</button>
           </div>
           <div class="form-group">
             <label>Event / Folder</label>
@@ -1407,7 +1404,6 @@
               <option value="">-- Chagua Event au Folder --</option>
             </select>
             <p style="font-size:11px;color:var(--gray-400);margin-top:6px;">Huna event bado? Tengeneza "Folder" - inakuwezesha kupakia/kuongeza contacts na kutuma SMS moja kwa moja, bila kuhitaji kutengeneza event kamili.</p>
-            <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">📁 Folder ni tofauti kabisa na Event - kuifuta (au kufuta contacts zake) <strong>hakuathiri</strong> wageni/data za "Tuma Mialiko" (Invitations) kwa vyovyote vile. Bofya "🗑️ Futa Folder" juu kuchagua Folder ya kufuta.</p>
           </div>
           <div id="rsvpEventStats" style="display:none;">
             <div style="display:flex;gap:12px;margin-top:12px;">
@@ -2115,32 +2111,7 @@
   </div>
 </div>
 
-<!-- Delete RSVP Folder Modal -->
-<div class="modal-overlay" id="deleteFolderModal">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">🗑️ Futa Folder</div>
-      <button class="modal-close" onclick="closeModal('deleteFolderModal')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>Chagua Folder unayotaka kufuta</label>
-        <select id="deleteFolderSelect">
-          <option value="">-- Chagua Folder ya kufuta --</option>
-        </select>
-        <p id="deleteFolderEmptyMsg" style="display:none;font-size:13px;color:var(--gray-400);margin-top:8px;">Huna Folder yoyote iliyotengenezwa bado. Tumia "📁 + Folder Mpya" kwanza.</p>
-        <p style="font-size:11px;color:var(--gray-400);margin-top:8px;">Orodha hii inaonyesha <strong>Folders pekee</strong> (za SMS/michango) - Events halisi hazionyeshwi hapa kwa sababu wageni wake ni rekodi ile ile inayotumika kwenye "Tuma Mialiko" (Invitations), hivyo kuwafuta hapa kungeathiri mialiko. Kufuta Folder <strong>hakuathiri</strong> Invitations kwa vyovyote.</p>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('deleteFolderModal')">Ghairi</button>
-      <button class="btn btn-danger" id="deleteFolderConfirmBtn" onclick="confirmDeleteFolder()">🗑️ Futa Folder Hii</button>
-    </div>
-  </div>
-</div>
-
 <!-- Bulk Import Modal -->
-
 <div class="modal-overlay" id="bulkImportModal">
   <div class="modal">
     <div class="modal-header">
@@ -3142,8 +3113,8 @@ async function saveEventLocation() {
   loadEvents();
 }
 
-async function deleteEvent(id, skipConfirm) {
-  if (!skipConfirm && !confirm('Una uhakika kutaka kufuta event hii? Data zote za event hii (wageni, templates, kadi zilizotengenezwa) zitafutwa kabisa na haziwezi kurudishwa.')) return;
+async function deleteEvent(id) {
+  if (!confirm('Una uhakika kutaka kufuta event hii? Data zote za event hii (wageni, templates, kadi zilizotengenezwa) zitafutwa kabisa na haziwezi kurudishwa.')) return;
 
   showToast('Inafuta event na data zake zote...', 'info');
 
@@ -3231,12 +3202,12 @@ async function loadRsvpEventsAndFolders() {
   let html = '<option value="">-- Chagua Event au Folder --</option>';
   if (events.length) {
     html += '<optgroup label="🎉 Matukio (Events)">';
-    events.forEach(e => { html += `<option value="${e.id}" data-folder="false">${e.name}</option>`; });
+    events.forEach(e => { html += `<option value="${e.id}">${e.name}</option>`; });
     html += '</optgroup>';
   }
   if (folders.length) {
     html += '<optgroup label="📁 Folders (SMS pekee)">';
-    folders.forEach(f => { html += `<option value="${f.id}" data-folder="true">📁 ${f.name}</option>`; });
+    folders.forEach(f => { html += `<option value="${f.id}">📁 ${f.name}</option>`; });
     html += '</optgroup>';
   }
   rsvpSel.innerHTML = html;
@@ -3269,57 +3240,6 @@ async function saveNewFolder() {
     document.getElementById('rsvpEventSelect').value = data.id;
     onRsvpEventChange();
   }
-}
-
-// Hufuta Folder (na contacts/SMS zake zote) - HAIWEZI kuathiri Event halisi wala
-// data za "Tuma Mialiko" (Invitations), kwa sababu Folder ni rekodi kabisa tofauti
-// (is_folder = true) na wageni wake (guests.event_id = folder.id) hawajaunganishwa
-// na event yoyote halisi ya kadi/mialiko. Inatumia deleteEvent() ile ile
-// inayotumika kufuta Event (inafuta guests + templates + kadi za storage + row yenyewe).
-//
-// Kwa MAKUSUDI orodha hii inaonyesha FOLDERS PEKEE (si Events halisi) - kwa sababu
-// wageni wa Event halisi ni rekodi ile ile inayotumika kwenye "Tuma Mialiko", hivyo
-// kuifuta kunaweza kuathiri Invitations. Endapo mtu anataka kufuta contact/mgeni
-// mmoja mmoja wa Event halisi, atumie kitufe cha 🗑️ kwenye jedwali la wageni.
-async function openDeleteFolderModal() {
-  const { data } = await sb.from('events').select('id,name').eq('user_id', ORG_OWNER_ID).eq('is_folder', true).order('created_at', { ascending: false });
-  const sel = document.getElementById('deleteFolderSelect');
-  const emptyMsg = document.getElementById('deleteFolderEmptyMsg');
-  const confirmBtn = document.getElementById('deleteFolderConfirmBtn');
-
-  if (!data || data.length === 0) {
-    sel.innerHTML = '';
-    sel.style.display = 'none';
-    emptyMsg.style.display = 'block';
-    confirmBtn.disabled = true;
-  } else {
-    sel.style.display = 'block';
-    emptyMsg.style.display = 'none';
-    confirmBtn.disabled = false;
-    sel.innerHTML = '<option value="">-- Chagua Folder ya kufuta --</option>' +
-      data.map(f => `<option value="${f.id}">📁 ${f.name}</option>`).join('');
-  }
-  showModal('deleteFolderModal');
-}
-
-async function confirmDeleteFolder() {
-  const sel = document.getElementById('deleteFolderSelect');
-  const id = sel.value;
-  if (!id) return showToast('Chagua Folder kwanza', 'error');
-  const name = sel.options[sel.selectedIndex].textContent.replace('📁', '').trim();
-
-  if (!confirm(`Una uhakika kutaka kufuta Folder "${name}"? Contacts na ujumbe wote wa SMS ndani yake vitafutwa kabisa. Hii HAITAATHIRI wageni wa "Tuma Mialiko" (Invitations) kwa vyovyote.`)) return;
-
-  closeModal('deleteFolderModal');
-  showToast('Inafuta Folder...', 'info');
-  await deleteEvent(id, true); // skipConfirm: tayari tumeshathibitisha juu; deleteEvent inafuta guests, templates, kadi za storage, na folder row yenyewe
-  await loadRsvpEventsAndFolders();
-  const rsvpSel = document.getElementById('rsvpEventSelect');
-  if (rsvpSel && rsvpSel.value === id) {
-    rsvpSel.value = '';
-    onRsvpEventChange();
-  }
-  showToast(`Folder "${name}" imefutwa!`, 'success');
 }
 
 async function selectEventForInvitations(eventId) {
