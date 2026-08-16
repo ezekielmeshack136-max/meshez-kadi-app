@@ -1571,6 +1571,14 @@
           <h2 style="font-size:18px;font-weight:700;">💬 WhatsApp Monitor</h2>
           <p style="font-size:13px;color:var(--gray-400);">Fuatilia hali ya WhatsApp na RSVP za wageni</p>
         </div>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Chagua Event</label>
+            <select id="waEventFilter" onchange="loadWhatsappMonitor()">
+              <option value="">-- Events Zote (Zimechanganywa) --</option>
+            </select>
+          </div>
+        </div>
         <div class="grid-3" style="margin-bottom:16px;">
           <div class="stat-card">
             <div class="stat-icon" style="background:linear-gradient(135deg,#DCFCE7,#BBF7D0);"><i data-lucide="check-circle-2" style="color:#16A34A"></i></div>
@@ -4500,10 +4508,24 @@ function playBeep(type) {
 // ===== WHATSAPP MONITOR =====
 async function loadWhatsappMonitor() {
   if (!currentUser) return;
-  const { data: guests } = await sb.from('guests').select('*').eq('user_id', ORG_OWNER_ID);
-  const { data: events } = await sb.from('events').select('id, name').eq('user_id', ORG_OWNER_ID);
+  const { data: events } = await sb.from('events').select('id, name').eq('user_id', ORG_OWNER_ID).eq('is_folder', false).order('created_at', { ascending: false });
   const eventNameById = {};
   (events || []).forEach(e => { eventNameById[e.id] = e.name; });
+
+  // Jaza dropdown ya Event kila mara (ili ijumuishe events mpya), ikitunza
+  // Event iliyokuwa imechaguliwa tayari
+  const filterSel = document.getElementById('waEventFilter');
+  if (filterSel) {
+    const currentVal = filterSel.value;
+    filterSel.innerHTML = '<option value="">-- Events Zote (Zimechanganywa) --</option>' +
+      (events || []).map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+    if (currentVal && filterSel.querySelector(`option[value="${currentVal}"]`)) filterSel.value = currentVal;
+  }
+  const selectedEventId = filterSel ? filterSel.value : '';
+
+  let guestQuery = sb.from('guests').select('*').eq('user_id', ORG_OWNER_ID);
+  if (selectedEventId) guestQuery = guestQuery.eq('event_id', selectedEventId);
+  const { data: guests } = await guestQuery;
 
   const waOk      = guests?.filter(g => g.wa_sent === 'yes').length || 0;
   const waPending = guests?.filter(g => g.wa_sent === 'no' && g.whatsapp === 'yes').length || 0;
@@ -4523,7 +4545,7 @@ async function loadWhatsappMonitor() {
 
   const tbody = document.getElementById('waTable');
   if (!guests || guests.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna data</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna data${selectedEventId ? ' kwa event hii' : ''}</td></tr>`;
     return;
   }
 
