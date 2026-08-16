@@ -743,6 +743,38 @@
   .scan-title { font-size: 22px; font-weight: 700; }
   .scan-sub { font-size: 14px; color: var(--gray-600); margin-top: 4px; }
 
+  /* Animated Success Checkmark - circle inachorwa kwanza, kisha tick
+     inachorwa kutoka katikati kwenda nje ya circle (kama kwenye Scanner PWA) */
+  .checkmark-anim {
+    width: 72px; height: 72px; margin: 0 auto;
+    display: block;
+  }
+  .checkmark-anim-circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    stroke-width: 3;
+    stroke: var(--green);
+    fill: none;
+    animation: checkmarkStrokeCircle 0.5s cubic-bezier(0.65,0,0.45,1) forwards;
+  }
+  .checkmark-anim-check {
+    transform-origin: 50% 50%;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    stroke: var(--green);
+    stroke-width: 4;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    animation: checkmarkStrokeCheck 0.35s cubic-bezier(0.65,0,0.45,1) 0.5s forwards;
+  }
+  @keyframes checkmarkStrokeCircle {
+    100% { stroke-dashoffset: 0; }
+  }
+  @keyframes checkmarkStrokeCheck {
+    100% { stroke-dashoffset: 0; }
+  }
+
   /* Page sections */
   .page { display: none; }
   .page.active { display: block; }
@@ -2556,6 +2588,7 @@ async function getMyAccessibleEventIds() {
 let scanCountOk = 0;
 let scanCountFail = 0;
 let qrScanner = null;
+let scanLocked = false; // Inazuia kadi ile ile "kudetect" mara nyingi mfululizo mpaka "Scan Ijayo"
 
 // ===== AUTH =====
 function switchAuthTab(tab) {
@@ -4506,6 +4539,7 @@ async function sendRsvpBulkMessage() {
 // ===== SCANNER =====
 function initScanner() {
   if (qrScanner) return;
+  scanLocked = false;
   try {
     qrScanner = new Html5QrcodeScanner(
       'scannerReader',
@@ -4517,8 +4551,39 @@ function initScanner() {
 }
 
 async function onScanSuccess(text) {
+  if (scanLocked) return; // Kadi tayari imeshadetect - puuza mpaka "Scan Ijayo" ibonyezwe
+  scanLocked = true;
+  try { qrScanner.pause(true); } catch(e) {}
   document.getElementById('manualScanInput').value = text;
   await verifyScan();
+}
+
+// Inaachilia kamera iendelee kusoma QR nyingine - inaitwa baada ya
+// mtumiaji kumaliza kuangalia/kuthibitisha matokeo ya kadi iliyopita
+function resumeScanning() {
+  scanLocked = false;
+  document.getElementById('scanResult').innerHTML = `
+    <div class="empty-state" style="padding:32px;">
+      <div class="icon">🔍</div>
+      <h3>Subiri Scan</h3>
+      <p>Matokeo yataonekana hapa</p>
+    </div>`;
+  if (qrScanner) { try { qrScanner.resume(); } catch(e) {} }
+}
+
+// Kitufe cha "Scan Ijayo" kinachoongezwa mwishoni mwa kila matokeo ya scan
+function scanNextBtn() {
+  return `<button class="btn btn-primary" style="width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:6px;" onclick="resumeScanning()">🔎 Scan Ijayo</button>`;
+}
+
+// Animated checkmark SVG - circle inachorwa kwanza, kisha tick inachorwa
+// kutoka katikati kwenda nje ya circle (success confirmation animation)
+function animatedCheckmarkSVG() {
+  return `
+    <svg class="checkmark-anim" viewBox="0 0 52 52">
+      <circle class="checkmark-anim-circle" cx="26" cy="26" r="24"/>
+      <path class="checkmark-anim-check" d="M14 27 l8 8 16-17"/>
+    </svg>`;
 }
 
 async function verifyScan() {
@@ -4541,7 +4606,8 @@ async function verifyScan() {
         <div class="scan-title" style="color:#DC2626;">KADI YA EVENT TOFAUTI</div>
         <div class="scan-sub">${guest.name}</div>
         <div style="font-size:13px;margin-top:8px;color:#888;">Kadi hii ni ya event <strong>"${correctEvent?.name || 'nyingine'}"</strong>, si event uliyochagua sasa.</div>
-      </div>`;
+      </div>
+      ${scanNextBtn()}`;
     document.getElementById('scanCountOk').textContent   = scanCountOk;
     document.getElementById('scanCountFail').textContent = scanCountFail;
     return;
@@ -4558,7 +4624,8 @@ async function verifyScan() {
         <div class="scan-title" style="color:#DC2626;">KADI SI HALALI</div>
         <div class="scan-sub">QR hii haipo kwenye mfumo</div>
         <div style="font-size:12px;margin-top:8px;color:#888;">${cardId}</div>
-      </div>`;
+      </div>
+      ${scanNextBtn()}`;
   } else if (guest.used_count >= guest.group_size) {
     resultDiv.innerHTML = `
       <div class="scan-result-warn">
@@ -4566,12 +4633,13 @@ async function verifyScan() {
         <div class="scan-title" style="color:#CA8A04;">GROUP IMEKAMILIKA</div>
         <div class="scan-sub">${guest.name}</div>
         <div style="font-size:14px;margin-top:8px;font-weight:600;">${guest.used_count}/${guest.group_size} wameingia</div>
-      </div>`;
+      </div>
+      ${scanNextBtn()}`;
   } else {
     const nafasi = guest.group_size - guest.used_count;
     resultDiv.innerHTML = `
       <div class="scan-result-ok">
-        <div class="scan-icon">✅</div>
+        <div class="scan-icon">${animatedCheckmarkSVG()}</div>
         <div class="scan-title" style="color:#16A34A;">KADI HALALI</div>
         <div class="scan-sub" style="font-size:18px;font-weight:700;color:#1E293B;">${guest.name}</div>
         <div style="font-size:14px;margin-top:4px;">Nafasi zilizobaki: <strong>${nafasi}</strong> / ${guest.group_size}</div>
@@ -4586,6 +4654,7 @@ async function verifyScan() {
     scanCountOk++;
   }
 
+  document.getElementById('manualScanInput').value = '';
   document.getElementById('scanCountOk').textContent   = scanCountOk;
   document.getElementById('scanCountFail').textContent = scanCountFail;
 }
@@ -4604,6 +4673,13 @@ async function confirmEntry(guestId, usedCount, groupSize) {
   if (currentUsed >= currentGroupSize) {
     showToast('Onyo: mgeni huyu tayari amekamilisha group yake - huenda scanner nyingine imeshamthibitisha!', 'error');
     document.getElementById('manualScanInput').value = '';
+    document.getElementById('scanResult').innerHTML = `
+      <div class="scan-result-warn">
+        <div class="scan-icon">⚠️</div>
+        <div class="scan-title" style="color:#CA8A04;">TAYARI IMEKAMILIKA</div>
+        <div class="scan-sub">Scanner nyingine imeshamthibitisha mgeni huyu</div>
+      </div>
+      ${scanNextBtn()}`;
     refreshLiveAttendedCount();
     return;
   }
@@ -4615,10 +4691,12 @@ async function confirmEntry(guestId, usedCount, groupSize) {
   showToast(`Wameingia ${extra}! Jumla: ${newCount}/${currentGroupSize}`, 'success');
   document.getElementById('manualScanInput').value = '';
   document.getElementById('scanResult').innerHTML = `
-    <div class="empty-state" style="padding:32px;">
-      <div class="icon">🔍</div>
-      <h3>Tayari! Scan inayofuata...</h3>
-    </div>`;
+    <div class="scan-result-ok">
+      <div class="scan-icon">${animatedCheckmarkSVG()}</div>
+      <div class="scan-title" style="color:#16A34A;">Imethibitishwa!</div>
+      <div class="scan-sub">${newCount}/${currentGroupSize} wameingia • Wanaobaki: ${currentGroupSize-newCount}</div>
+    </div>
+    ${scanNextBtn()}`;
   refreshLiveAttendedCount();
 }
 
