@@ -1785,8 +1785,8 @@
             <input type="file" id="promoImageFile" accept="image/*">
             <button class="btn btn-primary" style="margin-top:8px;" onclick="uploadPromoImage()">📤 Pakia Picha</button>
           </div>
-          <div id="promoImagesGallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:16px;">
-            <p style="grid-column:1/-1;text-align:center;color:var(--gray-400);font-size:13px;">Hakuna picha bado</p>
+          <div id="promoImagesGallery" style="display:flex;flex-direction:column;gap:16px;margin-top:16px;">
+            <p style="text-align:center;color:var(--gray-400);font-size:13px;">Hakuna picha bado</p>
           </div>
         </div>
 
@@ -5088,20 +5088,50 @@ async function loadPromoImages() {
   if (!gallery) return;
 
   if (error) {
-    gallery.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--red);font-size:12px;">Kosa: jedwali la promo_images halijawekwa vizuri. Angalia maelezo ya SQL.</p>`;
+    gallery.innerHTML = `<p style="text-align:center;color:var(--red);font-size:12px;">Kosa: jedwali la promo_images halijawekwa vizuri. Angalia maelezo ya SQL.</p>`;
     return;
   }
   if (!data || data.length === 0) {
-    gallery.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--gray-400);font-size:13px;">Hakuna picha bado</p>`;
+    gallery.innerHTML = `<p style="text-align:center;color:var(--gray-400);font-size:13px;">Hakuna picha bado</p>`;
     return;
   }
 
   gallery.innerHTML = data.map(img => `
     <div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--gray-200);">
-      <img src="${img.url}" style="width:100%;height:140px;object-fit:cover;display:block;">
-      <button onclick="deletePromoImage('${img.id}','${img.file_path}')" style="position:absolute;top:6px;right:6px;background:rgba(220,38,38,0.9);color:#fff;border:none;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;">🗑️</button>
+      <img src="${img.url}" style="width:100%;height:auto;display:block;">
+      <div style="position:absolute;top:10px;right:10px;display:flex;gap:8px;">
+        <button onclick="downloadPromoImage('${img.url}','${img.file_path}')" style="background:rgba(26,86,219,0.9);color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;" title="Pakua Picha">⬇️</button>
+        <button onclick="deletePromoImage('${img.id}','${img.file_path}')" style="background:rgba(220,38,38,0.9);color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;" title="Futa Picha">🗑️</button>
+      </div>
     </div>
   `).join('');
+}
+
+// Hupakua picha ya mvuto moja kwa moja kwenye folder ya Downloads ya device
+// (badala ya kufungua tab mpya) - inatumia fetch() + Blob ili kulazimisha
+// download halisi hata kama picha inatoka kwenye storage ya nje (Supabase URL).
+async function downloadPromoImage(url, filePath) {
+  try {
+    showToast('Inapakua picha...', 'info');
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Imeshindwa kupata picha');
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
+    // Jina la faili linatoka kwenye file_path (jina la asili la picha lililopakiwa)
+    const fileName = (filePath && filePath.split('/').pop()) || `picha_${Date.now()}.jpg`;
+
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+    showToast('Picha imepakuliwa!', 'success');
+  } catch (e) {
+    showToast('Kosa la kupakua: ' + e.message, 'error');
+  }
 }
 
 async function uploadPromoImage() {
