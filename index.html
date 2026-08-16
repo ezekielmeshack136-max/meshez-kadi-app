@@ -820,9 +820,102 @@
     .content { padding: 16px; }
     .input-row { flex-direction: column; }
   }
+/* ===== DARK MODE ===== */
+body.dark-mode {
+  --white:    #1E293B;
+  --gray-50:  #1A2332;
+  --gray-100: #243044;
+  --gray-200: #334155;
+  --gray-400: #94A3B8;
+  --gray-600: #CBD5E1;
+  --gray-800: #F1F5F9;
+  --blue-light: #17233D;
+  --orange-light: #2E2113;
+  background: #0F172A;
+  color: var(--gray-800);
+}
+
+body.dark-mode .card {
+  background: linear-gradient(165deg, rgba(30,41,59,0.92), rgba(26,35,50,0.9));
+}
+
+body.dark-mode .modal {
+  background: linear-gradient(165deg, #1E293B 0%, #17223A 100%);
+}
+
+body.dark-mode .modal-header {
+  background: linear-gradient(90deg, #17233D, #1B2A47);
+}
+
+body.dark-mode .auth-card {
+  background: #1E293B;
+}
+
+body.dark-mode .form-group input,
+body.dark-mode .form-group select,
+body.dark-mode .form-group textarea {
+  background: #1A2332;
+  color: var(--gray-800);
+  border-color: var(--gray-200);
+}
+
+body.dark-mode .table-wrap table td:last-child {
+  background: #1E293B;
+}
+
+body.dark-mode .event-card,
+body.dark-mode .stat-card {
+  background: #1E293B;
+}
+
+body.dark-mode tr:hover td { background: #17233D; }
+body.dark-mode .table-wrap table tr:hover td:last-child { background: #17233D; }
+
+body.dark-mode .modal-close { background: var(--gray-100); color: var(--gray-800); }
+
+body.dark-mode ::-webkit-scrollbar-track { background: #1A2332; }
+body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
+
+/* Vitufe vya Light/Dark - Profile Settings */
+.theme-toggle-wrap {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+.theme-toggle-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 2px solid var(--gray-200);
+  background: var(--gray-50);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-600);
+  transition: all 0.2s;
+}
+.theme-toggle-btn.active {
+  border-color: var(--blue);
+  background: var(--blue-light);
+  color: var(--blue);
+}
+.theme-toggle-btn .icon-big { font-size: 24px; }
 </style>
 </head>
 <body>
+<script>
+  // Tumia theme iliyohifadhiwa MARA MOJA (kabla ya page kuonekana) ili kuepuka
+  // "flash" ya Light Mode kwa sekunde moja kabla ya kubadilika kwenda Dark Mode.
+  try {
+    if (localStorage.getItem('meshez_theme') === 'dark') {
+      document.body.classList.add('dark-mode');
+    }
+  } catch (e) {}
+</script>
 
 <!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
@@ -1868,6 +1961,22 @@
               </div>
               <button class="btn btn-primary" onclick="saveSettings()">💾 Hifadhi Mipangilio</button>
             </div>
+
+            <div class="card" style="margin-top:16px;">
+              <div class="card-title" style="margin-bottom:16px;">🎨 Appearance Mode</div>
+              <p style="font-size:13px;color:var(--gray-400);margin-bottom:14px;">Chagua muonekano wa mfumo mzima. Mipangilio hii inahifadhiwa kwenye kifaa hiki.</p>
+              <div class="theme-toggle-wrap">
+                <button class="theme-toggle-btn" id="themeLightBtn" onclick="setThemeMode('light')">
+                  <span class="icon-big">☀️</span>
+                  <span>Light Mode</span>
+                  <span style="font-size:11px;font-weight:400;color:var(--gray-400);">(Default)</span>
+                </button>
+                <button class="theme-toggle-btn" id="themeDarkBtn" onclick="setThemeMode('dark')">
+                  <span class="icon-big">🌙</span>
+                  <span>Dark Mode</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -2562,6 +2671,29 @@ async function verifyAccountStillValid() {
 setInterval(verifyAccountStillValid, 45000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) verifyAccountStillValid(); });
 
+// ===== APPEARANCE MODE (Light/Dark) - Mfumo Mzima =====
+// Inahifadhiwa kwenye localStorage ya kifaa (si database) - kila kifaa
+// kinaweza kuwa na chaguo lake mwenyewe. Default ni Light Mode.
+function setThemeMode(mode) {
+  if (mode === 'dark') {
+    document.body.classList.add('dark-mode');
+  } else {
+    document.body.classList.remove('dark-mode');
+  }
+  try { localStorage.setItem('meshez_theme', mode); } catch (e) {}
+  initThemeToggleUI();
+  showToast(mode === 'dark' ? '🌙 Dark Mode imewashwa' : '☀️ Light Mode imewashwa', 'success');
+}
+
+function initThemeToggleUI() {
+  let saved = 'light';
+  try { saved = localStorage.getItem('meshez_theme') || 'light'; } catch (e) {}
+  const lightBtn = document.getElementById('themeLightBtn');
+  const darkBtn = document.getElementById('themeDarkBtn');
+  if (lightBtn) lightBtn.classList.toggle('active', saved !== 'dark');
+  if (darkBtn) darkBtn.classList.toggle('active', saved === 'dark');
+}
+
 async function loadProfile() {
   if (!currentUser) return;
   const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
@@ -2657,6 +2789,7 @@ function showPage(page) {
   if (page === 'scanner') openScannerPage();
   if (page === 'templates') { loadTemplates(); renderPositionPreview(); }
   if (page === 'rsvp') loadEventsDropdown();
+  if (page === 'profile') initThemeToggleUI();
 
   startAutoRefresh(page);
 }
