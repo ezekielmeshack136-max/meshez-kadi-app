@@ -980,7 +980,7 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
         <input type="password" id="loginPassword" placeholder="••••••••">
       </div>
       <button class="btn btn-primary" onclick="login()" style="margin-top:8px;">
-        🔐 Ingia
+        <i data-lucide="log-in" style="width:16px;height:16px;"></i> Ingia
       </button>
     </div>
 
@@ -1006,15 +1006,21 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
       </div>
       <div class="form-group">
         <p style="font-size:12px;color:var(--gray-400);background:var(--gray-50,#F9FAFB);padding:10px;border-radius:8px;">
-          ℹ️ Akaunti mpya inaanza na ruhusa za "Scanner" pekee. Admin wa mfumo anaweza kukuongezea ruhusa (Manager/Admin) baadaye kwenye "User Management".
+          <i data-lucide="info" style="width:13px;height:13px;vertical-align:-2px;"></i> Akaunti mpya inaanza na ruhusa za "Scanner" pekee. Admin wa mfumo anaweza kukuongezea ruhusa (Manager/Admin) baadaye kwenye "User Management".
         </p>
       </div>
       <button class="btn btn-primary" onclick="register()" style="margin-top:8px;">
-        ✅ Jisajili
+        <i data-lucide="user-plus" style="width:16px;height:16px;"></i> Jisajili
       </button>
     </div>
   </div>
 </div>
+<script>
+  // Washa icons za screen ya login MARA MOJA hapa (badala ya kusubiri script
+  // ya mwisho kabisa ya faili) - kwa sababu screen hii ndiyo ya kwanza
+  // kuonekana, kabla hata ya mtu kuingia mfumoni.
+  try { lucide.createIcons(); } catch(e) {}
+</script>
 
 <!-- ===== MAIN APP ===== -->
 <div class="app" id="mainApp">
@@ -1693,7 +1699,7 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
       <!-- ===== WHATSAPP MONITOR PAGE ===== -->
       <div class="page" id="page-whatsapp">
         <div style="margin-bottom:20px;">
-          <h2 style="font-size:18px;font-weight:700;">💬 WhatsApp Monitor</h2>
+          <h2 style="font-size:18px;font-weight:700;"><i data-lucide="message-circle" class="icon" style="color:#22C55E;width:20px;height:20px;vertical-align:-3px;"></i> WhatsApp Monitor</h2>
           <p style="font-size:13px;color:var(--gray-400);">Fuatilia hali ya WhatsApp na RSVP za wageni</p>
         </div>
         <div class="card" style="margin-bottom:16px;">
@@ -1741,7 +1747,7 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
         <div class="card">
           <div class="card-header">
             <div class="card-title">Orodha ya WhatsApp na RSVP</div>
-            <a id="scannerLink" href="#" target="_blank" class="btn btn-outline btn-sm">🔗 Link ya Scanner</a>
+            <a id="scannerLink" href="#" target="_blank" class="btn btn-outline btn-sm"><i data-lucide="link" style="width:14px;height:14px;"></i> Link ya Scanner</a>
           </div>
           <div class="table-wrap">
             <table>
@@ -1760,7 +1766,7 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
       <!-- ===== REPORTS PAGE ===== -->
       <div class="page" id="page-reports">
         <div style="margin-bottom:20px;">
-          <h2 style="font-size:18px;font-weight:700;">📈 Ripoti za Mfumo</h2>
+          <h2 style="font-size:18px;font-weight:700;"><i data-lucide="bar-chart-3" class="icon" style="color:#F59E0B;width:20px;height:20px;vertical-align:-3px;"></i> Ripoti za Mfumo</h2>
           <p style="font-size:13px;color:var(--gray-400);">Takwimu kamili za matumizi</p>
         </div>
         <div class="stats-grid" style="margin-bottom:20px;">
@@ -1788,7 +1794,7 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
         <div class="card">
           <div class="card-header">
             <div class="card-title">Ripoti ya Kina kwa Event</div>
-            <button class="btn btn-outline btn-sm" onclick="exportReport()">📥 Export CSV (Mfumo Mzima)</button>
+            <button class="btn btn-outline btn-sm" onclick="exportReport()"><i data-lucide="download" style="width:14px;height:14px;"></i> Export CSV (Mfumo Mzima)</button>
           </div>
           <div class="table-wrap">
             <table>
@@ -2752,6 +2758,10 @@ function showApp() {
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('mainApp').style.display = 'block';
   applyRoleBasedUI();
+  // Hakikisha icons (Lucide) za sidebar/menu zinawaka MARA MOJA hapa, badala ya
+  // kusubiri script ya mwisho ya faili (chini kabisa) - hiyo ndiyo iliyokuwa
+  // ikisababisha icons "kuchelewa kuwaka" kwenye mitandao ya polepole.
+  try { lucide.createIcons(); } catch(e) {}
 
   const role = currentProfile?.role || 'admin';
   if (role === 'scanner') {
@@ -4829,7 +4839,7 @@ async function loadReports() {
         <td>${sms}</td>
         <td>${wa}</td>
         <td><span class="badge ${pct>=80?'badge-green':pct>=50?'badge-yellow':'badge-red'}">${pct}%</span></td>
-        <td><button class="btn btn-outline btn-sm" onclick="exportEventCSV('${e.id}','${e.name.replace(/'/g,"")}')">📥 CSV</button></td>
+        <td><button class="btn btn-outline btn-sm" onclick="exportEventDetailedCSV('${e.id}','${e.name.replace(/'/g,"")}')"><i data-lucide="download" style="width:14px;height:14px;"></i> CSV</button></td>
       </tr>`;
   }));
   tbody.innerHTML = rows.join('');
@@ -4873,6 +4883,70 @@ async function exportReport() {
   const csv = guestsToCSV(guests, eventNameById);
   downloadCSVBlob(csv, `meshez_kadi_ripoti_kamili_${new Date().toISOString().slice(0,10)}.csv`);
   showToast('Ripoti ya mfumo mzima imepakuliwa!', 'success');
+}
+
+// Ripoti ya Kina ya Event - CSV yenye taarifa za tukio kama title juu
+// (jina, tarehe, mahali n.k.) kabla ya jedwali la wageni, kila column
+// ikitegemea data iliyopo kwenye mfumo kwa event/mgeni husika (safe defaults
+// kama data fulani haipo).
+async function exportEventDetailedCSV(eventId, eventNameParam) {
+  const { data: eventData } = await sb.from('events').select('*').eq('id', eventId).single();
+  const { data: guests } = await sb.from('guests').select('*').eq('event_id', eventId).order('sequence_number', { ascending: true });
+  if (!guests || guests.length === 0) return showToast('Hakuna wageni kwenye event hii', 'error');
+
+  const safe = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+
+  const rsvpLabel = (g) => g.rsvp === 'yes' ? 'Atahudhuria' : g.rsvp === 'no' ? 'Hatohudhuria' : 'Bado Hajajibu';
+  const scannedLabel = (g) => {
+    const used = g.used_count || 0;
+    const size = g.group_size || 1;
+    if (used <= 0) return 'Bado Hajaingia';
+    if (used >= size) return 'Ameingia Kikamilifu';
+    return 'Ameingia Sehemu';
+  };
+  const badgeLabel = (g) => {
+    const rank = (g.vip_status || '').trim();
+    return (!rank || rank.toLowerCase() === 'none') ? 'Kawaida' : rank;
+  };
+
+  // --- Sehemu ya juu: taarifa za tukio (title/details) ---
+  const titleLines = [
+    ['Meshez Kadi - Ripoti ya Kina ya Event'],
+    [],
+    ['Jina la Tukio:', eventData?.name || eventNameParam || '-'],
+    ['Aina ya Tukio:', eventData?.type || '-'],
+    ['Tarehe ya Tukio:', eventData?.event_date || '-'],
+    ['Muda wa Tukio:', eventData?.event_time || '-'],
+    ['Mahali:', eventData?.venue || '-'],
+    ['Mwenye Tukio:', eventData?.host_name || '-'],
+    ['Namba ya Mawasiliano:', eventData?.contact_phone || '-'],
+    ['Jumla ya Wageni Waliosajiliwa:', String(guests?.length || 0)],
+    ['Ripoti Imetengenezwa:', new Date().toLocaleString('sw-TZ')],
+    [],
+  ].map(row => row.map(safe).join(',')).join('\n');
+
+  // --- Sehemu ya jedwali la wageni ---
+  const header = ['Jina', 'Namba ya Simu', 'Group Size Label', 'Badge Label', 'WhatsApp', 'SMS Status', 'WA Status', 'Uthibitisho wa RSVP', 'Tarehe ya RSVP', 'Uwepo (Baada ya Scan)', 'Walioingia/Jumla']
+    .map(safe).join(',');
+
+  const rows = (guests || []).map(g => [
+    safe(g.name),
+    safe(g.phone),
+    safe(guestCardTypeLabelFriendly(g)),
+    safe(badgeLabel(g)),
+    safe(g.whatsapp === 'yes' ? 'Ndiyo' : 'Hapana'),
+    safe(g.sms_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa'),
+    safe(g.wa_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa'),
+    safe(rsvpLabel(g)),
+    safe(g.rsvp_date ? new Date(g.rsvp_date).toLocaleString('sw-TZ') : '-'),
+    safe(scannedLabel(g)),
+    safe(`${g.used_count || 0}/${g.group_size || 1}`),
+  ].join(','));
+
+  const csv = titleLines + '\n' + [header].concat(rows).join('\n');
+  const safeName = (eventData?.name || eventNameParam || 'event').replace(/[^a-zA-Z0-9]/g, '_');
+  downloadCSVBlob(csv, `Ripoti_${safeName}_${new Date().toISOString().slice(0,10)}.csv`);
+  showToast(`Ripoti ya "${eventData?.name || eventNameParam}" imepakuliwa!`, 'success');
 }
 
 async function exportEventCSV(eventId, eventName) {
@@ -6172,3 +6246,16 @@ async function generateAllCards() {
     <div class="modal-body" style="text-align:center;">
       <canvas id="cardCanvas" style="max-width:100%;border:1px solid var(--gray-200);border-radius:8px;"></canvas>
       <div id="cardLoading" style="padding:32px;color:var(--gray-400);">Inatengeneza kadi...</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('cardPreviewModal')">Funga</button>
+      <button class="btn btn-primary" id="downloadCardBtn" onclick="downloadCard()">⬇️ Pakua Kadi</button>
+    </div>
+  </div>
+</div>
+<script>
+  // Zalisha professional icons (Lucide) badala ya <i data-lucide="...">
+  try { lucide.createIcons(); } catch(e) {}
+</script>
+</body>
+</html>
