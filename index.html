@@ -1700,7 +1700,7 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
           <div class="form-group" style="margin-bottom:0;">
             <label>Chagua Event</label>
             <select id="waEventFilter" onchange="loadWhatsappMonitor()">
-              <option value="">-- Events Zote (Zimechanganywa) --</option>
+              <option value="">-- Chagua Event --</option>
             </select>
           </div>
         </div>
@@ -4728,14 +4728,27 @@ async function loadWhatsappMonitor() {
   const filterSel = document.getElementById('waEventFilter');
   if (filterSel) {
     const currentVal = filterSel.value;
-    filterSel.innerHTML = '<option value="">-- Events Zote (Zimechanganywa) --</option>' +
+    filterSel.innerHTML = '<option value="">-- Chagua Event --</option>' +
       (events || []).map(e => `<option value="${e.id}">${e.name}</option>`).join('');
     if (currentVal && filterSel.querySelector(`option[value="${currentVal}"]`)) filterSel.value = currentVal;
   }
   const selectedEventId = filterSel ? filterSel.value : '';
 
-  let guestQuery = sb.from('guests').select('*').eq('user_id', ORG_OWNER_ID);
-  if (selectedEventId) guestQuery = guestQuery.eq('event_id', selectedEventId);
+  // Bila kuchagua event mahususi, hatuoneshi takwimu za "zimechanganywa" -
+  // mtumiaji lazima achague event kwanza ili kuepuka mkanganyiko wa matukio.
+  if (!selectedEventId) {
+    document.getElementById('waOk').textContent      = 0;
+    document.getElementById('waPending').textContent = 0;
+    document.getElementById('waFail').textContent    = 0;
+    document.getElementById('rsvpYes').textContent     = 0;
+    document.getElementById('rsvpNo').textContent      = 0;
+    document.getElementById('rsvpPending').textContent = 0;
+    document.getElementById('scannerLink').href      = window.location.href;
+    document.getElementById('waTable').innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:32px;">👆 Chagua event hapo juu kuona takwimu za WhatsApp/RSVP</td></tr>`;
+    return;
+  }
+
+  let guestQuery = sb.from('guests').select('*').eq('user_id', ORG_OWNER_ID).eq('event_id', selectedEventId);
   const { data: guests } = await guestQuery;
 
   const waOk      = guests?.filter(g => g.wa_sent === 'yes').length || 0;
@@ -6159,16 +6172,3 @@ async function generateAllCards() {
     <div class="modal-body" style="text-align:center;">
       <canvas id="cardCanvas" style="max-width:100%;border:1px solid var(--gray-200);border-radius:8px;"></canvas>
       <div id="cardLoading" style="padding:32px;color:var(--gray-400);">Inatengeneza kadi...</div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('cardPreviewModal')">Funga</button>
-      <button class="btn btn-primary" id="downloadCardBtn" onclick="downloadCard()">⬇️ Pakua Kadi</button>
-    </div>
-  </div>
-</div>
-<script>
-  // Zalisha professional icons (Lucide) badala ya <i data-lucide="...">
-  try { lucide.createIcons(); } catch(e) {}
-</script>
-</body>
-</html>
