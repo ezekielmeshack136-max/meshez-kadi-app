@@ -4839,7 +4839,7 @@ async function loadReports() {
         <td>${sms}</td>
         <td>${wa}</td>
         <td><span class="badge ${pct>=80?'badge-green':pct>=50?'badge-yellow':'badge-red'}">${pct}%</span></td>
-        <td><button class="btn btn-outline btn-sm" onclick="exportEventDetailedCSV('${e.id}','${e.name.replace(/'/g,"")}')"><i data-lucide="download" style="width:14px;height:14px;"></i> CSV</button></td>
+        <td><button class="btn btn-outline btn-sm" onclick="exportEventDetailedCSV('${e.id}','${e.name.replace(/'/g,"")}')"><i data-lucide="file-text" style="width:14px;height:14px;"></i> PDF</button></td>
       </tr>`;
   }));
   tbody.innerHTML = rows.join('');
@@ -4885,21 +4885,13 @@ async function exportReport() {
   showToast('Ripoti ya mfumo mzima imepakuliwa!', 'success');
 }
 
-// Ripoti ya Kina ya Event - CSV yenye taarifa za tukio kama title juu
-// (jina, tarehe, mahali n.k.) kabla ya jedwali la wageni, kila column
-// ikitegemea data iliyopo kwenye mfumo kwa event/mgeni husika (safe defaults
-// kama data fulani haipo).
+// Ripoti ya Kina ya Event - PDF yenye logo, rangi za chapa, taarifa za tukio
+// zilizopangwa vizuri juu, na jedwali la wageni linalojirudia vizuri kwenye
+// kurasa nyingi (A4) bila kuongeza kurasa zisizo za lazima.
 async function exportEventDetailedCSV(eventId, eventNameParam) {
   const { data: eventData } = await sb.from('events').select('*').eq('id', eventId).single();
   const { data: guests } = await sb.from('guests').select('*').eq('event_id', eventId).order('sequence_number', { ascending: true });
   if (!guests || guests.length === 0) return showToast('Hakuna wageni kwenye event hii', 'error');
-
-  const safe = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  // Namba za simu ni ndefu (mfano 255713079348) - Excel huzibadilisha kiotomatiki
-  // kuwa namba za kisayansi (2.55713E+11) au kuondoa "0" ya mwanzo kama
-  // zikiwekwa kama namba za kawaida. Hii "=" trick inalazimisha Excel
-  // kuzisoma kama TEXT kamili, hivyo namba inabaki kamili bila mabadiliko.
-  const csvPhone = (v) => `="${String(v ?? '').replace(/"/g, '""')}"`;
 
   const rsvpLabel = (g) => g.rsvp === 'yes' ? 'Atahudhuria' : g.rsvp === 'no' ? 'Hatohudhuria' : 'Bado Hajajibu';
   const scannedLabel = (g) => {
@@ -4914,42 +4906,182 @@ async function exportEventDetailedCSV(eventId, eventNameParam) {
     return (!rank || rank.toLowerCase() === 'none') ? 'Kawaida' : rank;
   };
 
-  // --- Sehemu ya juu: taarifa za tukio (title/details) - maneno wazi tu,
-  // bila alama za "quotes" kuzunguka, kama zilivyoombwa. ---
-  const titleLines = [
-    'Meshez Kadi - Ripoti ya Kina ya Event',
-    '',
-    `Jina la Tukio: ${eventData?.name || eventNameParam || '-'}`,
-    `Aina ya Tukio: ${eventData?.type || '-'}`,
-    `Tarehe ya Tukio: ${eventData?.event_date || '-'}`,
-    `Muda wa Tukio: ${eventData?.event_time || '-'}`,
-    `Mahali: ${eventData?.venue || '-'}`,
-    `Mwenye Tukio: ${eventData?.host_name || '-'}`,
-    `Namba ya Mawasiliano: ${eventData?.contact_phone || '-'}`,
-    `Jumla ya Wageni Waliosajiliwa: ${guests?.length || 0}`,
-    `Ripoti Imetengenezwa: ${new Date().toLocaleString('sw-TZ')}`,
-    '',
-  ].join('\n');
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const pageWidth  = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const marginX = 14;
+  const navy = [30, 58, 138];
+  const gold = [184, 134, 11];
 
-  // --- Sehemu ya jedwali la wageni ---
-  const header = ['Jina', 'Namba', 'Group Size', 'Badge', 'SMS', 'WA', 'RSVP', 'Uwepo', 'Jumla']
-    .map(safe).join(',');
+  // Logo ya mfumo (imewekwa tayari kama favicon ya app) - tunaipata moja kwa
+  // moja kutoka kwenye <link rel="icon"> badala ya kuiweka mara mbili kwenye
+  // faili hili.
+  let logoDataUrl = null;
+  try { logoDataUrl = document.querySelector('link[rel="icon"]')?.href || null; } catch (e) {}
 
-  const rows = (guests || []).map(g => [
-    safe(g.name),
-    csvPhone(g.phone),
-    safe(guestCardTypeLabelFriendly(g)),
-    safe(badgeLabel(g)),
-    safe(g.sms_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa'),
-    safe(g.wa_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa'),
-    safe(rsvpLabel(g)),
-    safe(scannedLabel(g)),
-    g.group_size || 1,
-  ].join(','));
+  // ---- Header band (chapa) ----
+  const bandHeight = 40;
+  doc.setFillColor(...navy);
+  doc.rect(0, 0, pageWidth, bandHeight, 'F');
+  doc.setFillColor(...gold);
+  doc.rect(0, bandHeight, pageWidth, 1.4, 'F');
 
-  const csv = titleLines + '\n' + [header].concat(rows).join('\n');
+  if (logoDataUrl) {
+    // Kisanduku cheupe nyuma ya logo ili ionekane vizuri juu ya rangi ya buluu
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(marginX, 6, 28, 28, 2, 2, 'F');
+    try { doc.addImage(logoDataUrl, 'PNG', marginX + 2, 8, 24, 24); } catch (e) {}
+  }
+
+  const textStartX = logoDataUrl ? marginX + 34 : marginX;
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(19);
+  doc.text(BUSINESS_NAME, textStartX, 18);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.text(BUSINESS_TAGLINE, textStartX, 25, { maxWidth: pageWidth - textStartX - marginX });
+  doc.text('Simu: ' + BUSINESS_PHONES.join('  |  '), textStartX, 33);
+
+  // ---- Report title + meta ----
+  let y = bandHeight + 14;
+  doc.setTextColor(20, 20, 20);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('RIPOTI YA KINA YA TUKIO', marginX, y);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(90, 90, 90);
+  doc.text('Imetengenezwa: ' + new Date().toLocaleString('sw-TZ'), pageWidth - marginX, y - 5, { align: 'right' });
+  doc.text('Jumla ya Wageni Waliosajiliwa: ' + (guests?.length || 0), pageWidth - marginX, y, { align: 'right' });
+  y += 8;
+
+  // ---- Event details box (columns mbili ili maneno yasibanane) ----
+  doc.setDrawColor(225, 228, 233);
+  doc.setFillColor(248, 249, 251);
+  const boxTop = y;
+  const boxHeight = 34;
+  doc.roundedRect(marginX, boxTop, pageWidth - marginX * 2, boxHeight, 2, 2, 'FD');
+
+  const colALabelX = marginX + 5, colAValX = marginX + 32;
+  const colBLabelX = pageWidth / 2 + 4, colBValX = pageWidth / 2 + 32;
+  let rowY = boxTop + 8;
+  const leftDetails = [
+    ['Jina la Tukio', eventData?.name || eventNameParam || '-'],
+    ['Aina ya Tukio', eventData?.type || '-'],
+    ['Tarehe ya Tukio', eventData?.event_date || '-'],
+    ['Muda wa Tukio', eventData?.event_time || '-'],
+  ];
+  const rightDetails = [
+    ['Mahali', eventData?.venue || '-'],
+    ['Mwenye Tukio', eventData?.host_name || '-'],
+    ['Namba ya Mawasiliano', eventData?.contact_phone || '-'],
+  ];
+  doc.setFontSize(9.5);
+  leftDetails.forEach(([label, val]) => {
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(60, 60, 60);
+    doc.text(label + ':', colALabelX, rowY);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(20, 20, 20);
+    doc.text(String(val), colAValX, rowY, { maxWidth: pageWidth / 2 - colAValX + marginX - 6 });
+    rowY += 6.5;
+  });
+  rowY = boxTop + 8;
+  rightDetails.forEach(([label, val]) => {
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(60, 60, 60);
+    doc.text(label + ':', colBLabelX, rowY);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(20, 20, 20);
+    doc.text(String(val), colBValX, rowY, { maxWidth: pageWidth - colBValX - marginX });
+    rowY += 6.5;
+  });
+  y = boxTop + boxHeight + 10;
+
+  // ---- Jedwali la wageni (linajirudia kwenye kurasa mpya bila kupoteza nafasi) ----
+  const columns = [
+    { label: 'Jina',        width: 38, key: g => g.name || '-' },
+    { label: 'Namba',       width: 25, key: g => g.phone || '-' },
+    { label: 'Group Size',  width: 22, key: g => guestCardTypeLabelFriendly(g) },
+    { label: 'Badge',       width: 17, key: g => badgeLabel(g) },
+    { label: 'SMS',         width: 15, key: g => g.sms_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa' },
+    { label: 'WA',          width: 15, key: g => g.wa_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa' },
+    { label: 'RSVP',        width: 18, key: g => rsvpLabel(g) },
+    { label: 'Uwepo',       width: 22, key: g => scannedLabel(g) },
+    { label: 'Jumla',       width: 12, key: g => String(g.group_size || 1) },
+  ];
+  const tableWidth = columns.reduce((s, c) => s + c.width, 0);
+  const tableStartX = marginX;
+  const rowHeight = 6;
+  const footerY = pageHeight - 14;
+
+  function drawTableHeader(yy) {
+    doc.setFillColor(...navy);
+    doc.rect(tableStartX, yy, tableWidth, 7, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    let cx = tableStartX;
+    columns.forEach(col => {
+      doc.text(col.label, cx + 2, yy + 4.8);
+      cx += col.width;
+    });
+    return yy + 7;
+  }
+
+  function drawFooter() {
+    doc.setDrawColor(...gold);
+    doc.setLineWidth(0.6);
+    doc.line(marginX, footerY, pageWidth - marginX, footerY);
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(8);
+    doc.setTextColor(110, 110, 110);
+    doc.text(BUSINESS_NAME + ' - ' + BUSINESS_TAGLINE, marginX, footerY + 5);
+  }
+
+  y = drawTableHeader(y);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+
+  guests.forEach((g, idx) => {
+    if (y + rowHeight > footerY - 2) {
+      drawFooter();
+      doc.addPage();
+      y = marginX;
+      y = drawTableHeader(y);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+    }
+    if (idx % 2 === 1) {
+      doc.setFillColor(245, 247, 250);
+      doc.rect(tableStartX, y, tableWidth, rowHeight, 'F');
+    }
+    doc.setTextColor(30, 30, 30);
+    let cx = tableStartX;
+    columns.forEach(col => {
+      const text = doc.splitTextToSize(String(col.key(g)), col.width - 3)[0] || '';
+      doc.text(text, cx + 2, y + 4.2);
+      cx += col.width;
+    });
+    y += rowHeight;
+  });
+
+  drawFooter();
+
+  // ---- Namba za kurasa (baada ya kurasa zote kutengenezwa) ----
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(110, 110, 110);
+    doc.text(`Ukurasa ${p}/${totalPages}`, pageWidth - marginX, footerY + 5, { align: 'right' });
+  }
+
   const safeName = (eventData?.name || eventNameParam || 'event').replace(/[^a-zA-Z0-9]/g, '_');
-  downloadCSVBlob(csv, `Ripoti_${safeName}_${new Date().toISOString().slice(0,10)}.csv`);
+  doc.save(`Ripoti_${safeName}_${new Date().toISOString().slice(0,10)}.pdf`);
   showToast(`Ripoti ya "${eventData?.name || eventNameParam}" imepakuliwa!`, 'success');
 }
 
