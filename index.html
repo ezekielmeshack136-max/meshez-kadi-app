@@ -4895,6 +4895,11 @@ async function exportEventDetailedCSV(eventId, eventNameParam) {
   if (!guests || guests.length === 0) return showToast('Hakuna wageni kwenye event hii', 'error');
 
   const safe = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  // Namba za simu ni ndefu (mfano 255713079348) - Excel huzibadilisha kiotomatiki
+  // kuwa namba za kisayansi (2.55713E+11) au kuondoa "0" ya mwanzo kama
+  // zikiwekwa kama namba za kawaida. Hii "=" trick inalazimisha Excel
+  // kuzisoma kama TEXT kamili, hivyo namba inabaki kamili bila mabadiliko.
+  const csvPhone = (v) => `="${String(v ?? '').replace(/"/g, '""')}"`;
 
   const rsvpLabel = (g) => g.rsvp === 'yes' ? 'Atahudhuria' : g.rsvp === 'no' ? 'Hatohudhuria' : 'Bado Hajajibu';
   const scannedLabel = (g) => {
@@ -4909,38 +4914,37 @@ async function exportEventDetailedCSV(eventId, eventNameParam) {
     return (!rank || rank.toLowerCase() === 'none') ? 'Kawaida' : rank;
   };
 
-  // --- Sehemu ya juu: taarifa za tukio (title/details) ---
+  // --- Sehemu ya juu: taarifa za tukio (title/details) - maneno wazi tu,
+  // bila alama za "quotes" kuzunguka, kama zilivyoombwa. ---
   const titleLines = [
-    ['Meshez Kadi - Ripoti ya Kina ya Event'],
-    [],
-    ['Jina la Tukio:', eventData?.name || eventNameParam || '-'],
-    ['Aina ya Tukio:', eventData?.type || '-'],
-    ['Tarehe ya Tukio:', eventData?.event_date || '-'],
-    ['Muda wa Tukio:', eventData?.event_time || '-'],
-    ['Mahali:', eventData?.venue || '-'],
-    ['Mwenye Tukio:', eventData?.host_name || '-'],
-    ['Namba ya Mawasiliano:', eventData?.contact_phone || '-'],
-    ['Jumla ya Wageni Waliosajiliwa:', String(guests?.length || 0)],
-    ['Ripoti Imetengenezwa:', new Date().toLocaleString('sw-TZ')],
-    [],
-  ].map(row => row.map(safe).join(',')).join('\n');
+    'Meshez Kadi - Ripoti ya Kina ya Event',
+    '',
+    `Jina la Tukio: ${eventData?.name || eventNameParam || '-'}`,
+    `Aina ya Tukio: ${eventData?.type || '-'}`,
+    `Tarehe ya Tukio: ${eventData?.event_date || '-'}`,
+    `Muda wa Tukio: ${eventData?.event_time || '-'}`,
+    `Mahali: ${eventData?.venue || '-'}`,
+    `Mwenye Tukio: ${eventData?.host_name || '-'}`,
+    `Namba ya Mawasiliano: ${eventData?.contact_phone || '-'}`,
+    `Jumla ya Wageni Waliosajiliwa: ${guests?.length || 0}`,
+    `Ripoti Imetengenezwa: ${new Date().toLocaleString('sw-TZ')}`,
+    '',
+  ].join('\n');
 
   // --- Sehemu ya jedwali la wageni ---
-  const header = ['Jina', 'Namba ya Simu', 'Group Size Label', 'Badge Label', 'WhatsApp', 'SMS Status', 'WA Status', 'Uthibitisho wa RSVP', 'Tarehe ya RSVP', 'Uwepo (Baada ya Scan)', 'Walioingia/Jumla']
+  const header = ['Jina', 'Namba', 'Group Size', 'Badge', 'SMS', 'WA', 'RSVP', 'Uwepo', 'Jumla']
     .map(safe).join(',');
 
   const rows = (guests || []).map(g => [
     safe(g.name),
-    safe(g.phone),
+    csvPhone(g.phone),
     safe(guestCardTypeLabelFriendly(g)),
     safe(badgeLabel(g)),
-    safe(g.whatsapp === 'yes' ? 'Ndiyo' : 'Hapana'),
     safe(g.sms_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa'),
     safe(g.wa_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa'),
     safe(rsvpLabel(g)),
-    safe(g.rsvp_date ? new Date(g.rsvp_date).toLocaleString('sw-TZ') : '-'),
     safe(scannedLabel(g)),
-    safe(`${g.used_count || 0}/${g.group_size || 1}`),
+    g.group_size || 1,
   ].join(','));
 
   const csv = titleLines + '\n' + [header].concat(rows).join('\n');
