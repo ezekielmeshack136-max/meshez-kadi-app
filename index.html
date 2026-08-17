@@ -1335,6 +1335,13 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
               </div>
             </div>
             <div>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;margin-bottom:12px;">
+                <input type="checkbox" id="posQrShow" checked style="width:16px;height:16px;" onchange="renderPositionPreview()">
+                <div>
+                  <div style="font-size:13px;font-weight:600;">📷 Onyesha QR Code kwenye Kadi (default ya template hii)</div>
+                  <div style="font-size:11px;color:var(--gray-400);">Zima kama template hii haihitaji QR Code kwenye kadi.</div>
+                </div>
+              </label>
               <div class="form-group">
                 <label>QR Code - Position X</label>
                 <input type="number" id="posQrX" value="872" placeholder="872" oninput="renderPositionPreview()">
@@ -5729,7 +5736,7 @@ async function downloadEventInvoice(eventId) {
 }
 
 // ===== TEMPLATES =====
-const DEFAULT_POSITIONS = { jinaX: 709, jinaY: 381, jinaFont: 75, jinaColor: '#000000', jinaFontFamily: 'Inter', qrX: 872, qrY: 1662, qrSize: 250, labelColor: '#000000', labelFormat: 'hash', labelX: null, labelY: null, vipX: null, vipY: null, vipColor: 'auto', vipShow: true, labelShow: true };
+const DEFAULT_POSITIONS = { jinaX: 709, jinaY: 381, jinaFont: 75, jinaColor: '#000000', jinaFontFamily: 'Inter', qrX: 872, qrY: 1662, qrSize: 250, labelColor: '#000000', labelFormat: 'hash', labelX: null, labelY: null, vipX: null, vipY: null, vipColor: 'auto', vipShow: true, labelShow: true, qrShow: true };
 let selectedTemplateForEdit = null; // template inayohaririwa sasa kwenye Position Management
 
 function fillPositionInputs(pos) {
@@ -5754,6 +5761,7 @@ function fillPositionInputs(pos) {
   document.getElementById('vipColorSwatch').style.background = vipColorVal === 'auto' ? 'linear-gradient(135deg,#B8860B,#1A56DB)' : vipColorVal;
   document.getElementById('posVipShow').checked = pos.vipShow !== false;
   document.getElementById('posLabelShow').checked = pos.labelShow !== false;
+  document.getElementById('posQrShow').checked = pos.qrShow !== false;
 }
 
 async function selectTemplateForEditing(templateId) {
@@ -5792,6 +5800,7 @@ async function savePositions() {
     vipColor: document.getElementById('posVipColor').value,
     vipShow: document.getElementById('posVipShow').checked,
     labelShow: document.getElementById('posLabelShow').checked,
+    qrShow: document.getElementById('posQrShow').checked,
   };
 
   if (!selectedTemplateForEdit) {
@@ -5850,6 +5859,7 @@ async function renderPositionPreview() {
     vipColor: document.getElementById('posVipColor').value || 'auto',
     vipShow: document.getElementById('posVipShow').checked,
     labelShow: document.getElementById('posLabelShow').checked,
+    qrShow: document.getElementById('posQrShow').checked,
   };
 
   const ctx = canvas.getContext('2d');
@@ -5875,18 +5885,20 @@ qrImg.onload = () => {
   const boxSize = pos.qrSize + (padding * 2);
   const radius = 12;
 
-  // Chora mstatili mweupe wenye kona za mviringo chini ya QR
-  ctx.save();
-  ctx.fillStyle = '#FFFFFF';
-  ctx.shadowColor = 'rgba(0,0,0,0.25)';
-  ctx.shadowBlur = 10;
-  ctx.beginPath();
-  ctx.roundRect(boxX, boxY, boxSize, boxSize, radius);
-  ctx.fill();
-  ctx.restore();
+  if (pos.qrShow !== false) {
+    // Chora mstatili mweupe wenye kona za mviringo chini ya QR
+    ctx.save();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.shadowColor = 'rgba(0,0,0,0.25)';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.roundRect(boxX, boxY, boxSize, boxSize, radius);
+    ctx.fill();
+    ctx.restore();
 
-  // Chora QR juu ya hiyo background
-  ctx.drawImage(qrImg, pos.qrX, pos.qrY, pos.qrSize, pos.qrSize);
+    // Chora QR juu ya hiyo background
+    ctx.drawImage(qrImg, pos.qrX, pos.qrY, pos.qrSize, pos.qrSize);
+  }
 
   // Lebo (mfano #SINGLE) JUU ya QR (au mahali ulipoweka kwenye Position X/Y)
   const previewLabelCx = pos.labelX !== null && !isNaN(pos.labelX) ? pos.labelX : (pos.qrX + pos.qrSize / 2);
@@ -6178,11 +6190,13 @@ async function generateCard(guestId) {
     ctx.textAlign = 'center';
     ctx.fillText(guest.name, parseInt(pos.jinaX), parseInt(pos.jinaY));
 
-    // Tengeneza QR code kama picha, kisha ichore juu ya kadi
+    // Tengeneza QR code kama picha, kisha ichore juu ya kadi (isipokuwa qrShow imezimwa kwenye template)
     const qrDataUrl = await QRCode.toDataURL(guest.card_id, { width: parseInt(pos.qrSize), margin: 1 });
     const qrImg = new Image();
     qrImg.onload = () => {
-  ctx.drawImage(qrImg, parseInt(pos.qrX), parseInt(pos.qrY), parseInt(pos.qrSize), parseInt(pos.qrSize));
+  if (pos.qrShow !== false) {
+    ctx.drawImage(qrImg, parseInt(pos.qrX), parseInt(pos.qrY), parseInt(pos.qrSize), parseInt(pos.qrSize));
+  }
   drawGuestLabelWithVip(ctx, guest, pos, parseInt(pos.qrY));
   document.getElementById('cardLoading').style.display = 'none';
   canvas.style.display = 'inline-block';
@@ -6231,13 +6245,15 @@ function generateSingleCardBlob(guest, template, pos) {
   const boxX = parseInt(pos.qrX) - padding;
   const boxY = parseInt(pos.qrY) - padding;
   const boxSize = parseInt(pos.qrSize) + padding * 2;
-  ctx.save();
-  ctx.fillStyle = '#FFFFFF';
-  ctx.beginPath();
-  ctx.roundRect(boxX, boxY, boxSize, boxSize, 12);
-  ctx.fill();
-  ctx.restore();
-  ctx.drawImage(qrImg, parseInt(pos.qrX), parseInt(pos.qrY), parseInt(pos.qrSize), parseInt(pos.qrSize));
+  if (pos.qrShow !== false) {
+    ctx.save();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.roundRect(boxX, boxY, boxSize, boxSize, 12);
+    ctx.fill();
+    ctx.restore();
+    ctx.drawImage(qrImg, parseInt(pos.qrX), parseInt(pos.qrY), parseInt(pos.qrSize), parseInt(pos.qrSize));
+  }
 
   drawGuestLabelWithVip(ctx, guest, pos, boxY);
 
