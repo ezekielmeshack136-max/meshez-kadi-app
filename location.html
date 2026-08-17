@@ -156,36 +156,31 @@ async function loadLocation() {
   const cardId = params.get('id');
   if (!cardId) return renderError('Kiungo hiki si sahihi - hakina kitambulisho cha mgeni.');
 
-  const { data: guest, error: guestErr } = await sb
-    .from('guests').select('name, event_id').eq('card_id', cardId).single();
-  if (guestErr || !guest) {
-    console.error('location.html - guest lookup error:', guestErr, 'cardId used:', cardId);
+  // Tunatumia RPC salama (get_location_for_card) badala ya kusoma majedwali
+  // ya guests/events moja kwa moja - hii inazuia ukurasa huu wa umma (bila
+  // login) kufungua jedwali zima kwa dunia, ni row MOJA tu inayolingana
+  // na card_id iliyotolewa ndiyo inayorudishwa.
+  const { data, error } = await sb.rpc('get_location_for_card', { p_card_id: cardId });
+  const row = Array.isArray(data) ? data[0] : data;
+
+  if (error || !row) {
+    console.error('location.html - get_location_for_card error:', error, 'cardId used:', cardId);
     return renderError(
       'Mgeni hajapatikana kwa kiungo hiki.',
-      `card_id="${cardId}" | ${guestErr ? (guestErr.code || '') + ' - ' + guestErr.message : 'Hakuna row iliyorudishwa (0 results)'}`
+      `card_id="${cardId}" | ${error ? (error.code || '') + ' - ' + error.message : 'Hakuna row iliyorudishwa (0 results)'}`
     );
   }
 
-  const { data: event, error: eventErr } = await sb
-    .from('events').select('*').eq('id', guest.event_id).single();
-  if (eventErr || !event) {
-    console.error('location.html - event lookup error:', eventErr, 'event_id:', guest.event_id);
-    return renderError(
-      'Taarifa za tukio hazikupatikana.',
-      `event_id="${guest.event_id}" | ${eventErr ? (eventErr.code || '') + ' - ' + eventErr.message : 'Hakuna row iliyorudishwa'}`
-    );
-  }
-
-  const coords = (event.coordinates || '').trim();
+  const coords = (row.coordinates || '').trim();
   if (!coords) {
     return renderError('Mwenyeji hajaweka bado eneo la GPS la tukio hili. Tafadhali muulize mwenyeji mahali halisi.');
   }
 
   const dirUrl = buildDirectionsUrl(coords);
   const pinUrl = buildPinUrl(coords);
-  const date = event.event_date || '';
-  const time = formatTimeAMPM(event.event_time || '');
-  const venue = event.venue || '';
+  const date = row.event_date || '';
+  const time = formatTimeAMPM(row.event_time || '');
+  const venue = row.venue || '';
 
   let details = '';
   if (date) details += `<div>📅 ${date}${time ? ' · ' + time : ''}</div>`;
@@ -194,7 +189,7 @@ async function loadLocation() {
   renderState(`
     <div class="pin">📍</div>
     <h1>Maelekezo ya Kufika</h1>
-    <p class="event-name">${event.name || 'Tukio'}</p>
+    <p class="event-name">${row.event_name || 'Tukio'}</p>
     ${details ? `<div class="details">${details}</div>` : ''}
     <a class="btn btn-primary" href="${dirUrl}" target="_blank" rel="noopener noreferrer">🧭 Fungua Maelekezo (Njia)</a>
     <a class="btn btn-outline" href="${pinUrl}" target="_blank" rel="noopener noreferrer">📌 Ona Pini Kwenye Ramani</a>
