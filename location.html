@@ -142,11 +142,12 @@ function renderState(html) {
   document.getElementById('card').innerHTML = html;
 }
 
-function renderError(msg) {
+function renderError(msg, technicalDetail) {
   renderState(`
     <div class="icon-lg">⚠️</div>
     <h1>Samahani</h1>
     <div class="state-msg" style="padding-top:0;">${msg}</div>
+    ${technicalDetail ? `<div style="margin-top:14px;padding:10px 12px;background:var(--gray-50);border-radius:8px;font-size:11px;color:var(--gray-400);text-align:left;word-break:break-all;">🔧 Maelezo ya kiufundi (kwa msimamizi):<br>${technicalDetail}</div>` : ''}
   `);
 }
 
@@ -157,11 +158,23 @@ async function loadLocation() {
 
   const { data: guest, error: guestErr } = await sb
     .from('guests').select('name, event_id').eq('card_id', cardId).single();
-  if (guestErr || !guest) return renderError('Mgeni hajapatikana kwa kiungo hiki.');
+  if (guestErr || !guest) {
+    console.error('location.html - guest lookup error:', guestErr, 'cardId used:', cardId);
+    return renderError(
+      'Mgeni hajapatikana kwa kiungo hiki.',
+      `card_id="${cardId}" | ${guestErr ? (guestErr.code || '') + ' - ' + guestErr.message : 'Hakuna row iliyorudishwa (0 results)'}`
+    );
+  }
 
   const { data: event, error: eventErr } = await sb
     .from('events').select('*').eq('id', guest.event_id).single();
-  if (eventErr || !event) return renderError('Taarifa za tukio hazikupatikana.');
+  if (eventErr || !event) {
+    console.error('location.html - event lookup error:', eventErr, 'event_id:', guest.event_id);
+    return renderError(
+      'Taarifa za tukio hazikupatikana.',
+      `event_id="${guest.event_id}" | ${eventErr ? (eventErr.code || '') + ' - ' + eventErr.message : 'Hakuna row iliyorudishwa'}`
+    );
+  }
 
   const coords = (event.coordinates || '').trim();
   if (!coords) {
