@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Harusi ya Josephine & Mark — Mualiko</title>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,500&family=Sacramento&family=Jost:wght@300;400;500;600&display=swap');
+
+  :root{
+    --plum-deep:#170a20;
+    --plum:#2c1240;
+    --plum-soft:#4a1f5c;
+    --gold:#d8ae55;
+    --gold-light:#f2d889;
+    --blush:#f3b6c4;
+    --ivory:#fbf3e7;
+    --emerald:#2f6b57;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'Jost', sans-serif;
+    color:var(--ivory);
+    background:var(--plum-deep);
+    overflow-x:hidden;
+    -webkit-tap-highlight-color:transparent;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important;}
+  }
+
+  /* ============ BACKGROUND (moja, endelevu, hakuna mistari ya mgawanyo) ============ */
+  #bgGradient{
+    position:fixed; inset:0; z-index:0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(216,174,85,0.10), transparent 60%),
+      linear-gradient(180deg, #170a20 0%, #23102f 14%, #2c1240 30%, #3a1650 46%, #2c1240 62%, #23102f 80%, #170a20 100%);
+  }
+  #sparkleCanvas{position:fixed; inset:0; z-index:1; pointer-events:none;}
+
+  /* ============ SPACE: sayari zinazozunguka taratibu + nyota nyingi + comet ============ */
+  .planet{position:fixed; border-radius:50%; z-index:1; pointer-events:none; opacity:0.9; animation:orbitDrift 42s ease-in-out infinite;}
+  .planet::after{content:''; position:absolute; border-radius:50%; pointer-events:none;}
+  .planet.p1{width:64px; height:64px; top:9%; left:7%;
+    background:radial-gradient(circle at 32% 30%, #f7e2a8, #d8ae55 55%, #8a611f 100%);
+    box-shadow:0 0 34px rgba(216,174,85,0.28);}
+  .planet.p1::after{inset:-13px -34px; border:2px solid rgba(216,174,85,0.4); transform:rotate(-20deg);}
+  .planet.p2{width:40px; height:40px; top:66%; right:6%;
+    background:radial-gradient(circle at 34% 30%, #d9ecff, #7fa8d9 60%, #3f6390 100%);
+    box-shadow:0 0 24px rgba(127,168,217,0.32); animation-duration:55s; animation-delay:-14s;}
+  .planet.p3{width:22px; height:22px; top:30%; right:14%;
+    background:radial-gradient(circle at 35% 30%, #f3d9e2, #d98aa8 60%, #82405c 100%);
+    box-shadow:0 0 16px rgba(217,138,168,0.35); animation-duration:33s; animation-delay:-6s;}
+  @keyframes orbitDrift{
+    0%{transform:translate(0,0);} 25%{transform:translate(12px,-10px);}
+    50%{transform:translate(-6px,12px);} 75%{transform:translate(-14px,-6px);} 100%{transform:translate(0,0);}
+  }
+  .comet{position:fixed; top:14%; left:-6%; width:3px; height:3px; border-radius:50%; background:#fff; z-index:1;
+    box-shadow:0 0 10px 2px rgba(255,255,255,0.85); opacity:0; pointer-events:none; animation:cometFly 13s linear infinite;}
+  .comet::before{content:''; position:absolute; top:50%; right:0; width:90px; height:1.4px; transform:translateY(-50%);
+    background:linear-gradient(90deg, rgba(255,255,255,0.9), transparent);}
+  @keyframes cometFly{
+    0%{opacity:0; transform:translate(0,0);}
+    3%{opacity:1;}
+    16%{opacity:0; transform:translate(70vw,42vh);}
+    100%{opacity:0;}
+  }
+
+  /* ============ NJIWA ZINAZOKARIBIANA (hero) ============ */
+  .doves-wrap{display:flex; align-items:center; justify-content:center; gap:30px; width:100%;}
+  .dove{width:64px; height:auto;}
+  .dove-left{animation:doveApproachL 4.5s ease-in-out infinite;}
+  .dove-right{animation:doveApproachR 4.5s ease-in-out infinite;}
+  @keyframes doveApproachL{0%,100%{transform:translate(0,0) rotate(0deg);} 50%{transform:translate(13px,-7px) rotate(-3deg);}}
+  @keyframes doveApproachR{0%,100%{transform:scaleX(-1) translate(0,0) rotate(0deg);} 50%{transform:scaleX(-1) translate(13px,-7px) rotate(-3deg);}}
+
+  .page{position:relative; z-index:2;}
+
+  /* ============ TIPOGRAFIA ============ */
+  .eyebrow{
+    font-family:'Jost'; font-weight:500; letter-spacing:0.35em; text-transform:uppercase;
+    font-size:11px; color:var(--gold-light); opacity:0.85; text-align:center;
+  }
+  h1,h2{font-family:'Cinzel'; font-weight:600; color:var(--gold-light); text-align:center; letter-spacing:0.02em;}
+  .script{font-family:'Sacramento'; color:var(--gold-light); line-height:1;}
+  p{font-family:'Cormorant Garamond'; font-size:19px; line-height:1.6; color:var(--ivory); text-align:center;}
+
+  /* ============ ORNAMENT: pembe za dhahabu (corner flourish) ============ */
+  .frame{position:relative; padding:38px 22px;}
+  .frame::before, .frame::after{
+    content:''; position:absolute; width:34px; height:34px;
+    border:1.5px solid var(--gold); opacity:0.65;
+  }
+  .frame::before{top:8px; left:8px; border-right:none; border-bottom:none;}
+  .frame::after{bottom:8px; right:8px; border-left:none; border-top:none;}
+
+  /* ============ SECTION 1: COVER / TAP TO OPEN ============ */
+  #cover{
+    min-height:100svh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px; cursor:pointer;
+  }
+  .cover-frame{
+    width:min(280px, 78vw); aspect-ratio:3/4; border:1.5px solid var(--gold);
+    border-radius:4px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:18px; background:linear-gradient(160deg, rgba(216,174,85,0.06), rgba(216,174,85,0.01));
+    box-shadow:0 0 60px rgba(216,174,85,0.08), inset 0 0 40px rgba(216,174,85,0.05);
+    position:relative;
+  }
+  .cover-frame .corner{position:absolute; width:20px; height:20px; border:1px solid var(--gold);}
+  .cover-frame .corner.tl{top:10px; left:10px; border-right:none; border-bottom:none;}
+  .cover-frame .corner.tr{top:10px; right:10px; border-left:none; border-bottom:none;}
+  .cover-frame .corner.bl{bottom:10px; left:10px; border-right:none; border-top:none;}
+  .cover-frame .corner.br{bottom:10px; right:10px; border-left:none; border-top:none;}
+  .monogram{font-family:'Sacramento'; font-size:44px; color:var(--gold-light);}
+  .cover-names{font-family:'Cinzel'; font-size:15px; letter-spacing:0.3em; color:var(--ivory); opacity:0.8;}
+  .tap-hint{display:flex; flex-direction:column; align-items:center; gap:10px; margin-top:6px;}
+  .hand{font-size:26px; animation:tapPulse 1.4s ease-in-out infinite;}
+  @keyframes tapPulse{0%,100%{transform:translateY(0) scale(1); opacity:0.9;} 50%{transform:translateY(6px) scale(0.92); opacity:0.55;}}
+  .tap-label{font-family:'Jost'; letter-spacing:0.25em; font-size:11px; text-transform:uppercase; color:var(--gold-light);
+    animation:blink 1.8s ease-in-out infinite;}
+  @keyframes blink{0%,100%{opacity:1;} 50%{opacity:0.35;}}
+
+  /* Pazia (curtain) */
+  .curtain{position:fixed; inset:0; z-index:50; display:flex; pointer-events:none;}
+  .curtain-panel{flex:1; background:linear-gradient(180deg,#3a1650,#170a20); transition:transform 1.1s cubic-bezier(.76,0,.24,1);
+    box-shadow:0 0 40px rgba(0,0,0,0.5) inset;}
+  .curtain-panel.left{transform-origin:left;}
+  .curtain-panel.right{transform-origin:right;}
+  .curtain.open .curtain-panel.left{transform:translateX(-100%);}
+  .curtain.open .curtain-panel.right{transform:translateX(100%);}
+  .curtain.hidden{display:none;}
+
+  /* ============ SECTION 2: HERO / WAPENZI ============ */
+  #hero{min-height:100svh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:24px;}
+  .doves{width:min(230px,60vw); height:150px;}
+  .scroll-cue{display:flex; flex-direction:column; align-items:center; gap:6px; margin-top:30px;}
+  .scroll-cue span{font-size:11px; letter-spacing:0.3em; text-transform:uppercase; color:var(--gold-light); opacity:0.85;}
+  .chevron{width:14px; height:14px; border-right:1.5px solid var(--gold); border-bottom:1.5px solid var(--gold);
+    transform:rotate(45deg); animation:chevBounce 1.6s ease-in-out infinite;}
+  @keyframes chevBounce{0%,100%{transform:rotate(45deg) translate(0,0); opacity:0.4;} 50%{transform:rotate(45deg) translate(5px,5px); opacity:1;}}
+
+  /* ============ REVEAL ON SCROLL (generic) ============ */
+  .reveal{opacity:0; transform:translateY(28px); transition:opacity 0.9s ease, transform 0.9s ease;}
+  .reveal.in{opacity:1; transform:translateY(0);}
+
+  section{min-height:60svh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:70px 22px;}
+
+  /* ============ WELCOME / JINA + TAREHE ============ */
+  .guest-name{font-family:'Cinzel'; font-size:clamp(26px,7vw,38px); color:var(--gold-light); text-align:center; margin:14px 0 6px;}
+  .date-badge{margin-top:22px; display:inline-flex; flex-direction:column; align-items:center; gap:4px;
+    border-top:1px solid var(--gold); border-bottom:1px solid var(--gold); padding:12px 30px;}
+  .date-badge .d{font-family:'Cinzel'; font-size:22px; letter-spacing:0.08em; color:var(--ivory);}
+
+  /* ============ COUNTDOWN ============ */
+  .countdown{display:flex; gap:16px; margin-top:18px;}
+  .countdown .unit{display:flex; flex-direction:column; align-items:center; gap:4px; min-width:56px;}
+  .countdown .num{font-family:'Cinzel'; font-size:26px; color:var(--gold-light); border:1px solid var(--gold);
+    border-radius:8px; padding:10px 6px; width:100%; text-align:center;}
+  .countdown .lbl{font-size:9px; letter-spacing:0.15em; text-transform:uppercase; opacity:0.7;}
+
+  /* ============ OUR STORY ============ */
+  .story-line{display:flex; align-items:center; gap:10px; margin-top:6px;}
+  .story-line .dot{width:5px; height:5px; border-radius:50%; background:var(--gold);}
+  .story-line .rule{width:26px; height:1px; background:var(--gold); opacity:0.6;}
+
+  /* ============ ENTRY PASS / QR ============ */
+  .pass-card{background:linear-gradient(160deg, rgba(216,174,85,0.08), rgba(216,174,85,0.02));
+    border:1px solid var(--gold); border-radius:10px; padding:28px; display:flex; flex-direction:column; align-items:center; gap:14px;
+    max-width:280px; width:100%;}
+  .qr-box{width:150px; height:150px; background:repeating-conic-gradient(var(--ivory) 0% 25%, transparent 0% 50%) 0 0/16px 16px, var(--ivory);
+    border-radius:6px; position:relative; display:flex; align-items:center; justify-content:center;}
+  .qr-box::before{content:''; position:absolute; inset:14px; background:var(--plum-deep); border-radius:3px;}
+  .qr-box.has-qr::before{content:none;}
+  .qr-box span{position:relative; z-index:2; font-family:'Jost'; font-size:10px; color:var(--gold-light); letter-spacing:0.1em;}
+  .pass-num{font-family:'Cinzel'; letter-spacing:0.15em; font-size:13px; color:var(--gold-light);}
+
+  /* ============ RECEPTION ============ */
+  .venue-photo{width:100%; max-width:340px; aspect-ratio:16/10; border-radius:8px;
+    background:linear-gradient(135deg, var(--plum-soft), var(--emerald)); border:1px solid var(--gold);
+    display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond'; font-style:italic; color:var(--gold-light); opacity:0.7;}
+  .map-btn{margin-top:18px; font-family:'Jost'; letter-spacing:0.15em; text-transform:uppercase; font-size:12px;
+    color:var(--plum-deep); background:var(--gold-light); border:none; padding:13px 26px; border-radius:30px;
+    cursor:pointer; text-decoration:none; display:inline-block;}
+
+  /* ============ DRESS CODE ============ */
+  .swatch-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; max-width:320px; width:100%; margin-top:10px;}
+  .swatch{display:flex; flex-direction:column; align-items:center; gap:8px;}
+  .swatch .chip{
+    width:100%; aspect-ratio:3/4; border-radius:10px; border:1.5px solid rgba(255,255,255,0.35);
+    box-shadow:0 6px 16px rgba(0,0,0,0.35); position:relative; overflow:hidden;
+    display:flex; align-items:flex-end; justify-content:center; background-size:cover; background-position:center;
+  }
+  .swatch .chip .person-ph{width:30%; opacity:0.55; margin-bottom:14%;}
+  .swatch .chip .upload-hint{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:'Jost'; font-size:8px; letter-spacing:0.08em; text-transform:uppercase; color:rgba(255,255,255,0.55);
+    text-align:center; padding:4px;
+  }
+  .swatch .name{font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ivory); opacity:0.75;}
+
+  /* ============ PROGRAM ============ */
+  .program-list{width:100%; max-width:340px; display:flex; flex-direction:column; gap:16px; margin-top:14px;}
+  .program-item{display:flex; align-items:stretch; gap:14px;}
+  .program-bar{width:4px; border-radius:4px; flex-shrink:0;}
+  .program-body{flex:1; display:flex; justify-content:space-between; align-items:center; padding:10px 0;}
+  .program-body .ev{font-family:'Cormorant Garamond'; font-size:17px; color:var(--ivory);}
+  .program-body .tm{font-family:'Jost'; font-size:12px; letter-spacing:0.1em; color:var(--gold-light);}
+
+  /* ============ WAZAZI / HOSTS ============ */
+  .hosts-grid{display:flex; gap:34px; margin-top:16px; flex-wrap:wrap; justify-content:center;}
+  .host{display:flex; flex-direction:column; align-items:center; gap:4px; max-width:130px;}
+  .host .lbl{font-size:9px; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold-light); opacity:0.75;}
+  .host .nm{font-family:'Cormorant Garamond'; font-size:16px;}
+
+  /* ============ ZAWADI / GIFT ============ */
+  .gift-card{border:1px solid var(--gold); border-radius:10px; padding:22px; max-width:300px; width:100%; text-align:center; margin-top:12px;}
+  .gift-card .line{font-family:'Jost'; font-size:13px; letter-spacing:0.08em; color:var(--gold-light); margin-top:6px;}
+
+  /* ============ NOTE / GUESTBOOK ============ */
+  .note-form{width:100%; max-width:320px; display:flex; flex-direction:column; gap:14px; margin-top:14px;}
+  .note-form textarea{
+    background:rgba(255,255,255,0.05); border:1px solid rgba(216,174,85,0.4); border-radius:10px;
+    padding:14px; color:var(--ivory); font-family:'Cormorant Garamond'; font-size:16px; min-height:100px; resize:vertical;
+  }
+  .note-form textarea::placeholder{color:rgba(251,243,231,0.4);}
+  .note-form button{
+    font-family:'Jost'; letter-spacing:0.15em; text-transform:uppercase; font-size:12px;
+    color:var(--plum-deep); background:var(--gold); border:none; padding:14px; border-radius:30px; cursor:pointer;
+  }
+  .note-sent{display:none; font-family:'Cormorant Garamond'; font-style:italic; color:var(--gold-light); margin-top:10px;}
+
+  /* ============ THANK YOU ============ */
+  #thankyou{min-height:80svh;}
+  .thankyou-script{font-size:clamp(38px,10vw,58px);}
+
+  footer{padding:40px 20px 70px; text-align:center;}
+  footer .brand{font-family:'Jost'; font-size:10px; letter-spacing:0.3em; text-transform:uppercase; color:var(--gold-light); opacity:0.55;}
+
+  /* ============ LOADER / ERROR STATE (data kutoka Supabase) ============ */
+  #loadState{
+    position:fixed; inset:0; z-index:50; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:16px; background:var(--plum-deep); text-align:center; padding:30px;
+  }
+  #loadState.hidden{display:none;}
+  .load-spinner{
+    width:38px; height:38px; border-radius:50%;
+    border:3px solid rgba(216,174,85,0.25); border-top-color:var(--gold);
+    animation:loadSpin 0.9s linear infinite;
+  }
+  @keyframes loadSpin{to{transform:rotate(360deg);}}
+  #loadState p{font-family:'Cormorant Garamond'; font-size:16px; color:var(--ivory); opacity:0.85; max-width:280px;}
+  #loadState .err-title{font-family:'Cinzel'; font-size:20px; color:var(--gold-light); letter-spacing:0.05em;}
+  #loadState .err-icon{font-size:34px;}
+  .qr-real{position:relative; z-index:2; width:122px; height:122px; border-radius:4px; background:#fff; display:block;}
+  .vip-pill{
+    display:inline-block; margin-top:8px; font-family:'Jost'; font-size:11px; letter-spacing:0.12em; text-transform:uppercase;
+    padding:5px 14px; border-radius:20px; font-weight:600;
+  }
+  .vip-pill.vvip{background:#f2d889; color:#3a2a05;}
+  .vip-pill.vip{background:rgba(216,174,85,0.25); color:var(--gold-light); border:1px solid rgba(216,174,85,0.5);}
+  .group-pill{
+    display:inline-block; margin-top:8px; margin-left:6px; font-family:'Jost'; font-size:11px; letter-spacing:0.08em;
+    padding:5px 14px; border-radius:20px; background:rgba(255,255,255,0.08); color:var(--ivory); opacity:0.85;
+  }
+  #loadState{z-index:60;}
+</style>
+</head>
+<body>
+
+<div id="bgGradient"></div>
+<div class="planet p1"></div>
+<div class="planet p2"></div>
+<div class="planet p3"></div>
+<div class="comet"></div>
+<canvas id="sparkleCanvas"></canvas>
+
+<!-- ============ HALI YA KUPAKIA / KOSA (kabla data ya Supabase haijafika) ============ -->
+<div id="loadState">
+  <div class="load-spinner" id="loadSpinner"></div>
+  <p id="loadText">Tafadhali subiri, tunapakia mualiko wako...</p>
+</div>
+
+<div class="curtain" id="curtain">
+  <div class="curtain-panel left"></div>
+  <div class="curtain-panel right"></div>
+</div>
+
+<div class="page" id="page-content">
+
+  <!-- 1. COVER -->
+  <section id="cover" onclick="openCurtain()">
+    <div class="eyebrow">Umealikwa</div>
+    <div class="cover-frame">
+      <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+      <div class="monogram">J &amp; M</div>
+      <div class="cover-names">JOSEPHINE &nbsp;·&nbsp; MARK</div>
+      <div class="tap-hint">
+        <div class="hand">👆</div>
+        <div class="tap-label">Gusa Kufungua</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. HERO -->
+  <section id="hero">
+    <div class="doves-wrap reveal">
+      <svg class="dove dove-left" viewBox="0 0 60 40" fill="none">
+        <path d="M2 30 C10 10, 25 6, 30 20 C25 10, 40 6, 48 22 C40 18, 32 24, 30 34 C28 26, 14 34, 2 30 Z" fill="#d8ae55" opacity="0.92"/>
+      </svg>
+      <svg class="dove dove-right" viewBox="0 0 60 40" fill="none">
+        <path d="M2 30 C10 10, 25 6, 30 20 C25 10, 40 6, 48 22 C40 18, 32 24, 30 34 C28 26, 14 34, 2 30 Z" fill="#d8ae55" opacity="0.92"/>
+      </svg>
+    </div>
+    <h1 class="reveal" style="font-size:20px; letter-spacing:0.15em;">Wawili Wamekuwa Mmoja</h1>
+    <p class="reveal" style="max-width:280px;">Kwa neema ya Mungu na furaha ya mioyo yetu, tunafunga ndoa na tunapenda uwe sehemu ya siku hii adhimu.</p>
+    <div class="scroll-cue reveal">
+      <span>Scroll Kuendelea</span>
+      <div class="chevron"></div>
+    </div>
+  </section>
+
+  <!-- 3. COUNTDOWN -->
+  <section id="countdown">
+    <div class="eyebrow reveal">Siku Zinazobaki</div>
+    <div class="countdown reveal" id="countdownBoxes">
+      <div class="unit"><div class="num" id="cdDays">--</div><div class="lbl">Siku</div></div>
+      <div class="unit"><div class="num" id="cdHours">--</div><div class="lbl">Saa</div></div>
+      <div class="unit"><div class="num" id="cdMins">--</div><div class="lbl">Dakika</div></div>
+    </div>
+  </section>
+
+  <!-- 4. WELCOME -->
+  <section id="welcome">
+    <div class="frame reveal" style="text-align:center;">
+      <div class="eyebrow">Karibu</div>
+      <div class="guest-name" id="guestName">Neema Mushi</div>
+      <div id="guestBadges"></div>
+      <p style="max-width:280px; margin:0 auto;">Umealikwa rasmi kuungana nasi katika siku hii ya harusi.</p>
+      <div class="date-badge">
+        <span class="eyebrow" style="font-size:9px;">Event Date</span>
+        <span class="d" id="eventDateText">Jumamosi, 14 Februari 2027</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. OUR STORY -->
+  <section id="story">
+    <div class="eyebrow reveal">Hadithi Yetu</div>
+    <div class="story-line reveal"><div class="dot"></div><div class="rule"></div><div class="dot"></div></div>
+    <p class="reveal" style="max-width:290px; margin-top:16px;">Tulikutana miaka mitatu iliyopita, na tangu siku hiyo, safari yetu imejaa upendo, furaha, na shukrani. Leo tunafunga hatua mpya — na tunataka uwe shahidi wa agano hili.</p>
+  </section>
+
+  <!-- 6. ENTRY PASS -->
+  <section id="pass">
+    <div class="eyebrow reveal">Your Entry Pass</div>
+    <div class="pass-card reveal" style="margin-top:16px;">
+      <div class="qr-box" id="qrBox"><span>SAMPLE QR</span></div>
+      <div class="pass-num">NAMBA: <span id="passNum">HARUSI2027-014</span></div>
+      <p style="font-size:14px; opacity:0.75;">Onyesha QR hii mlangoni kwa uthibitisho wa haraka</p>
+    </div>
+  </section>
+
+  <!-- 7. RECEPTION -->
+  <section id="reception">
+    <div class="eyebrow reveal">Reception Details</div>
+    <div class="venue-photo reveal" style="margin-top:16px;">Picha ya Ukumbi</div>
+    <h2 class="reveal" style="font-size:22px; margin-top:18px;" id="venueName">Kilimanjaro Golden Hall</h2>
+    <p class="reveal" id="venueTime">Barabara ya Uhuru, Dodoma</p>
+    <a href="#" class="map-btn reveal" id="mapBtn" target="_blank" rel="noopener">Fungua Ramani</a>
+  </section>
+
+  <!-- 8. DRESS CODE -->
+  <section id="dresscode">
+    <div class="eyebrow reveal">Dressing Code</div>
+    <div class="swatch-grid reveal">
+      <div class="swatch"><div class="chip" style="background:#d8ae55;"><div class="upload-hint">+ Picha</div></div><span class="name">Gold</span></div>
+      <div class="swatch"><div class="chip" style="background:#6b1e3c;"><div class="upload-hint">+ Picha</div></div><span class="name">Wine</span></div>
+      <div class="swatch"><div class="chip" style="background:#f3b6c4;"><div class="upload-hint">+ Picha</div></div><span class="name">Blush</span></div>
+      <div class="swatch"><div class="chip" style="background:#fbf3e7;"><div class="upload-hint" style="color:rgba(23,10,32,0.5);">+ Picha</div></div><span class="name">Ivory</span></div>
+      <div class="swatch"><div class="chip" style="background:#2f6b57;"><div class="upload-hint">+ Picha</div></div><span class="name">Emerald</span></div>
+      <div class="swatch"><div class="chip" style="background:#1c2b4a;"><div class="upload-hint">+ Picha</div></div><span class="name">Navy</span></div>
+    </div>
+  </section>
+
+  <!-- 9. PROGRAM -->
+  <section id="program">
+    <div class="eyebrow reveal">Celebration Program</div>
+    <div class="program-list reveal">
+      <div class="program-item"><div class="program-bar" style="background:#d8ae55;"></div>
+        <div class="program-body"><span class="ev">Kupokelewa kwa Wageni</span><span class="tm">10:00</span></div></div>
+      <div class="program-item"><div class="program-bar" style="background:#f3b6c4;"></div>
+        <div class="program-body"><span class="ev">Kuingia kwa Bibi &amp; Bwana Harusi</span><span class="tm">11:30</span></div></div>
+      <div class="program-item"><div class="program-bar" style="background:#2f6b57;"></div>
+        <div class="program-body"><span class="ev">Chakula cha Mchana</span><span class="tm">13:00</span></div></div>
+      <div class="program-item"><div class="program-bar" style="background:#6b1e3c;"></div>
+        <div class="program-body"><span class="ev">Kukata Keki</span><span class="tm">15:00</span></div></div>
+      <div class="program-item"><div class="program-bar" style="background:#d8ae55;"></div>
+        <div class="program-body"><span class="ev">Densi &amp; Sherehe</span><span class="tm">16:00</span></div></div>
+    </div>
+  </section>
+
+  <!-- 10. WAZAZI / HOSTS -->
+  <section id="hosts">
+    <div class="eyebrow reveal">Wazazi wa Harusi</div>
+    <div class="hosts-grid reveal">
+      <div class="host"><span class="lbl">Upande wa Bibi</span><span class="nm">Bw. na Bi. Mushi</span></div>
+      <div class="host"><span class="lbl">Upande wa Bwana</span><span class="nm">Bw. na Bi. Komba</span></div>
+    </div>
+  </section>
+
+  <!-- 11. ZAWADI -->
+  <section id="gift">
+    <div class="eyebrow reveal">Zawadi</div>
+    <div class="gift-card reveal">
+      <p>Uwepo wako ndio zawadi kubwa kwetu. Kama ungependa kuchangia, karibu:</p>
+      <div class="line">M-PESA / Selcom: 0713 079 348</div>
+      <div class="line">Jina: Josephine Mushi</div>
+    </div>
+  </section>
+
+  <!-- 12. NOTE -->
+  <section id="note">
+    <div class="eyebrow reveal">Leave a Note to the Couple</div>
+    <form class="note-form reveal" onsubmit="return sendNote(event)">
+      <textarea id="noteTextarea" placeholder="Andika salamu zako kwa bibi na bwana harusi..." required maxlength="2000"></textarea>
+      <button type="submit" id="noteSubmitBtn">Tuma Salamu</button>
+      <p class="note-error" id="noteError" style="display:none; color:#f3b6c4; font-family:'Jost'; font-size:12px; margin:0;"></p>
+    </form>
+    <p class="note-sent" id="noteSent">Asante! Salamu yako imepokelewa 💛</p>
+  </section>
+
+  <!-- 13. THANK YOU -->
+  <section id="thankyou">
+    <div class="script thankyou-script reveal">Asante</div>
+    <p class="reveal" style="margin-top:10px; max-width:260px;">Tunafurahi kukuwa nawe katika siku hii. Tuonane <span id="thankyouDate">14 Februari 2027</span>!</p>
+  </section>
+
+  <footer>
+    <div class="brand">me. brands — digital invitations</div>
+  </footer>
+
+</div>
+
+<script>
+  // ---------- CURTAIN OPEN ----------
+  function openCurtain(){
+    const curtain = document.getElementById('curtain');
+    curtain.classList.add('open');
+    setTimeout(() => {
+      curtain.classList.add('hidden');
+      document.getElementById('hero').scrollIntoView({behavior:'smooth'});
+    }, 1150);
+  }
+
+  // ---------- SCROLL REVEAL ----------
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('in'); });
+  }, { threshold: 0.2 });
+  revealEls.forEach(el => io.observe(el));
+
+  // ---------- COUNTDOWN (tarehe halisi inawekwa na loadInvitation() chini) ----------
+  let eventTargetMs = new Date('2027-02-14T10:00:00+03:00').getTime(); // fallback ya sampuli
+  function updateCountdown(){
+    const now = Date.now();
+    const diff = Math.max(0, eventTargetMs - now);
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    document.getElementById('cdDays').textContent = days;
+    document.getElementById('cdHours').textContent = hours;
+    document.getElementById('cdMins').textContent = mins;
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 60000);
+
+  // =====================================================================
+  // ===== DATA HALISI KUTOKA SUPABASE (kwa token/id kwenye URL) ========
+  // =====================================================================
+  const SUPABASE_URL = 'https://fymjjqembyrlwgktbcgf.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_SMflxbKh4452586Q4ojrow_L4ZGq2uu';
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+
+  const MIEZI_SW = ['Januari','Februari','Machi','Aprili','Mei','Juni','Julai','Agosti','Septemba','Oktoba','Novemba','Desemba'];
+  const SIKU_SW  = ['Jumapili','Jumatatu','Jumanne','Jumatano','Alhamisi','Ijumaa','Jumamosi'];
+
+  function formatDateSw(dateStr){
+    if(!dateStr) return null;
+    // event_date huhifadhiwa kama 'YYYY-MM-DD' - tunaijenga bila timezone shift
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, (m || 1) - 1, d || 1);
+    return `${SIKU_SW[dt.getDay()]}, ${dt.getDate()} ${MIEZI_SW[dt.getMonth()]} ${dt.getFullYear()}`;
+  }
+
+  function formatTimeAMPM(time24){
+    if(!time24) return '';
+    const [hStr, mStr] = time24.split(':');
+    let h = parseInt(hStr, 10); const m = mStr || '00';
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12; if(h === 0) h = 12;
+    return `${h}:${m} ${ampm}`;
+  }
+
+  function showLoadError(message){
+    document.getElementById('loadSpinner').style.display = 'none';
+    const box = document.getElementById('loadState');
+    box.innerHTML = `
+      <div class="err-icon">💌</div>
+      <div class="err-title">Samahani</div>
+      <p>${message}</p>
+    `;
+  }
+
+  async function drawGuestQR(cardId){
+    try{
+      const dataUrl = await QRCode.toDataURL(cardId, { width: 260, margin: 1 });
+      const box = document.getElementById('qrBox');
+      box.classList.add('has-qr');
+      box.innerHTML = `<img src="${dataUrl}" alt="QR ya mgeni" class="qr-real">`;
+    }catch(e){
+      console.error('Imeshindwa kutengeneza QR:', e);
+    }
+  }
+
+  function renderGuestBadges(guest, eventData){
+    const wrap = document.getElementById('guestBadges');
+    if(!wrap) return;
+    let html = '';
+    const rank = (guest.vip_status || '').trim();
+    if(eventData?.show_vip_badge !== false && rank && rank.toLowerCase() !== 'none'){
+      if(rank.toLowerCase() === 'vvip'){
+        html += `<span class="vip-pill vvip">👑 VVIP</span>`;
+      } else if(rank.toLowerCase() === 'vip'){
+        html += `<span class="vip-pill vip">⭐ VIP</span>`;
+      } else {
+        html += `<span class="vip-pill vip">${rank}</span>`;
+      }
+    }
+    if(eventData?.show_group_label !== false && (guest.group_size || 1) > 1){
+      html += `<span class="group-pill">👥 Kikundi cha ${guest.group_size}</span>`;
+    }
+    wrap.innerHTML = html;
+  }
+
+  let currentGuestCardId = null; // inatumika na fomu ya "Ujumbe wa Shukrani"
+
+  async function loadInvitation(){
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('id') || params.get('token');
+
+    if(!token){
+      showLoadError('Kiungo hiki cha mualiko hakina taarifa sahihi. Tafadhali tumia kiungo alichotumiwa mgeni.');
+      return;
+    }
+
+    // 1) Tafuta mgeni kwa card_id (token)
+    const { data: guest, error: guestErr } = await sb
+      .from('guests')
+      .select('*')
+      .eq('card_id', token)
+      .single();
+
+    if(guestErr || !guest){
+      showLoadError('Mualiko huu haukupatikana. Huenda kiungo si sahihi au kimeondolewa.');
+      return;
+    }
+
+    // 2) Tafuta taarifa za event husika
+    const { data: eventData } = await sb
+      .from('events')
+      .select('*')
+      .eq('id', guest.event_id)
+      .single();
+
+    // ---- Jaza taarifa halisi kwenye ukurasa ----
+    currentGuestCardId = guest.card_id;
+    document.getElementById('guestName').textContent = guest.name || 'Mgeni';
+    document.getElementById('passNum').textContent = guest.card_id;
+    renderGuestBadges(guest, eventData);
+    drawGuestQR(guest.card_id);
+
+    if(eventData){
+      const dateText = formatDateSw(eventData.event_date);
+      if(dateText){
+        document.getElementById('eventDateText').textContent = dateText;
+        document.getElementById('thankyouDate').textContent = dateText;
+      }
+      if(eventData.event_date){
+        const timeStr = eventData.event_time || '10:00';
+        eventTargetMs = new Date(`${eventData.event_date}T${timeStr}:00+03:00`).getTime();
+        updateCountdown();
+      }
+      if(eventData.venue){
+        document.getElementById('venueName').textContent = eventData.venue;
+      }
+      const timeText = formatTimeAMPM(eventData.event_time);
+      document.getElementById('venueTime').textContent = timeText
+        ? `Muda: ${timeText}`
+        : document.getElementById('venueTime').textContent;
+      const mapBtn = document.getElementById('mapBtn');
+      if(eventData.location_url){
+        mapBtn.href = eventData.location_url;
+      } else {
+        mapBtn.style.display = 'none';
+      }
+    }
+
+    // ---- Onyesha ukurasa, ficha loader ----
+    document.getElementById('loadState').classList.add('hidden');
+  }
+
+  loadInvitation();
+
+  // ---------- NOTE SUBMIT (inatuma Ujumbe wa Shukrani kwenda Supabase) ----------
+  async function sendNote(ev){
+    ev.preventDefault();
+    const form = ev.target;
+    const textarea = document.getElementById('noteTextarea');
+    const btn = document.getElementById('noteSubmitBtn');
+    const errBox = document.getElementById('noteError');
+    const message = textarea.value.trim();
+
+    errBox.style.display = 'none';
+
+    if(!message){
+      errBox.textContent = 'Tafadhali andika ujumbe kabla ya kutuma.';
+      errBox.style.display = 'block';
+      return false;
+    }
+    if(!currentGuestCardId){
+      errBox.textContent = 'Samahani, taarifa za mualiko bado hazijapakia. Jaribu tena baada ya sekunde chache.';
+      errBox.style.display = 'block';
+      return false;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Inatuma...';
+
+    const { error } = await sb.rpc('submit_guest_note', {
+      p_card_id: currentGuestCardId,
+      p_message: message
+    });
+
+    if(error){
+      console.error('Imeshindwa kutuma ujumbe:', error);
+      errBox.textContent = 'Samahani, imeshindwa kutuma ujumbe wako. Tafadhali jaribu tena.';
+      errBox.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Tuma Salamu';
+      return false;
+    }
+
+    form.style.display = 'none';
+    document.getElementById('noteSent').style.display = 'block';
+    return false;
+  }
+
+  // ---------- SPARKLE BACKGROUND (chembechembe za dhahabu zinazometameta) ----------
+  const canvas = document.getElementById('sparkleCanvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function resize(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function initParticles(){
+    const count = Math.min(150, Math.floor((canvas.width * canvas.height) / 9000));
+    particles = Array.from({length: count}, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.5 + 0.3,
+      speed: Math.random() * 0.08 + 0.015,
+      phase: Math.random() * Math.PI * 2,
+    }));
+  }
+  initParticles();
+  window.addEventListener('resize', initParticles);
+
+  function drawParticles(t){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p => {
+      const twinkle = 0.4 + 0.6 * Math.abs(Math.sin(t/1000 + p.phase));
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(216,174,85,${twinkle * 0.8})`;
+      ctx.fill();
+      p.y -= p.speed;
+      if(p.y < -5){ p.y = canvas.height + 5; p.x = Math.random() * canvas.width; }
+    });
+  }
+
+  if(!reduceMotion){
+    function loop(t){ drawParticles(t); requestAnimationFrame(loop); }
+    requestAnimationFrame(loop);
+  } else {
+    drawParticles(0);
+  }
+</script>
+
+</body>
+</html>
