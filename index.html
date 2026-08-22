@@ -1052,6 +1052,9 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
       <button class="nav-item" data-roles="admin,manager" onclick="showPage('templates')">
         <i data-lucide="layout-template" class="icon" style="color:#A855F7"></i> Template Management
       </button>
+      <button class="nav-item" data-roles="admin,manager" onclick="showPage('invitedesign')">
+        <i data-lucide="sparkles" class="icon" style="color:#F59E0B"></i> Digital Invitation
+      </button>
       <button class="nav-item" data-roles="admin,manager" onclick="showPage('invitations')">
         <i data-lucide="send" class="icon" style="color:#10B981"></i> Send Invitations
       </button>
@@ -1422,6 +1425,121 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
       </div>
 
       <!-- ===== INVITATIONS PAGE ===== -->
+      <div class="page" id="page-invitedesign">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div>
+            <h2 style="font-size:18px;font-weight:700;">Digital Invitation</h2>
+            <p style="font-size:13px;color:var(--gray-400);margin-top:2px;">Buni muonekano wa mualiko wa kidijitali (scroll) kwa kila event - rangi, hadithi, program, dress code</p>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-header">
+            <div class="card-title"><i data-lucide="calendar-days" class="icon" style="color:#F97316"></i> Chagua Event</div>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Event unayotaka kuibunia Digital Invitation</label>
+            <select id="inviteDesignEventSelect" onchange="loadInvitationDesign()">
+              <option value="">-- Chagua Event --</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="inviteDesignEmptyState" class="empty-state">
+          <div class="icon"><i data-lucide="sparkles" style="color:#F59E0B;width:32px;height:32px;"></i></div>
+          <h3>Chagua event kuanza</h3>
+          <p>Mipangilio ya Digital Invitation inawekwa kwa kila event tofauti</p>
+        </div>
+
+        <div id="inviteDesignFormWrap" style="display:none;">
+          <input type="hidden" id="invDesignId">
+          <input type="hidden" id="invDesignEventId">
+
+          <!-- COVER & HADITHI -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="sparkles" class="icon" style="color:#F59E0B"></i> Cover &amp; Hadithi</div>
+            </div>
+            <div class="form-group">
+              <label>Majina ya Wapenzi (kwenye Cover)</label>
+              <input type="text" id="invCoverNames" placeholder="JOSEPHINE · MARK">
+            </div>
+            <div class="form-group">
+              <label>Aya ya Karibisho (Hero Verse)</label>
+              <textarea id="invHeroVerse" rows="2" placeholder="Kwa neema ya Mungu na furaha ya mioyo yetu, tunafunga ndoa..."></textarea>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Hadithi Yetu (Our Story)</label>
+              <textarea id="invStoryText" rows="3" placeholder="Tulikutana miaka mitatu iliyopita..."></textarea>
+            </div>
+          </div>
+
+          <!-- RECEPTION -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="map-pin" class="icon" style="color:#EF4444"></i> Reception Details</div>
+            </div>
+            <div class="input-row">
+              <div class="form-group">
+                <label>Jina la Ukumbi</label>
+                <input type="text" id="invVenueName" placeholder="Kilimanjaro Golden Hall">
+              </div>
+              <div class="form-group">
+                <label>Anwani</label>
+                <input type="text" id="invVenueAddress" placeholder="Barabara ya Uhuru, Dodoma">
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Link ya Ramani (Google Maps)</label>
+              <input type="text" id="invVenueMapUrl" placeholder="https://maps.google.com/?q=...">
+            </div>
+          </div>
+
+          <!-- DRESS CODE -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="shirt" class="icon" style="color:#EC4899"></i> Dress Code</div>
+              <button class="btn btn-outline btn-sm" onclick="addDressColorRow()">+ Ongeza Rangi</button>
+            </div>
+            <p style="font-size:12px;color:var(--gray-400);margin-bottom:12px;">Ongeza rangi za mavazi - unaweza pia kupakia picha ya mfano (mtu aliyevaa rangi hiyo) kwa kila moja</p>
+            <div id="dressColorsList" style="display:flex; flex-direction:column; gap:10px;"></div>
+          </div>
+
+          <!-- PROGRAM -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="calendar-clock" class="icon" style="color:#3B82F6"></i> Celebration Program</div>
+              <button class="btn btn-outline btn-sm" onclick="addProgramRow()">+ Ongeza Ratiba</button>
+            </div>
+            <div id="programList" style="display:flex; flex-direction:column; gap:10px;"></div>
+          </div>
+
+          <!-- WAZAZI / HOSTS -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="users" class="icon" style="color:#16A34A"></i> Wazazi wa Harusi</div>
+              <button class="btn btn-outline btn-sm" onclick="addHostRow()">+ Ongeza</button>
+            </div>
+            <div id="hostsList" style="display:flex; flex-direction:column; gap:10px;"></div>
+          </div>
+
+          <!-- ZAWADI -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="gift" class="icon" style="color:#D97706"></i> Zawadi</div>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Taarifa za Zawadi/Mchango</label>
+              <textarea id="invGiftInfo" rows="3" placeholder="M-Pesa/Selcom: 0713 079 348&#10;Jina: Josephine Mushi"></textarea>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" style="width:100%;" onclick="saveInvitationDesign()">
+            <i data-lucide="save" style="width:16px;height:16px;"></i> Hifadhi Digital Invitation
+          </button>
+        </div>
+      </div>
+
       <div class="page" id="page-invitations">
         <div style="margin-bottom:20px;">
           <h2 style="font-size:18px;font-weight:700;">Send Invitations</h2>
@@ -2672,6 +2790,7 @@ const PAGE_ROLES = {
   dashboard:   ['admin','manager'],
   events:      ['admin','manager'],
   templates:   ['admin','manager'],
+  invitedesign:['admin','manager'],
   invitations: ['admin','manager'],
   rsvp:        ['admin','manager'],
   scanner:     ['admin','manager','scanner'],
@@ -2815,6 +2934,7 @@ function showPage(page) {
     dashboard: ['Dashboard', 'Muhtasari wa mfumo wako'],
     events: ['Event Management', 'Simamia matukio yako'],
     templates: ['Template Management', 'Simamia templates za kadi'],
+    invitedesign: ['Digital Invitation', 'Buni muonekano wa mualiko wa kidijitali (scroll)'],
     invitations: ['Send Invitations', 'Tuma mialiko kwa wageni'],
     rsvp: ['RSVP - Ujumbe wa Shukrani', 'Tuma SMS za shukrani kwa wageni'],
     scanner: ['Scanner', 'Kagua kadi za wageni mlangoni'],
@@ -2838,6 +2958,7 @@ function showPage(page) {
   if (page === 'whatsapp') loadWhatsappMonitor();
   if (page === 'scanner') openScannerPage();
   if (page === 'templates') { loadTemplates(); renderPositionPreview(); }
+  if (page === 'invitedesign') { /* dropdown tayari imejazwa na loadEventsDropdown() */ }
   if (page === 'rsvp') loadEventsDropdown();
   if (page === 'profile') initThemeToggleUI();
 
@@ -3417,13 +3538,16 @@ async function loadEventsDropdown() {
   const tplSel = document.getElementById('tplEventSelect');
   const bulkSel = document.getElementById('bulkEventSelect');
   const paySel = document.getElementById('paymentEventSelect');
+  const invDesignSel = document.getElementById('inviteDesignEventSelect');
   if (tplSel) tplSel.innerHTML = '<option value="">-- Chagua Event --</option>';
   if (bulkSel) bulkSel.innerHTML = '<option value="">-- Chagua Event --</option>';
   if (paySel) paySel.innerHTML = '<option value="">-- Chagua Event --</option>';
+  if (invDesignSel) invDesignSel.innerHTML = '<option value="">-- Chagua Event --</option>';
   data.forEach(e => {
     if (tplSel) tplSel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
     if (bulkSel) bulkSel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
     if (paySel) paySel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
+    if (invDesignSel) invDesignSel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
   });
 
   data.forEach(e => {
@@ -5918,6 +6042,188 @@ qrImg.onload = () => {
 qrImg.src = qrDataUrl;
   };
   bgImg.src = previewTemplateCache.url;
+}
+
+// ============================================================
+// DIGITAL INVITATION DESIGN
+// ============================================================
+const DRESS_PHOTO_BUCKET = 'dress-photos';
+let dressColorRowSeq = 0, programRowSeq = 0, hostRowSeq = 0;
+
+const DRESS_COLOR_OPTIONS = [
+  { hex: '#D8AE55', name: 'Gold' },
+  { hex: '#6B1E3C', name: 'Wine' },
+  { hex: '#F3B6C4', name: 'Blush' },
+  { hex: '#FBF3E7', name: 'Ivory' },
+  { hex: '#2F6B57', name: 'Emerald' },
+  { hex: '#1C2B4A', name: 'Navy' },
+  { hex: '#000000', name: 'Black' },
+  { hex: '#EF4444', name: 'Red' },
+];
+
+async function loadInvitationDesign() {
+  const eventId = document.getElementById('inviteDesignEventSelect').value;
+  const emptyState = document.getElementById('inviteDesignEmptyState');
+  const formWrap = document.getElementById('inviteDesignFormWrap');
+
+  if (!eventId) {
+    emptyState.style.display = 'block';
+    formWrap.style.display = 'none';
+    return;
+  }
+
+  emptyState.style.display = 'none';
+  formWrap.style.display = 'block';
+  document.getElementById('invDesignEventId').value = eventId;
+
+  const { data, error } = await sb.from('invitation_designs').select('*').eq('event_id', eventId).maybeSingle();
+  if (error) { showToast('Kosa kupakia design: ' + error.message, 'error'); return; }
+
+  document.getElementById('invDesignId').value = data?.id || '';
+  document.getElementById('invCoverNames').value = data?.cover_names || '';
+  document.getElementById('invHeroVerse').value = data?.hero_verse || '';
+  document.getElementById('invStoryText').value = data?.story_text || '';
+  document.getElementById('invVenueName').value = data?.venue_name || '';
+  document.getElementById('invVenueAddress').value = data?.venue_address || '';
+  document.getElementById('invVenueMapUrl').value = data?.venue_map_url || '';
+  document.getElementById('invGiftInfo').value = data?.gift_info || '';
+
+  document.getElementById('dressColorsList').innerHTML = '';
+  document.getElementById('programList').innerHTML = '';
+  document.getElementById('hostsList').innerHTML = '';
+
+  const dressColors = data?.dress_colors || [];
+  if (dressColors.length === 0) { addDressColorRow(); } else { dressColors.forEach(addDressColorRow); }
+
+  const program = data?.program || [];
+  if (program.length === 0) { addProgramRow(); } else { program.forEach(addProgramRow); }
+
+  const hosts = data?.hosts || [];
+  if (hosts.length === 0) { addHostRow(); } else { hosts.forEach(addHostRow); }
+
+  try { lucide.createIcons(); } catch(e) {}
+}
+
+async function saveInvitationDesign() {
+  const eventId = document.getElementById('invDesignEventId').value;
+  if (!eventId) return showToast('Chagua Event kwanza', 'error');
+
+  const payload = {
+    user_id: ORG_OWNER_ID,
+    event_id: eventId,
+    cover_names: document.getElementById('invCoverNames').value.trim(),
+    hero_verse: document.getElementById('invHeroVerse').value.trim(),
+    story_text: document.getElementById('invStoryText').value.trim(),
+    venue_name: document.getElementById('invVenueName').value.trim(),
+    venue_address: document.getElementById('invVenueAddress').value.trim(),
+    venue_map_url: document.getElementById('invVenueMapUrl').value.trim(),
+    gift_info: document.getElementById('invGiftInfo').value.trim(),
+    dress_colors: collectDressColors(),
+    program: collectProgram(),
+    hosts: collectHosts(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error } = await sb.from('invitation_designs').upsert(payload, { onConflict: 'event_id' });
+  if (error) return showToast('Kosa: ' + error.message + ' (Huenda jedwali la invitation_designs halijatengenezwa - angalia SQL ya Hatua 1)', 'error');
+
+  showToast('Digital Invitation imehifadhiwa!', 'success');
+  loadInvitationDesign();
+}
+
+// ---------- DRESS CODE ROWS ----------
+function addDressColorRow(existing) {
+  const id = 'dc_' + (dressColorRowSeq++);
+  const hex = existing?.hex || DRESS_COLOR_OPTIONS[0].hex;
+  const label = existing?.label || DRESS_COLOR_OPTIONS[0].name;
+  const photoUrl = existing?.photo_url || '';
+
+  const row = document.createElement('div');
+  row.id = id;
+  row.style.cssText = 'display:flex; align-items:center; gap:10px; border:1px solid var(--gray-200); border-radius:8px; padding:8px;';
+  row.innerHTML = `
+    <div class="dc-photo-frame" style="width:44px;height:58px;border-radius:6px;flex-shrink:0;background-size:cover;background-position:center;border:1px solid var(--gray-200);background-color:${hex};background-image:${photoUrl ? `url('${photoUrl}')` : 'none'};"></div>
+    <select class="dc-color" style="width:110px;">
+      ${DRESS_COLOR_OPTIONS.map(c => `<option value="${c.hex}" ${c.hex.toLowerCase() === hex.toLowerCase() ? 'selected' : ''}>${c.name}</option>`).join('')}
+    </select>
+    <input type="text" class="dc-label" value="${label}" placeholder="Jina la rangi" style="flex:1;min-width:0;">
+    <input type="file" accept="image/*" style="display:none;" onchange="uploadDressPhoto('${id}', this)">
+    <button class="btn btn-outline btn-sm" onclick="this.previousElementSibling.click()" title="Pakia Picha"><i data-lucide="upload" style="width:14px;height:14px;"></i></button>
+    <button class="btn btn-outline btn-sm" onclick="document.getElementById('${id}').remove()" title="Futa"><i data-lucide="trash-2" style="width:14px;height:14px;color:#EF4444;"></i></button>
+  `;
+  row.querySelector('.dc-color').addEventListener('change', function(){
+    row.querySelector('.dc-photo-frame').style.backgroundColor = this.value;
+    const opt = DRESS_COLOR_OPTIONS.find(c => c.hex.toLowerCase() === this.value.toLowerCase());
+    if (opt) row.querySelector('.dc-label').value = opt.name;
+  });
+  document.getElementById('dressColorsList').appendChild(row);
+  try { lucide.createIcons(); } catch(e) {}
+}
+
+async function uploadDressPhoto(rowId, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const row = document.getElementById(rowId);
+  const path = `${ORG_OWNER_ID}/${Date.now()}_${file.name}`;
+  const { error: upErr } = await sb.storage.from(DRESS_PHOTO_BUCKET).upload(path, file);
+  if (upErr) return showToast('Kosa la upload: ' + upErr.message + ' (Hakikisha bucket "dress-photos" ipo kwenye Supabase Storage)', 'error');
+  const { data: { publicUrl } } = sb.storage.from(DRESS_PHOTO_BUCKET).getPublicUrl(path);
+  row.querySelector('.dc-photo-frame').style.backgroundImage = `url('${publicUrl}')`;
+  row.dataset.photoUrl = publicUrl;
+  showToast('Picha imepakiwa', 'success');
+}
+
+function collectDressColors() {
+  return Array.from(document.querySelectorAll('#dressColorsList > div')).map(row => ({
+    hex: row.querySelector('.dc-color').value,
+    label: row.querySelector('.dc-label').value.trim(),
+    photo_url: row.dataset.photoUrl || (row.querySelector('.dc-photo-frame').style.backgroundImage.match(/url\(['"]?(.*?)['"]?\)/)?.[1] || ''),
+  }));
+}
+
+// ---------- PROGRAM ROWS ----------
+const PROGRAM_COLORS = ['#D8AE55', '#F3B6C4', '#2F6B57', '#6B1E3C', '#3B82F6'];
+function addProgramRow(existing) {
+  const id = 'pg_' + (programRowSeq++);
+  const row = document.createElement('div');
+  row.id = id;
+  row.style.cssText = 'display:flex; align-items:center; gap:10px; border:1px solid var(--gray-200); border-radius:8px; padding:8px;';
+  row.innerHTML = `
+    <input type="color" class="pg-color" value="${existing?.color || PROGRAM_COLORS[programRowSeq % PROGRAM_COLORS.length]}" style="width:34px;height:34px;border:none;padding:0;flex-shrink:0;">
+    <input type="text" class="pg-event" value="${existing?.event || ''}" placeholder="Kupokelewa kwa Wageni" style="flex:1;min-width:0;">
+    <input type="time" class="pg-time" value="${existing?.time || ''}" style="width:110px;">
+    <button class="btn btn-outline btn-sm" onclick="document.getElementById('${id}').remove()" title="Futa"><i data-lucide="trash-2" style="width:14px;height:14px;color:#EF4444;"></i></button>
+  `;
+  document.getElementById('programList').appendChild(row);
+  try { lucide.createIcons(); } catch(e) {}
+}
+function collectProgram() {
+  return Array.from(document.querySelectorAll('#programList > div')).map(row => ({
+    color: row.querySelector('.pg-color').value,
+    event: row.querySelector('.pg-event').value.trim(),
+    time: row.querySelector('.pg-time').value,
+  })).filter(p => p.event);
+}
+
+// ---------- HOSTS ROWS ----------
+function addHostRow(existing) {
+  const id = 'hs_' + (hostRowSeq++);
+  const row = document.createElement('div');
+  row.id = id;
+  row.style.cssText = 'display:flex; align-items:center; gap:10px; border:1px solid var(--gray-200); border-radius:8px; padding:8px;';
+  row.innerHTML = `
+    <input type="text" class="hs-label" value="${existing?.label || ''}" placeholder="Upande wa Bibi" style="flex:1;min-width:0;">
+    <input type="text" class="hs-name" value="${existing?.name || ''}" placeholder="Bw. na Bi. Mushi" style="flex:1;min-width:0;">
+    <button class="btn btn-outline btn-sm" onclick="document.getElementById('${id}').remove()" title="Futa"><i data-lucide="trash-2" style="width:14px;height:14px;color:#EF4444;"></i></button>
+  `;
+  document.getElementById('hostsList').appendChild(row);
+  try { lucide.createIcons(); } catch(e) {}
+}
+function collectHosts() {
+  return Array.from(document.querySelectorAll('#hostsList > div')).map(row => ({
+    label: row.querySelector('.hs-label').value.trim(),
+    name: row.querySelector('.hs-name').value.trim(),
+  })).filter(h => h.name);
 }
 
 async function uploadTemplate() {
