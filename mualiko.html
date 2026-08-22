@@ -558,24 +558,19 @@
       return;
     }
 
-    // 1) Tafuta mgeni kwa card_id (token)
-    const { data: guest, error: guestErr } = await sb
-      .from('guests')
-      .select('*')
-      .eq('card_id', token)
-      .single();
+    // 1) Tafuta mgeni na taarifa za event husika kwa pamoja - kupitia RPC
+    // (inayopita RLS kwa usalama, kama vile submit_guest_note inavyofanya
+    // kwa "Ujumbe wa Shukrani"). Hii inaepuka 406 kwa mgeni asiye-login.
+    const { data: result, error: guestErr } = await sb
+      .rpc('get_invitation_by_card', { p_card_id: token });
 
-    if(guestErr || !guest){
+    if(guestErr || !result){
       showLoadError('Mualiko huu haukupatikana. Huenda kiungo si sahihi au kimeondolewa.');
       return;
     }
 
-    // 2) Tafuta taarifa za event husika
-    const { data: eventData } = await sb
-      .from('events')
-      .select('*')
-      .eq('id', guest.event_id)
-      .single();
+    const guest = result.guest;
+    const eventData = result.event;
 
     // ---- Jaza taarifa halisi kwenye ukurasa ----
     currentGuestCardId = guest.card_id;
