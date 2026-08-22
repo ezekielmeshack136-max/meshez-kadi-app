@@ -1463,6 +1463,23 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
             <div class="form-group">
               <label>Majina ya Wapenzi (kwenye Cover)</label>
               <input type="text" id="invCoverNames" placeholder="JOSEPHINE · MARK">
+              <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Herufi (mfano J &amp; M) zinatengenezwa kiotomatiki kutoka kwenye majina haya.</p>
+            </div>
+            <div class="form-group">
+              <label>Picha ya Cover (itaonekana kwenye jedwali la kwanza la mualiko)</label>
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div id="coverPhotoPreview" style="width:64px;height:64px;border-radius:50%;background:var(--gray-100);background-size:cover;background-position:center;border:1px solid var(--gray-200);flex-shrink:0;"></div>
+                <div>
+                  <input type="file" id="invCoverPhotoFile" accept="image/*" style="display:none;" onchange="uploadCoverPhoto(this)">
+                  <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('invCoverPhotoFile').click()"><i data-lucide="upload" style="width:14px;height:14px;"></i> Pakia Picha</button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="removeCoverPhoto()" title="Ondoa Picha"><i data-lucide="trash-2" style="width:14px;height:14px;color:#EF4444;"></i></button>
+                </div>
+              </div>
+              <input type="hidden" id="invCoverPhotoUrl">
+            </div>
+            <div class="form-group">
+              <label>Kichwa cha Ujumbe wa Karibisho (Hero Title)</label>
+              <input type="text" id="invHeroTitle" placeholder="Wawili Wamekuwa Mmoja">
             </div>
             <div class="form-group">
               <label>Aya ya Karibisho (Hero Verse)</label>
@@ -4364,7 +4381,8 @@ async function processWaQueueStep() {
       const bodyParams = buildWhatsAppBodyParams(g, waQueueEventData);
       const rsvpButtonSuffix = buildRsvpButtonSuffix(g);
       const locationButtonSuffix = buildLocationButtonSuffix(g);
-      const outcome = await callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, rsvpButtonSuffix, locationButtonSuffix);
+      const invitationButtonSuffix = buildInvitationButtonSuffix(g);
+      const outcome = await callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, rsvpButtonSuffix, locationButtonSuffix, invitationButtonSuffix);
 
       if (outcome.ok) {
         await sb.from('guests').update({ wa_sent: 'yes' }).eq('id', g.id);
@@ -4395,6 +4413,7 @@ async function sendWhatsAppInvite(guestId) {
   }
   const locationButtonSuffix = buildLocationButtonSuffix(guest);
   const rsvpButtonSuffix = buildRsvpButtonSuffix(guest);
+  const invitationButtonSuffix = buildInvitationButtonSuffix(guest);
 
   showToast('Inatengeneza kadi na kutuma...', 'info');
 
@@ -4408,7 +4427,7 @@ async function sendWhatsAppInvite(guestId) {
   const phone = formatPhoneForWhatsApp(guest.phone);
   const bodyParams = buildWhatsAppBodyParams(guest, eventData);
 
-  const outcome = await callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, rsvpButtonSuffix, locationButtonSuffix);
+  const outcome = await callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, rsvpButtonSuffix, locationButtonSuffix, invitationButtonSuffix);
   if (!outcome.ok) {
     return showToast('Imeshindwa kutuma WhatsApp: ' + outcome.error, 'error');
   }
@@ -4483,7 +4502,13 @@ function buildRsvpButtonSuffix(guest) {
   return guest?.card_id || '';
 }
 
-async function callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, rsvpButtonSuffix, locationButtonSuffix) {
+// Kitufe cha 3 (index 2) - "Fungua Mualiko" - hufungua mualiko.html?id=<card_id>
+// (kadi ya kidijitali binafsi ya mgeni: jina, QR, tarehe/ukumbi).
+function buildInvitationButtonSuffix(guest) {
+  return guest?.card_id || '';
+}
+
+async function callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, rsvpButtonSuffix, locationButtonSuffix, invitationButtonSuffix) {
   const { data: sessionData } = await sb.auth.getSession();
   const token = sessionData?.session?.access_token || SUPABASE_KEY;
 
@@ -4494,7 +4519,7 @@ async function callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, rsvpBut
       'Authorization': `Bearer ${token}`,
       'apikey': SUPABASE_KEY
     },
-    body: JSON.stringify({ phone, imageUrl, bodyParams, rsvpButtonSuffix, locationButtonSuffix })
+    body: JSON.stringify({ phone, imageUrl, bodyParams, rsvpButtonSuffix, locationButtonSuffix, invitationButtonSuffix })
   });
 
   let result = {};
@@ -6100,6 +6125,9 @@ async function loadInvitationDesign() {
 
   document.getElementById('invDesignId').value = data?.id || '';
   document.getElementById('invCoverNames').value = data?.cover_names || '';
+  document.getElementById('invCoverPhotoUrl').value = data?.cover_photo_url || '';
+  document.getElementById('coverPhotoPreview').style.backgroundImage = data?.cover_photo_url ? `url('${data.cover_photo_url}')` : 'none';
+  document.getElementById('invHeroTitle').value = data?.hero_title || '';
   document.getElementById('invHeroVerse').value = data?.hero_verse || '';
   document.getElementById('invStoryText').value = data?.story_text || '';
   document.getElementById('invVenueName').value = data?.venue_name || '';
@@ -6131,6 +6159,8 @@ async function saveInvitationDesign() {
     user_id: ORG_OWNER_ID,
     event_id: eventId,
     cover_names: document.getElementById('invCoverNames').value.trim(),
+    cover_photo_url: document.getElementById('invCoverPhotoUrl').value.trim(),
+    hero_title: document.getElementById('invHeroTitle').value.trim(),
     hero_verse: document.getElementById('invHeroVerse').value.trim(),
     story_text: document.getElementById('invStoryText').value.trim(),
     venue_name: document.getElementById('invVenueName').value.trim(),
@@ -6177,6 +6207,24 @@ function addDressColorRow(existing) {
   });
   document.getElementById('dressColorsList').appendChild(row);
   try { lucide.createIcons(); } catch(e) {}
+}
+
+async function uploadCoverPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const path = `${ORG_OWNER_ID}/cover_${Date.now()}_${file.name}`;
+  const { error: upErr } = await sb.storage.from(DRESS_PHOTO_BUCKET).upload(path, file);
+  if (upErr) return showToast('Kosa la upload: ' + upErr.message + ' (Hakikisha bucket "dress-photos" ipo kwenye Supabase Storage)', 'error');
+  const { data: { publicUrl } } = sb.storage.from(DRESS_PHOTO_BUCKET).getPublicUrl(path);
+  document.getElementById('invCoverPhotoUrl').value = publicUrl;
+  document.getElementById('coverPhotoPreview').style.backgroundImage = `url('${publicUrl}')`;
+  showToast('Picha ya cover imepakiwa', 'success');
+}
+
+function removeCoverPhoto() {
+  document.getElementById('invCoverPhotoUrl').value = '';
+  document.getElementById('coverPhotoPreview').style.backgroundImage = 'none';
+  document.getElementById('invCoverPhotoFile').value = '';
 }
 
 async function uploadDressPhoto(rowId, input) {
