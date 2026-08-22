@@ -3749,6 +3749,7 @@ function renderGuestsTable(guests) {
       <td>${rsvpBadge}</td>
       <td>
   <button class="btn btn-outline btn-sm" onclick="generateCard('${g.id}')" title="Zalisha Kadi">🎫</button>
+  <button class="btn btn-outline btn-sm" onclick="copyInvitationLink('${g.card_id}')" title="Nakili Link ya Mualiko">🔗</button>
   ${g.whatsapp === 'yes' ? `<button class="btn btn-outline btn-sm" onclick="sendWhatsAppInvite('${g.id}')" title="Tuma WhatsApp">💬</button>` : ''}
   ${g.phone ? `<button class="btn btn-outline btn-sm" onclick="sendSmsInvite('${g.id}')" title="Tuma SMS">📨</button>` : ''}
   <button class="btn btn-outline btn-sm" onclick="openEditGuestModal('${g.id}')">✏️</button>
@@ -3811,6 +3812,16 @@ function copyGuestId(cardId) {
     showToast('Guest ID imenakiliwa: ' + cardId, 'success');
   }).catch(() => {
     showToast('Imeshindwa kunakili. Guest ID: ' + cardId, 'error');
+  });
+}
+
+// Nakili link ya mualiko binafsi ya mgeni (mualiko.html?id=...) kwenye clipboard.
+function copyInvitationLink(cardId) {
+  const link = getInvitationLink({ card_id: cardId });
+  navigator.clipboard.writeText(link).then(() => {
+    showToast('Link ya mualiko imenakiliwa! 📨', 'success');
+  }).catch(() => {
+    showToast('Imeshindwa kunakili. Link: ' + link, 'error');
   });
 }
 
@@ -4180,6 +4191,14 @@ function getRsvpLink(guest) {
 function getLocationLink(guest) {
   const base = getBaseUrl();
   return `${base}location.html?id=${encodeURIComponent(guest.card_id)}`;
+}
+
+// Link ya kadi/mualiko binafsi ya mgeni (mualiko.html) - ina jina la mgeni,
+// QR halisi, na tarehe/ukumbi wa event. Inatumika hasa kwa kitufe cha
+// "📨 Nakili Link ya Mualiko" kwenye jedwali la wageni.
+function getInvitationLink(guest) {
+  const base = getBaseUrl();
+  return `${base}mualiko.html?id=${encodeURIComponent(guest.card_id)}`;
 }
 
 function formatTimeAMPM(time24) {
