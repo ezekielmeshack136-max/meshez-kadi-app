@@ -1462,20 +1462,68 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
             </div>
             <div class="form-group">
               <label>Majina ya Wapenzi (kwenye Cover)</label>
-              <input type="text" id="invCoverNames" placeholder="JOSEPHINE · MARK">
+              <input type="text" id="invCoverNames" placeholder="JOSEPHINE · MARK" oninput="renderCoverLivePreview()">
               <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Herufi (mfano J &amp; M) zinatengenezwa kiotomatiki kutoka kwenye majina haya.</p>
             </div>
             <div class="form-group">
               <label>Picha ya Cover (itaonekana kwenye jedwali la kwanza la mualiko)</label>
               <div style="display:flex; align-items:center; gap:12px;">
-                <div id="coverPhotoPreview" style="width:64px;height:64px;border-radius:50%;background:var(--gray-100);background-size:cover;background-position:center;border:1px solid var(--gray-200);flex-shrink:0;"></div>
+                <div id="coverPhotoPreview" style="width:64px;height:85px;border-radius:6px;background:var(--gray-100);background-size:cover;background-position:center;border:1px solid var(--gray-200);flex-shrink:0;"></div>
                 <div>
                   <input type="file" id="invCoverPhotoFile" accept="image/*" style="display:none;" onchange="uploadCoverPhoto(this)">
                   <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('invCoverPhotoFile').click()"><i data-lucide="upload" style="width:14px;height:14px;"></i> Pakia Picha</button>
                   <button type="button" class="btn btn-outline btn-sm" onclick="removeCoverPhoto()" title="Ondoa Picha"><i data-lucide="trash-2" style="width:14px;height:14px;color:#EF4444;"></i></button>
                 </div>
               </div>
+              <p style="font-size:11px;color:var(--gray-400);margin-top:6px;">Picha itajaza jedwali lote la Cover (background) na maandishi yataonekana juu yake.</p>
               <input type="hidden" id="invCoverPhotoUrl">
+            </div>
+            <div class="form-group">
+              <label>Nafasi ya Maandishi kwenye Cover (juu/chini)</label>
+              <p style="font-size:11px;color:var(--gray-400);margin:0 0 10px;">Sogeza herufi, majina na "Gusa Kufungua" juu au chini ndani ya jedwali. Preview upande wa kulia inasasishwa papo hapo.</p>
+              <div style="display:flex; gap:16px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:230px; display:flex; flex-direction:column; gap:8px;">
+                  <div class="pos-row" style="display:flex; align-items:center; gap:8px;">
+                    <span style="width:110px; font-size:12px; color:var(--gray-600);">Herufi (Monogram)</span>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="adjustCoverPos('Monogram', -4)">−</button>
+                    <span id="invCoverMonogramYLabel" style="width:36px; text-align:center; font-size:12px;">0</span>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="adjustCoverPos('Monogram', 4)">+</button>
+                  </div>
+                  <div class="pos-row" style="display:flex; align-items:center; gap:8px;">
+                    <span style="width:110px; font-size:12px; color:var(--gray-600);">Majina ya Wapenzi</span>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="adjustCoverPos('Names', -4)">−</button>
+                    <span id="invCoverNamesYLabel" style="width:36px; text-align:center; font-size:12px;">0</span>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="adjustCoverPos('Names', 4)">+</button>
+                  </div>
+                  <div class="pos-row" style="display:flex; align-items:center; gap:8px;">
+                    <span style="width:110px; font-size:12px; color:var(--gray-600);">"Gusa Kufungua"</span>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="adjustCoverPos('TapHint', -4)">−</button>
+                    <span id="invCoverTapHintYLabel" style="width:36px; text-align:center; font-size:12px;">0</span>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="adjustCoverPos('TapHint', 4)">+</button>
+                  </div>
+                  <button type="button" class="btn btn-outline btn-sm" style="width:fit-content;margin-top:4px;" onclick="resetCoverPositions()">↺ Rudisha Default</button>
+                </div>
+                <div style="flex-shrink:0;">
+                  <div id="coverLivePreview" style="width:150px;aspect-ratio:3/4;border:1.5px solid #d8ae55;border-radius:4px;position:relative;overflow:hidden;background:linear-gradient(160deg,#3a1650,#170a20);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:10px;padding-bottom:18px;">
+                    <div style="position:absolute;top:6px;left:6px;width:12px;height:12px;border:1px solid #d8ae55;border-right:none;border-bottom:none;z-index:2;"></div>
+                    <div style="position:absolute;top:6px;right:6px;width:12px;height:12px;border:1px solid #d8ae55;border-left:none;border-bottom:none;z-index:2;"></div>
+                    <div style="position:absolute;bottom:6px;left:6px;width:12px;height:12px;border:1px solid #d8ae55;border-right:none;border-top:none;z-index:2;"></div>
+                    <div style="position:absolute;bottom:6px;right:6px;width:12px;height:12px;border:1px solid #d8ae55;border-left:none;border-top:none;z-index:2;"></div>
+                    <img id="cvpPhoto" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;display:none;">
+                    <div id="cvpOverlay" style="position:absolute;inset:0;z-index:1;display:none;background:linear-gradient(180deg,rgba(23,10,32,0.28),rgba(23,10,32,0.55) 55%,rgba(23,10,32,0.8));"></div>
+                    <div id="cvpMonogram" style="font-family:'Sacramento';font-size:24px;color:#f2d889;position:relative;z-index:2;">J &amp; M</div>
+                    <div id="cvpNames" style="font-family:'Cinzel';font-size:8px;letter-spacing:0.25em;color:#fbf3e7;opacity:0.85;position:relative;z-index:2;">JOSEPHINE · MARK</div>
+                    <div id="cvpTapHint" style="display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;z-index:2;">
+                      <div style="font-size:14px;">👆</div>
+                      <div style="font-family:'Jost',sans-serif;font-size:6px;letter-spacing:0.2em;text-transform:uppercase;color:#f2d889;">Gusa Kufungua</div>
+                    </div>
+                  </div>
+                  <p style="font-size:10px;color:var(--gray-400);text-align:center;margin-top:6px;">Preview ya Cover</p>
+                </div>
+              </div>
+              <input type="hidden" id="invCoverMonogramY" value="0">
+              <input type="hidden" id="invCoverNamesY" value="0">
+              <input type="hidden" id="invCoverTapHintY" value="0">
             </div>
             <div class="form-group">
               <label>Kichwa cha Ujumbe wa Karibisho (Hero Title)</label>
@@ -6127,6 +6175,13 @@ async function loadInvitationDesign() {
   document.getElementById('invCoverNames').value = data?.cover_names || '';
   document.getElementById('invCoverPhotoUrl').value = data?.cover_photo_url || '';
   document.getElementById('coverPhotoPreview').style.backgroundImage = data?.cover_photo_url ? `url('${data.cover_photo_url}')` : 'none';
+  document.getElementById('invCoverMonogramY').value = data?.cover_monogram_y || 0;
+  document.getElementById('invCoverMonogramYLabel').textContent = data?.cover_monogram_y || 0;
+  document.getElementById('invCoverNamesY').value = data?.cover_names_y || 0;
+  document.getElementById('invCoverNamesYLabel').textContent = data?.cover_names_y || 0;
+  document.getElementById('invCoverTapHintY').value = data?.cover_taphint_y || 0;
+  document.getElementById('invCoverTapHintYLabel').textContent = data?.cover_taphint_y || 0;
+  renderCoverLivePreview();
   document.getElementById('invHeroTitle').value = data?.hero_title || '';
   document.getElementById('invHeroVerse').value = data?.hero_verse || '';
   document.getElementById('invStoryText').value = data?.story_text || '';
@@ -6160,6 +6215,9 @@ async function saveInvitationDesign() {
     event_id: eventId,
     cover_names: document.getElementById('invCoverNames').value.trim(),
     cover_photo_url: document.getElementById('invCoverPhotoUrl').value.trim(),
+    cover_monogram_y: parseInt(document.getElementById('invCoverMonogramY').value, 10) || 0,
+    cover_names_y: parseInt(document.getElementById('invCoverNamesY').value, 10) || 0,
+    cover_taphint_y: parseInt(document.getElementById('invCoverTapHintY').value, 10) || 0,
     hero_title: document.getElementById('invHeroTitle').value.trim(),
     hero_verse: document.getElementById('invHeroVerse').value.trim(),
     story_text: document.getElementById('invStoryText').value.trim(),
@@ -6219,12 +6277,70 @@ async function uploadCoverPhoto(input) {
   document.getElementById('invCoverPhotoUrl').value = publicUrl;
   document.getElementById('coverPhotoPreview').style.backgroundImage = `url('${publicUrl}')`;
   showToast('Picha ya cover imepakiwa', 'success');
+  renderCoverLivePreview();
 }
 
 function removeCoverPhoto() {
   document.getElementById('invCoverPhotoUrl').value = '';
   document.getElementById('coverPhotoPreview').style.backgroundImage = 'none';
   document.getElementById('invCoverPhotoFile').value = '';
+  renderCoverLivePreview();
+}
+
+// ---------- NAFASI (Y) YA MAANDISHI KWENYE COVER + LIVE PREVIEW ----------
+function adjustCoverPos(field, delta) {
+  const input = document.getElementById(`invCover${field}Y`);
+  const next = (parseInt(input.value, 10) || 0) + delta;
+  input.value = next;
+  document.getElementById(`invCover${field}YLabel`).textContent = next;
+  renderCoverLivePreview();
+}
+
+function resetCoverPositions() {
+  ['Monogram', 'Names', 'TapHint'].forEach(field => {
+    document.getElementById(`invCover${field}Y`).value = 0;
+    document.getElementById(`invCover${field}YLabel`).textContent = '0';
+  });
+  renderCoverLivePreview();
+}
+
+function renderCoverLivePreview() {
+  const namesRaw = document.getElementById('invCoverNames').value.trim();
+  const photoUrl = document.getElementById('invCoverPhotoUrl').value.trim();
+  const monoY = parseInt(document.getElementById('invCoverMonogramY').value, 10) || 0;
+  const namesY = parseInt(document.getElementById('invCoverNamesY').value, 10) || 0;
+  const tapY = parseInt(document.getElementById('invCoverTapHintY').value, 10) || 0;
+
+  // Preview inatumia scale ndogo (150px badala ya ~280px halisi) - Y inapunguzwa
+  // kwa uwiano huo huo ili isogee kwa kiasi kinachofanana na kitakachoonekana
+  // kwenye mualiko.html halisi.
+  const scale = 150 / 280;
+
+  if (namesRaw) {
+    document.getElementById('cvpNames').textContent = namesRaw;
+    const parts = namesRaw.split(/[·&]| na |,/i).map(s => s.trim()).filter(Boolean);
+    if (parts.length >= 2 && parts[0][0] && parts[1][0]) {
+      document.getElementById('cvpMonogram').textContent = `${parts[0][0].toUpperCase()} & ${parts[1][0].toUpperCase()}`;
+    }
+  } else {
+    document.getElementById('cvpNames').textContent = 'JOSEPHINE · MARK';
+    document.getElementById('cvpMonogram').textContent = 'J & M';
+  }
+
+  const cvpPhoto = document.getElementById('cvpPhoto');
+  const cvpOverlay = document.getElementById('cvpOverlay');
+  if (photoUrl) {
+    cvpPhoto.src = photoUrl;
+    cvpPhoto.style.display = 'block';
+    cvpOverlay.style.display = 'block';
+  } else {
+    cvpPhoto.style.display = 'none';
+    cvpOverlay.style.display = 'none';
+  }
+
+  document.getElementById('cvpMonogram').style.transform = `translateY(${monoY * scale}px)`;
+  document.getElementById('cvpNames').style.transform = `translateY(${namesY * scale}px)`;
+  document.getElementById('cvpTapHint').style.transform = `translateY(${tapY * scale}px)`;
 }
 
 async function uploadDressPhoto(rowId, input) {
@@ -6666,119 +6782,3 @@ async function generateAndUploadCard(guestId, forceRegenerate = false) {
   const { error: upErr } = await sb.storage.from(CARDS_BUCKET).upload(path, blob, {
     contentType: 'image/png',
     upsert: true
-  });
-  if (upErr) throw new Error('Kosa la upload: ' + upErr.message + ' (Hakikisha bucket "generated-cards" ipo na ni public)');
-
-  const { data: { publicUrl } } = sb.storage.from(CARDS_BUCKET).getPublicUrl(path);
-
-  const { error: updErr } = await sb.from('guests').update({ card_image_url: publicUrl }).eq('id', guestId);
-  if (updErr) throw new Error('Kosa kuhifadhi link ya kadi: ' + updErr.message);
-
-  return publicUrl;
-}
-
-// Huzalisha na kupakia kadi za wageni WOTE wa event fulani kwenda bucket ya generated-cards.
-// Muhimu kabla ya kutuma mialiko ya WhatsApp kwa wingi kupitia Meta API (inahitaji public URL, sio faili).
-async function generateAndUploadAllCards(eventId) {
-  const { data: guests } = await sb.from('guests').select('*').eq('event_id', eventId);
-  if (!guests || guests.length === 0) return { success: 0, failed: 0 };
-
-  let success = 0, failed = 0;
-  for (const g of guests) {
-    try {
-      await generateAndUploadCard(g.id);
-      success++;
-    } catch (e) {
-      console.error('Imeshindwa kupakia kadi ya ' + g.name, e);
-      failed++;
-    }
-  }
-  return { success, failed };
-}
-
-async function handleUploadAllCards() {
-  const eventId = document.getElementById('invEventSelect').value;
-  if (!eventId) return showToast('Chagua event kwanza', 'error');
-
-  const btn = document.getElementById('uploadAllCardsBtn');
-  const originalText = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = '⏳ Inapakia...';
-
-  try {
-    const { success, failed } = await generateAndUploadAllCards(eventId);
-    if (failed === 0) {
-      showToast(`Kadi ${success} zimepakiwa kwenye bucket! ✅`, 'success');
-    } else {
-      showToast(`Kadi ${success} zimepakiwa, ${failed} zimeshindwa. Angalia console.`, 'error');
-    }
-  } catch (e) {
-    showToast('Kosa: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = originalText;
-  }
-}
-
-async function generateAllCards() {
-  const eventId = document.getElementById('invEventSelect').value;
-  if (!eventId) return showToast('Chagua event kwanza', 'error');
-
-  const { data: eventData } = await sb.from('events').select('*').eq('id', eventId).single();
-
-  const template = await getTemplateForEvent(eventId, eventData?.type);
-  if (!template) return showToast('Hakuna template kwa event "' + (eventData?.name || '') + '". Upload template na uichague event hii.', 'error');
-
-  const { data: guests } = await sb.from('guests').select('*').eq('event_id', eventId);
-  if (!guests || guests.length === 0) return showToast('Hakuna wageni kwenye event hii', 'error');
-
-  showToast(`Inatengeneza kadi ${guests.length}... subiri`, 'info');
-
-  const tplPos = template.positions || DEFAULT_POSITIONS;
-  const pos = { ...tplPos, showVip: (tplPos.vipShow !== false) && (eventData?.show_vip_badge !== false), showGroupLabel: (tplPos.labelShow !== false) && (eventData?.show_group_label !== false) };
-  const zip = new JSZip();
-
-  for (let i = 0; i < guests.length; i++) {
-    const g = guests[i];
-    try {
-      const blob = await generateSingleCardBlob(g, template, pos);
-      const safeName = g.name.replace(/[^a-zA-Z0-9]/g, '_');
-      zip.file(`${safeName}_${g.card_id}.png`, blob);
-    } catch (e) {
-      console.error('Imeshindwa: ' + g.name, e);
-    }
-  }
-
-  showToast('Inapakia ZIP...', 'info');
-  const content = await zip.generateAsync({ type: 'blob' });
-  const url = URL.createObjectURL(content);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `kadi_${(eventData?.name || 'event').replace(/[^a-zA-Z0-9]/g, '_')}.zip`;
-  a.click();
-  showToast('Kadi zote zimepakuliwa! ✅', 'success');
-}
-</script>
-  <!-- Card Preview Modal -->
-<div class="modal-overlay" id="cardPreviewModal">
-  <div class="modal" style="max-width:420px;">
-    <div class="modal-header">
-      <div class="modal-title">🎫 Kadi ya Mgeni</div>
-      <button class="modal-close" onclick="closeModal('cardPreviewModal')">✕</button>
-    </div>
-    <div class="modal-body" style="text-align:center;">
-      <canvas id="cardCanvas" style="max-width:100%;border:1px solid var(--gray-200);border-radius:8px;"></canvas>
-      <div id="cardLoading" style="padding:32px;color:var(--gray-400);">Inatengeneza kadi...</div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('cardPreviewModal')">Funga</button>
-      <button class="btn btn-primary" id="downloadCardBtn" onclick="downloadCard()">⬇️ Pakua Kadi</button>
-    </div>
-  </div>
-</div>
-<script>
-  // Zalisha professional icons (Lucide) badala ya <i data-lucide="...">
-  try { lucide.createIcons(); } catch(e) {}
-</script>
-</body>
-</html>
