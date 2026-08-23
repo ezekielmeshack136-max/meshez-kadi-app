@@ -105,25 +105,30 @@
   }
   .cover-frame{
     width:min(280px, 78vw); aspect-ratio:3/4; border:1.5px solid var(--gold);
-    border-radius:4px; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:18px; background:linear-gradient(160deg, rgba(216,174,85,0.06), rgba(216,174,85,0.01));
+    border-radius:4px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+    gap:18px; padding-bottom:36px; background:linear-gradient(160deg, rgba(216,174,85,0.06), rgba(216,174,85,0.01));
     box-shadow:0 0 60px rgba(216,174,85,0.08), inset 0 0 40px rgba(216,174,85,0.05);
-    position:relative;
+    position:relative; overflow:hidden;
   }
-  .cover-frame .corner{position:absolute; width:20px; height:20px; border:1px solid var(--gold);}
+  .cover-frame .corner{position:absolute; width:20px; height:20px; border:1px solid var(--gold); z-index:2;}
   .cover-frame .corner.tl{top:10px; left:10px; border-right:none; border-bottom:none;}
   .cover-frame .corner.tr{top:10px; right:10px; border-left:none; border-bottom:none;}
   .cover-frame .corner.bl{bottom:10px; left:10px; border-right:none; border-top:none;}
   .cover-frame .corner.br{bottom:10px; right:10px; border-left:none; border-top:none;}
-  .monogram{font-family:'Sacramento'; font-size:44px; color:var(--gold-light);}
-  .cover-names{font-family:'Cinzel'; font-size:15px; letter-spacing:0.3em; color:var(--ivory); opacity:0.8;}
+  .monogram{font-family:'Sacramento'; font-size:44px; color:var(--gold-light); position:relative; z-index:2;}
+  .cover-names{font-family:'Cinzel'; font-size:15px; letter-spacing:0.3em; color:var(--ivory); opacity:0.8; position:relative; z-index:2;}
+  /* Picha ya cover - inajaza jedwali zima kama background, maandishi
+     yanabaki juu yake (overlay nyeusi-nyembamba inaongezwa kwa usomekaji) */
   .cover-photo-wrap{
-    width:96px; height:96px; border-radius:50%; overflow:hidden;
-    border:1.5px solid var(--gold); box-shadow:0 0 30px rgba(216,174,85,0.25), inset 0 0 20px rgba(216,174,85,0.08);
-    background:rgba(216,174,85,0.06);
+    position:absolute; inset:0; z-index:0; display:none;
   }
+  .cover-frame.has-cover-photo .cover-photo-wrap{ display:block; }
   .cover-photo{width:100%; height:100%; object-fit:cover; display:block;}
-  .tap-hint{display:flex; flex-direction:column; align-items:center; gap:10px; margin-top:6px;}
+  .cover-frame.has-cover-photo::after{
+    content:''; position:absolute; inset:0; z-index:1;
+    background:linear-gradient(180deg, rgba(23,10,32,0.28), rgba(23,10,32,0.55) 55%, rgba(23,10,32,0.8));
+  }
+  .tap-hint{display:flex; flex-direction:column; align-items:center; gap:10px; margin-top:6px; position:relative; z-index:2;}
   .hand{font-size:26px; animation:tapPulse 1.4s ease-in-out infinite;}
   @keyframes tapPulse{0%,100%{transform:translateY(0) scale(1); opacity:0.9;} 50%{transform:translateY(6px) scale(0.92); opacity:0.55;}}
   .tap-label{font-family:'Jost'; letter-spacing:0.25em; font-size:11px; text-transform:uppercase; color:var(--gold-light);
@@ -299,14 +304,14 @@
 
   <!-- 1. COVER -->
   <section id="cover" onclick="openCurtain()">
-    <div class="cover-frame">
+    <div class="cover-frame" id="coverFrame">
       <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
-      <div class="cover-photo-wrap" id="coverPhotoWrap" style="display:none;">
+      <div class="cover-photo-wrap" id="coverPhotoWrap">
         <img class="cover-photo" id="coverPhoto" alt="">
       </div>
       <div class="monogram" id="coverMonogram">J &amp; M</div>
       <div class="cover-names" id="coverNames">JOSEPHINE &nbsp;·&nbsp; MARK</div>
-      <div class="tap-hint">
+      <div class="tap-hint" id="coverTapHint">
         <div class="hand">👆</div>
         <div class="tap-label">Gusa Kufungua</div>
       </div>
@@ -575,6 +580,9 @@
   function renderCover(eventData, content){
     const names = eventData?.cover_names || content?.cover_names || null;
     const photoUrl = eventData?.cover_photo_url || content?.cover_photo_url || null;
+    const monogramY = eventData?.cover_monogram_y ?? content?.cover_monogram_y ?? 0;
+    const namesY    = eventData?.cover_names_y    ?? content?.cover_names_y    ?? 0;
+    const tapHintY  = eventData?.cover_taphint_y  ?? content?.cover_taphint_y  ?? 0;
 
     if(names && names.trim()){
       document.getElementById('coverNames').textContent = names.trim();
@@ -585,8 +593,14 @@
     if(photoUrl){
       const img = document.getElementById('coverPhoto');
       img.src = photoUrl;
-      document.getElementById('coverPhotoWrap').style.display = 'block';
+      document.getElementById('coverFrame').classList.add('has-cover-photo');
     }
+
+    // Nafasi (Y) ya kila kipengele - inatoka kwenye Digital Invitation.
+    // Zikiwa 0 (default) hakuna mabadiliko - muonekano unabaki kama wa kawaida.
+    if(monogramY) document.getElementById('coverMonogram').style.transform = `translateY(${monogramY}px)`;
+    if(namesY)    document.getElementById('coverNames').style.transform = `translateY(${namesY}px)`;
+    if(tapHintY)  document.getElementById('coverTapHint').style.transform = `translateY(${tapHintY}px)`;
   }
 
   // ---------- HERO (kichwa cha ujumbe + ujumbe wa karibisho) ----------
