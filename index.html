@@ -6782,3 +6782,119 @@ async function generateAndUploadCard(guestId, forceRegenerate = false) {
   const { error: upErr } = await sb.storage.from(CARDS_BUCKET).upload(path, blob, {
     contentType: 'image/png',
     upsert: true
+  });
+  if (upErr) throw new Error('Kosa la upload: ' + upErr.message + ' (Hakikisha bucket "generated-cards" ipo na ni public)');
+
+  const { data: { publicUrl } } = sb.storage.from(CARDS_BUCKET).getPublicUrl(path);
+
+  const { error: updErr } = await sb.from('guests').update({ card_image_url: publicUrl }).eq('id', guestId);
+  if (updErr) throw new Error('Kosa kuhifadhi link ya kadi: ' + updErr.message);
+
+  return publicUrl;
+}
+
+// Huzalisha na kupakia kadi za wageni WOTE wa event fulani kwenda bucket ya generated-cards.
+// Muhimu kabla ya kutuma mialiko ya WhatsApp kwa wingi kupitia Meta API (inahitaji public URL, sio faili).
+async function generateAndUploadAllCards(eventId) {
+  const { data: guests } = await sb.from('guests').select('*').eq('event_id', eventId);
+  if (!guests || guests.length === 0) return { success: 0, failed: 0 };
+
+  let success = 0, failed = 0;
+  for (const g of guests) {
+    try {
+      await generateAndUploadCard(g.id);
+      success++;
+    } catch (e) {
+      console.error('Imeshindwa kupakia kadi ya ' + g.name, e);
+      failed++;
+    }
+  }
+  return { success, failed };
+}
+
+async function handleUploadAllCards() {
+  const eventId = document.getElementById('invEventSelect').value;
+  if (!eventId) return showToast('Chagua event kwanza', 'error');
+
+  const btn = document.getElementById('uploadAllCardsBtn');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Inapakia...';
+
+  try {
+    const { success, failed } = await generateAndUploadAllCards(eventId);
+    if (failed === 0) {
+      showToast(`Kadi ${success} zimepakiwa kwenye bucket! ✅`, 'success');
+    } else {
+      showToast(`Kadi ${success} zimepakiwa, ${failed} zimeshindwa. Angalia console.`, 'error');
+    }
+  } catch (e) {
+    showToast('Kosa: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+
+async function generateAllCards() {
+  const eventId = document.getElementById('invEventSelect').value;
+  if (!eventId) return showToast('Chagua event kwanza', 'error');
+
+  const { data: eventData } = await sb.from('events').select('*').eq('id', eventId).single();
+
+  const template = await getTemplateForEvent(eventId, eventData?.type);
+  if (!template) return showToast('Hakuna template kwa event "' + (eventData?.name || '') + '". Upload template na uichague event hii.', 'error');
+
+  const { data: guests } = await sb.from('guests').select('*').eq('event_id', eventId);
+  if (!guests || guests.length === 0) return showToast('Hakuna wageni kwenye event hii', 'error');
+
+  showToast(`Inatengeneza kadi ${guests.length}... subiri`, 'info');
+
+  const tplPos = template.positions || DEFAULT_POSITIONS;
+  const pos = { ...tplPos, showVip: (tplPos.vipShow !== false) && (eventData?.show_vip_badge !== false), showGroupLabel: (tplPos.labelShow !== false) && (eventData?.show_group_label !== false) };
+  const zip = new JSZip();
+
+  for (let i = 0; i < guests.length; i++) {
+    const g = guests[i];
+    try {
+      const blob = await generateSingleCardBlob(g, template, pos);
+      const safeName = g.name.replace(/[^a-zA-Z0-9]/g, '_');
+      zip.file(`${safeName}_${g.card_id}.png`, blob);
+    } catch (e) {
+      console.error('Imeshindwa: ' + g.name, e);
+    }
+  }
+
+  showToast('Inapakia ZIP...', 'info');
+  const content = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(content);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kadi_${(eventData?.name || 'event').replace(/[^a-zA-Z0-9]/g, '_')}.zip`;
+  a.click();
+  showToast('Kadi zote zimepakuliwa! ✅', 'success');
+}
+</script>
+  <!-- Card Preview Modal -->
+<div class="modal-overlay" id="cardPreviewModal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">🎫 Kadi ya Mgeni</div>
+      <button class="modal-close" onclick="closeModal('cardPreviewModal')">✕</button>
+    </div>
+    <div class="modal-body" style="text-align:center;">
+      <canvas id="cardCanvas" style="max-width:100%;border:1px solid var(--gray-200);border-radius:8px;"></canvas>
+      <div id="cardLoading" style="padding:32px;color:var(--gray-400);">Inatengeneza kadi...</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('cardPreviewModal')">Funga</button>
+      <button class="btn btn-primary" id="downloadCardBtn" onclick="downloadCard()">⬇️ Pakua Kadi</button>
+    </div>
+  </div>
+</div>
+<script>
+  // Zalisha professional icons (Lucide) badala ya <i data-lucide="...">
+  try { lucide.createIcons(); } catch(e) {}
+</script>
+</body>
+</html>
