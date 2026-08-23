@@ -190,9 +190,12 @@
   .pass-num{font-family:'Cinzel'; letter-spacing:0.15em; font-size:13px; color:var(--gold-light);}
 
   /* ============ RECEPTION ============ */
-  .venue-photo{width:100%; max-width:340px; aspect-ratio:16/10; border-radius:8px;
+  .venue-photo-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px; width:100%; max-width:340px; margin:16px auto 0;}
+  .venue-photo{aspect-ratio:4/5; border-radius:8px;
     background:linear-gradient(135deg, var(--plum-soft), var(--emerald)); border:1px solid var(--gold);
-    display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond'; font-style:italic; color:var(--gold-light); opacity:0.7;}
+    display:flex; align-items:center; justify-content:center; background-size:cover; background-position:center;}
+  .venue-photo-label{font-family:'Cormorant Garamond'; font-style:italic; color:var(--gold-light); opacity:0.7; font-size:12.5px; padding:0 8px; text-align:center;}
+  .venue-photo.has-photo .venue-photo-label{display:none;}
   .map-btn{margin-top:18px; font-family:'Jost'; letter-spacing:0.15em; text-transform:uppercase; font-size:12px;
     color:var(--plum-deep); background:var(--gold-light); border:none; padding:13px 26px; border-radius:30px;
     cursor:pointer; text-decoration:none; display:inline-block;}
@@ -211,6 +214,10 @@
     font-family:'Jost'; font-size:8px; letter-spacing:0.08em; text-transform:uppercase; color:rgba(255,255,255,0.55);
     text-align:center; padding:4px;
   }
+  .swatch .chip .color-dot{
+    position:absolute; top:8px; left:8px; width:18px; height:18px; border-radius:50%;
+    border:2px solid rgba(255,255,255,0.85); box-shadow:0 2px 6px rgba(0,0,0,0.45); z-index:2;
+  }
   .swatch .name{font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ivory); opacity:0.75;}
 
   /* ============ PROGRAM ============ */
@@ -226,6 +233,18 @@
   .host{display:flex; flex-direction:column; align-items:center; gap:4px; max-width:130px;}
   .host .lbl{font-size:9px; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold-light); opacity:0.75;}
   .host .nm{font-family:'Cormorant Garamond'; font-size:16px;}
+
+  /* ============ WAHUDUMU / SERVICE PROVIDERS ============ */
+  .providers-list{width:100%; max-width:320px; display:flex; flex-direction:column; gap:0; margin-top:16px;}
+  .provider-item{
+    display:flex; justify-content:space-between; align-items:center; gap:16px;
+    padding:12px 0; border-bottom:1px solid rgba(216,174,85,0.22);
+  }
+  .provider-item .nm{font-family:'Cormorant Garamond'; font-size:16px; color:var(--ivory); text-align:left;}
+  .provider-item .phone{
+    font-family:'Jost'; font-size:13px; letter-spacing:0.03em; color:var(--gold-light);
+    white-space:nowrap; text-decoration:none;
+  }
 
   /* ============ ZAWADI / GIFT ============ */
   .gift-card{border:1px solid var(--gold); border-radius:10px; padding:22px; max-width:300px; width:100%; text-align:center; margin-top:12px;}
@@ -352,7 +371,7 @@
       <div class="eyebrow">Karibu</div>
       <div class="guest-name" id="guestName">Neema Mushi</div>
       <div id="guestBadges"></div>
-      <p style="max-width:280px; margin:0 auto;">Umealikwa rasmi kuungana nasi katika siku hii ya harusi.</p>
+      <p style="max-width:280px; margin:0 auto;" id="welcomeMessage">Umealikwa rasmi kuungana nasi katika siku hii ya harusi.</p>
       <div class="date-badge">
         <span class="eyebrow" style="font-size:9px;">Event Date</span>
         <span class="d" id="eventDateText">Jumamosi, 14 Februari 2027</span>
@@ -380,7 +399,10 @@
   <!-- 7. RECEPTION -->
   <section id="reception">
     <div class="eyebrow reveal">Reception Details</div>
-    <div class="venue-photo reveal" style="margin-top:16px;">Picha ya Ukumbi</div>
+    <div class="venue-photo-grid reveal">
+      <div class="venue-photo" id="venuePhoto1"><span class="venue-photo-label">Picha ya Ukumbi 1</span></div>
+      <div class="venue-photo" id="venuePhoto2"><span class="venue-photo-label">Picha ya Ukumbi 2</span></div>
+    </div>
     <h2 class="reveal" style="font-size:22px; margin-top:18px;" id="venueName">Kilimanjaro Golden Hall</h2>
     <p class="reveal" id="venueTime">Barabara ya Uhuru, Dodoma</p>
     <a href="#" class="map-btn reveal" id="mapBtn" target="_blank" rel="noopener">Fungua Ramani</a>
@@ -390,12 +412,12 @@
   <section id="dresscode">
     <div class="eyebrow reveal">Dressing Code</div>
     <div class="swatch-grid reveal" id="swatchGrid">
-      <div class="swatch"><div class="chip" style="background:#d8ae55;"><div class="upload-hint">+ Picha</div></div><span class="name">Gold</span></div>
-      <div class="swatch"><div class="chip" style="background:#6b1e3c;"><div class="upload-hint">+ Picha</div></div><span class="name">Wine</span></div>
-      <div class="swatch"><div class="chip" style="background:#f3b6c4;"><div class="upload-hint">+ Picha</div></div><span class="name">Blush</span></div>
-      <div class="swatch"><div class="chip" style="background:#fbf3e7;"><div class="upload-hint" style="color:rgba(23,10,32,0.5);">+ Picha</div></div><span class="name">Ivory</span></div>
-      <div class="swatch"><div class="chip" style="background:#2f6b57;"><div class="upload-hint">+ Picha</div></div><span class="name">Emerald</span></div>
-      <div class="swatch"><div class="chip" style="background:#1c2b4a;"><div class="upload-hint">+ Picha</div></div><span class="name">Navy</span></div>
+      <div class="swatch"><div class="chip" style="background:#d8ae55;"><div class="color-dot" style="background:#d8ae55;"></div><div class="upload-hint">+ Picha</div></div><span class="name">Gold</span></div>
+      <div class="swatch"><div class="chip" style="background:#6b1e3c;"><div class="color-dot" style="background:#6b1e3c;"></div><div class="upload-hint">+ Picha</div></div><span class="name">Wine</span></div>
+      <div class="swatch"><div class="chip" style="background:#f3b6c4;"><div class="color-dot" style="background:#f3b6c4;"></div><div class="upload-hint">+ Picha</div></div><span class="name">Blush</span></div>
+      <div class="swatch"><div class="chip" style="background:#fbf3e7;"><div class="color-dot" style="background:#fbf3e7;"></div><div class="upload-hint" style="color:rgba(23,10,32,0.5);">+ Picha</div></div><span class="name">Ivory</span></div>
+      <div class="swatch"><div class="chip" style="background:#2f6b57;"><div class="color-dot" style="background:#2f6b57;"></div><div class="upload-hint">+ Picha</div></div><span class="name">Emerald</span></div>
+      <div class="swatch"><div class="chip" style="background:#1c2b4a;"><div class="color-dot" style="background:#1c2b4a;"></div><div class="upload-hint">+ Picha</div></div><span class="name">Navy</span></div>
     </div>
   </section>
 
@@ -425,7 +447,16 @@
     </div>
   </section>
 
-  <!-- 11. ZAWADI -->
+  <!-- 11. WAHUDUMU / SERVICE PROVIDERS -->
+  <section id="providers">
+    <div class="eyebrow reveal">Wahudumu wa Tukio</div>
+    <div class="providers-list reveal" id="providersList">
+      <div class="provider-item"><span class="nm">MC - Baraka Ngowi</span><a class="phone" href="tel:0712345678">0712 345 678</a></div>
+      <div class="provider-item"><span class="nm">DJ - Elia Massawe</span><a class="phone" href="tel:0765432109">0765 432 109</a></div>
+    </div>
+  </section>
+
+  <!-- 12. ZAWADI -->
   <section id="gift">
     <div class="eyebrow reveal">Zawadi</div>
     <div class="gift-card reveal" id="giftCard">
@@ -435,7 +466,7 @@
     </div>
   </section>
 
-  <!-- 12. NOTE -->
+  <!-- 13. NOTE -->
   <section id="note">
     <div class="eyebrow reveal">Leave a Note to the Couple</div>
     <form class="note-form reveal" onsubmit="return sendNote(event)">
@@ -446,7 +477,7 @@
     <p class="note-sent" id="noteSent">Asante! Salamu yako imepokelewa 💛</p>
   </section>
 
-  <!-- 13. THANK YOU -->
+  <!-- 14. THANK YOU -->
   <section id="thankyou">
     <div class="script thankyou-script reveal">Asante</div>
     <p class="reveal" style="margin-top:10px; max-width:260px;">Tunafurahi kukuwa nawe katika siku hii. Tuonane <span id="thankyouDate">14 Februari 2027</span>!</p>
@@ -501,6 +532,8 @@
 
   const MIEZI_SW = ['Januari','Februari','Machi','Aprili','Mei','Juni','Julai','Agosti','Septemba','Oktoba','Novemba','Desemba'];
   const SIKU_SW  = ['Jumapili','Jumatatu','Jumanne','Jumatano','Alhamisi','Ijumaa','Jumamosi'];
+  const MIEZI_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const SIKU_EN  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
   function formatDateSw(dateStr){
     if(!dateStr) return null;
@@ -508,6 +541,18 @@
     const [y, m, d] = dateStr.split('-').map(Number);
     const dt = new Date(y, (m || 1) - 1, d || 1);
     return `${SIKU_SW[dt.getDay()]}, ${dt.getDate()} ${MIEZI_SW[dt.getMonth()]} ${dt.getFullYear()}`;
+  }
+
+  function formatDateEn(dateStr){
+    if(!dateStr) return null;
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, (m || 1) - 1, d || 1);
+    return `${SIKU_EN[dt.getDay()]}, ${MIEZI_EN[dt.getMonth()]} ${dt.getDate()}, ${dt.getFullYear()}`;
+  }
+
+  // lang: 'sw' (default) au 'en' - hutoka kwenye Digital Invitation
+  function formatDate(dateStr, lang){
+    return lang === 'en' ? formatDateEn(dateStr) : formatDateSw(dateStr);
   }
 
   function formatTimeAMPM(time24){
@@ -604,6 +649,30 @@
   }
 
   // ---------- HERO (kichwa cha ujumbe + ujumbe wa karibisho) ----------
+  // ---------- RECEPTION (picha mbili za ukumbi) ----------
+  function renderVenuePhotos(eventData, content){
+    const p1 = eventData?.venue_photo_1 || content?.venue_photo_1 || null;
+    const p2 = eventData?.venue_photo_2 || content?.venue_photo_2 || null;
+    if(p1){
+      const el = document.getElementById('venuePhoto1');
+      el.style.backgroundImage = `url('${p1}')`;
+      el.classList.add('has-photo');
+    }
+    if(p2){
+      const el = document.getElementById('venuePhoto2');
+      el.style.backgroundImage = `url('${p2}')`;
+      el.classList.add('has-photo');
+    }
+  }
+
+  // ---------- WELCOME (ujumbe chini ya jina la mgeni) ----------
+  function renderWelcome(eventData, content){
+    const msg = eventData?.welcome_message || content?.welcome_message || null;
+    if(msg && msg.trim()){
+      document.getElementById('welcomeMessage').textContent = msg.trim();
+    }
+  }
+
   function renderHero(eventData, content){
     const heroTitle = eventData?.hero_title || content?.hero_title || null;
     const heroVerse = eventData?.hero_verse || content?.hero_verse || null;
@@ -646,7 +715,8 @@
           ? `background-image:url('${sw.photo_url.replace(/'/g,"%27")}');`
           : `background:${escapeHtml(sw.color || '#666')};`;
         const hint = sw.photo_url ? '' : `<div class="upload-hint">+ Picha</div>`;
-        return `<div class="swatch"><div class="chip" style="${bgStyle}">${hint}</div><span class="name">${escapeHtml(sw.name)}</span></div>`;
+        const colorDot = `<div class="color-dot" style="background:${escapeHtml(sw.color || '#666')};"></div>`;
+        return `<div class="swatch"><div class="chip" style="${bgStyle}">${colorDot}${hint}</div><span class="name">${escapeHtml(sw.name)}</span></div>`;
       }).join('');
     } else {
       hideSection('dresscode');
@@ -660,6 +730,19 @@
       `).join('');
     } else {
       hideSection('hosts');
+    }
+
+    // 11. WAHUDUMU / SERVICE PROVIDERS
+    const providersList = document.getElementById('providersList');
+    if(Array.isArray(content.providers) && content.providers.length){
+      providersList.innerHTML = content.providers.map(p => {
+        const phoneDigits = (p.phone || '').replace(/[^\d+]/g, '');
+        return `<div class="provider-item"><span class="nm">${escapeHtml(p.name)}</span>${
+          phoneDigits ? `<a class="phone" href="tel:${phoneDigits}">${escapeHtml(p.phone)}</a>` : ''
+        }</div>`;
+      }).join('');
+    } else {
+      hideSection('providers');
     }
 
     // 11. ZAWADI / GIFT
@@ -728,7 +811,13 @@
     drawGuestQR(guest.card_id);
 
     if(eventData){
-      const dateText = formatDateSw(eventData.event_date);
+      // ---- Maudhui yanayobadilika (Hadithi, Program, Dress Code, Wazazi, Zawadi) ----
+      let content = eventData.content;
+      if(typeof content === 'string'){
+        try{ content = JSON.parse(content); }catch(e){ content = null; }
+      }
+      const dateLang = eventData.date_language || content?.date_language || 'sw';
+      const dateText = formatDate(eventData.event_date, dateLang);
       if(dateText){
         document.getElementById('eventDateText').textContent = dateText;
         document.getElementById('thankyouDate').textContent = dateText;
@@ -746,20 +835,24 @@
         ? `Muda: ${timeText}`
         : document.getElementById('venueTime').textContent;
       const mapBtn = document.getElementById('mapBtn');
-      if(eventData.location_url){
+      // Tumia mfumo uleule wa location.html (Fungua Maelekezo -> Google Maps
+      // Directions kutoka alipo mgeni hadi eneo la tukio) badala ya link
+      // tuli ya "location_url". "coordinates" ni field ileile inayotumiwa
+      // na get_location_for_card kwenye location.html.
+      const coords = (eventData.coordinates || '').trim();
+      if(coords){
+        mapBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(coords)}`;
+      } else if(eventData.location_url){
         mapBtn.href = eventData.location_url;
       } else {
         mapBtn.style.display = 'none';
       }
 
-      // ---- Maudhui yanayobadilika (Hadithi, Program, Dress Code, Wazazi, Zawadi) ----
-      let content = eventData.content;
-      if(typeof content === 'string'){
-        try{ content = JSON.parse(content); }catch(e){ content = null; }
-      }
       renderContentSections(content);
       renderCover(eventData, content);
       renderHero(eventData, content);
+      renderWelcome(eventData, content);
+      renderVenuePhotos(eventData, content);
     } else {
       renderContentSections(null);
     }

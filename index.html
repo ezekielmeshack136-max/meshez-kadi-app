@@ -1533,6 +1533,19 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
               <label>Aya ya Karibisho (Hero Verse)</label>
               <textarea id="invHeroVerse" rows="2" placeholder="Kwa neema ya Mungu na furaha ya mioyo yetu, tunafunga ndoa..."></textarea>
             </div>
+            <div class="form-group">
+              <label>Ujumbe wa Karibisho (chini ya jina la mgeni)</label>
+              <textarea id="invWelcomeMessage" rows="2" placeholder="Umealikwa rasmi kuungana nasi katika siku hii ya harusi."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Lugha ya Tarehe ya Tukio (Event Date)</label>
+              <p style="font-size:11px;color:var(--gray-400);margin:0 0 8px;">Mfano: "Ijumaa, 7 Agosti 2026" (Kiswahili) au "Friday, August 7, 2026" (English)</p>
+              <div style="display:flex; gap:8px;">
+                <button type="button" id="dateLangBtnSw" class="btn btn-outline btn-sm" onclick="setDateLanguage('sw')">🇹🇿 Kiswahili</button>
+                <button type="button" id="dateLangBtnEn" class="btn btn-outline btn-sm" onclick="setDateLanguage('en')">🇬🇧 English</button>
+              </div>
+              <input type="hidden" id="invDateLanguage" value="sw">
+            </div>
             <div class="form-group" style="margin-bottom:0;">
               <label>Hadithi Yetu (Our Story)</label>
               <textarea id="invStoryText" rows="3" placeholder="Tulikutana miaka mitatu iliyopita..."></textarea>
@@ -1554,9 +1567,32 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
                 <input type="text" id="invVenueAddress" placeholder="Barabara ya Uhuru, Dodoma">
               </div>
             </div>
-            <div class="form-group" style="margin-bottom:0;">
+            <div class="form-group">
               <label>Link ya Ramani (Google Maps)</label>
               <input type="text" id="invVenueMapUrl" placeholder="https://maps.google.com/?q=...">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Picha za Ukumbi (zitaonekana kama jedwali mbili chini ya "Reception Details")</label>
+              <div style="display:flex; gap:16px; flex-wrap:wrap;">
+                <div>
+                  <div id="venuePhoto1Preview" style="width:110px;height:138px;border-radius:8px;background:var(--gray-100);background-size:cover;background-position:center;border:1px solid var(--gray-200);"></div>
+                  <div style="margin-top:6px;display:flex;gap:6px;">
+                    <input type="file" id="invVenuePhoto1File" accept="image/*" style="display:none;" onchange="uploadVenuePhoto(1, this)">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('invVenuePhoto1File').click()"><i data-lucide="upload" style="width:13px;height:13px;"></i> Picha 1</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="removeVenuePhoto(1)" title="Ondoa"><i data-lucide="trash-2" style="width:13px;height:13px;color:#EF4444;"></i></button>
+                  </div>
+                </div>
+                <div>
+                  <div id="venuePhoto2Preview" style="width:110px;height:138px;border-radius:8px;background:var(--gray-100);background-size:cover;background-position:center;border:1px solid var(--gray-200);"></div>
+                  <div style="margin-top:6px;display:flex;gap:6px;">
+                    <input type="file" id="invVenuePhoto2File" accept="image/*" style="display:none;" onchange="uploadVenuePhoto(2, this)">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('invVenuePhoto2File').click()"><i data-lucide="upload" style="width:13px;height:13px;"></i> Picha 2</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="removeVenuePhoto(2)" title="Ondoa"><i data-lucide="trash-2" style="width:13px;height:13px;color:#EF4444;"></i></button>
+                  </div>
+                </div>
+              </div>
+              <input type="hidden" id="invVenuePhoto1Url">
+              <input type="hidden" id="invVenuePhoto2Url">
             </div>
           </div>
 
@@ -1586,6 +1622,16 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
               <button class="btn btn-outline btn-sm" onclick="addHostRow()">+ Ongeza</button>
             </div>
             <div id="hostsList" style="display:flex; flex-direction:column; gap:10px;"></div>
+          </div>
+
+          <!-- WAHUDUMU / SERVICE PROVIDERS -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="contact" class="icon" style="color:#0EA5E9"></i> Wahudumu wa Tukio</div>
+              <button class="btn btn-outline btn-sm" onclick="addProviderRow()">+ Ongeza</button>
+            </div>
+            <p style="font-size:11px;color:var(--gray-400);margin:0 0 10px;">Mfano: MC, DJ, Mpiga Picha, Videographer n.k. - jina upande wa kushoto, namba ya simu upande wa kulia.</p>
+            <div id="providersList" style="display:flex; flex-direction:column; gap:10px;"></div>
           </div>
 
           <!-- ZAWADI -->
@@ -6140,7 +6186,7 @@ qrImg.src = qrDataUrl;
 // DIGITAL INVITATION DESIGN
 // ============================================================
 const DRESS_PHOTO_BUCKET = 'dress-photos';
-let dressColorRowSeq = 0, programRowSeq = 0, hostRowSeq = 0;
+let dressColorRowSeq = 0, programRowSeq = 0, hostRowSeq = 0, providerRowSeq = 0;
 
 const DRESS_COLOR_OPTIONS = [
   { hex: '#D8AE55', name: 'Gold' },
@@ -6184,15 +6230,22 @@ async function loadInvitationDesign() {
   renderCoverLivePreview();
   document.getElementById('invHeroTitle').value = data?.hero_title || '';
   document.getElementById('invHeroVerse').value = data?.hero_verse || '';
+  document.getElementById('invWelcomeMessage').value = data?.welcome_message || '';
+  setDateLanguage(data?.date_language || 'sw');
   document.getElementById('invStoryText').value = data?.story_text || '';
   document.getElementById('invVenueName').value = data?.venue_name || '';
   document.getElementById('invVenueAddress').value = data?.venue_address || '';
   document.getElementById('invVenueMapUrl').value = data?.venue_map_url || '';
+  document.getElementById('invVenuePhoto1Url').value = data?.venue_photo_1 || '';
+  document.getElementById('venuePhoto1Preview').style.backgroundImage = data?.venue_photo_1 ? `url('${data.venue_photo_1}')` : 'none';
+  document.getElementById('invVenuePhoto2Url').value = data?.venue_photo_2 || '';
+  document.getElementById('venuePhoto2Preview').style.backgroundImage = data?.venue_photo_2 ? `url('${data.venue_photo_2}')` : 'none';
   document.getElementById('invGiftInfo').value = data?.gift_info || '';
 
   document.getElementById('dressColorsList').innerHTML = '';
   document.getElementById('programList').innerHTML = '';
   document.getElementById('hostsList').innerHTML = '';
+  document.getElementById('providersList').innerHTML = '';
 
   const dressColors = data?.dress_colors || [];
   if (dressColors.length === 0) { addDressColorRow(); } else { dressColors.forEach(addDressColorRow); }
@@ -6202,6 +6255,9 @@ async function loadInvitationDesign() {
 
   const hosts = data?.hosts || [];
   if (hosts.length === 0) { addHostRow(); } else { hosts.forEach(addHostRow); }
+
+  const providers = data?.providers || [];
+  if (providers.length === 0) { addProviderRow(); } else { providers.forEach(addProviderRow); }
 
   try { lucide.createIcons(); } catch(e) {}
 }
@@ -6220,14 +6276,19 @@ async function saveInvitationDesign() {
     cover_taphint_y: parseInt(document.getElementById('invCoverTapHintY').value, 10) || 0,
     hero_title: document.getElementById('invHeroTitle').value.trim(),
     hero_verse: document.getElementById('invHeroVerse').value.trim(),
+    welcome_message: document.getElementById('invWelcomeMessage').value.trim(),
+    date_language: document.getElementById('invDateLanguage').value.trim() || 'sw',
     story_text: document.getElementById('invStoryText').value.trim(),
     venue_name: document.getElementById('invVenueName').value.trim(),
     venue_address: document.getElementById('invVenueAddress').value.trim(),
     venue_map_url: document.getElementById('invVenueMapUrl').value.trim(),
+    venue_photo_1: document.getElementById('invVenuePhoto1Url').value.trim(),
+    venue_photo_2: document.getElementById('invVenuePhoto2Url').value.trim(),
     gift_info: document.getElementById('invGiftInfo').value.trim(),
     dress_colors: collectDressColors(),
     program: collectProgram(),
     hosts: collectHosts(),
+    providers: collectProviders(),
     updated_at: new Date().toISOString(),
   };
 
@@ -6249,7 +6310,9 @@ function addDressColorRow(existing) {
   row.id = id;
   row.style.cssText = 'display:flex; align-items:center; gap:10px; border:1px solid var(--gray-200); border-radius:8px; padding:8px;';
   row.innerHTML = `
-    <div class="dc-photo-frame" style="width:44px;height:58px;border-radius:6px;flex-shrink:0;background-size:cover;background-position:center;border:1px solid var(--gray-200);background-color:${hex};background-image:${photoUrl ? `url('${photoUrl}')` : 'none'};"></div>
+    <div class="dc-photo-frame" style="width:44px;height:58px;border-radius:6px;flex-shrink:0;position:relative;background-size:cover;background-position:center;border:1px solid var(--gray-200);background-color:${hex};background-image:${photoUrl ? `url('${photoUrl}')` : 'none'};">
+      <div class="dc-color-dot" style="position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:${hex};border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>
+    </div>
     <select class="dc-color" style="width:110px;">
       ${DRESS_COLOR_OPTIONS.map(c => `<option value="${c.hex}" ${c.hex.toLowerCase() === hex.toLowerCase() ? 'selected' : ''}>${c.name}</option>`).join('')}
     </select>
@@ -6260,6 +6323,7 @@ function addDressColorRow(existing) {
   `;
   row.querySelector('.dc-color').addEventListener('change', function(){
     row.querySelector('.dc-photo-frame').style.backgroundColor = this.value;
+    row.querySelector('.dc-color-dot').style.background = this.value;
     const opt = DRESS_COLOR_OPTIONS.find(c => c.hex.toLowerCase() === this.value.toLowerCase());
     if (opt) row.querySelector('.dc-label').value = opt.name;
   });
@@ -6288,6 +6352,34 @@ function removeCoverPhoto() {
 }
 
 // ---------- NAFASI (Y) YA MAANDISHI KWENYE COVER + LIVE PREVIEW ----------
+async function uploadVenuePhoto(slot, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const path = `${ORG_OWNER_ID}/venue${slot}_${Date.now()}_${file.name}`;
+  const { error: upErr } = await sb.storage.from(DRESS_PHOTO_BUCKET).upload(path, file);
+  if (upErr) return showToast('Kosa la upload: ' + upErr.message, 'error');
+  const { data: { publicUrl } } = sb.storage.from(DRESS_PHOTO_BUCKET).getPublicUrl(path);
+  document.getElementById(`invVenuePhoto${slot}Url`).value = publicUrl;
+  document.getElementById(`venuePhoto${slot}Preview`).style.backgroundImage = `url('${publicUrl}')`;
+  showToast(`Picha ${slot} ya ukumbi imepakiwa`, 'success');
+}
+
+function removeVenuePhoto(slot) {
+  document.getElementById(`invVenuePhoto${slot}Url`).value = '';
+  document.getElementById(`venuePhoto${slot}Preview`).style.backgroundImage = 'none';
+  document.getElementById(`invVenuePhoto${slot}File`).value = '';
+}
+
+function setDateLanguage(lang) {
+  document.getElementById('invDateLanguage').value = lang;
+  const swBtn = document.getElementById('dateLangBtnSw');
+  const enBtn = document.getElementById('dateLangBtnEn');
+  swBtn.classList.toggle('btn-primary', lang === 'sw');
+  swBtn.classList.toggle('btn-outline', lang !== 'sw');
+  enBtn.classList.toggle('btn-primary', lang === 'en');
+  enBtn.classList.toggle('btn-outline', lang !== 'en');
+}
+
 function adjustCoverPos(field, delta) {
   const input = document.getElementById(`invCover${field}Y`);
   const next = (parseInt(input.value, 10) || 0) + delta;
@@ -6407,6 +6499,27 @@ function collectHosts() {
     label: row.querySelector('.hs-label').value.trim(),
     name: row.querySelector('.hs-name').value.trim(),
   })).filter(h => h.name);
+}
+
+// ---------- WAHUDUMU / SERVICE PROVIDERS ROWS ----------
+function addProviderRow(existing) {
+  const id = 'pv_' + (providerRowSeq++);
+  const row = document.createElement('div');
+  row.id = id;
+  row.style.cssText = 'display:flex; align-items:center; gap:10px; border:1px solid var(--gray-200); border-radius:8px; padding:8px;';
+  row.innerHTML = `
+    <input type="text" class="pv-name" value="${existing?.name || ''}" placeholder="MC - Baraka Ngowi" style="flex:1;min-width:0;">
+    <input type="text" class="pv-phone" value="${existing?.phone || ''}" placeholder="0712 345 678" style="width:130px;">
+    <button class="btn btn-outline btn-sm" onclick="document.getElementById('${id}').remove()" title="Futa"><i data-lucide="trash-2" style="width:14px;height:14px;color:#EF4444;"></i></button>
+  `;
+  document.getElementById('providersList').appendChild(row);
+  try { lucide.createIcons(); } catch(e) {}
+}
+function collectProviders() {
+  return Array.from(document.querySelectorAll('#providersList > div')).map(row => ({
+    name: row.querySelector('.pv-name').value.trim(),
+    phone: row.querySelector('.pv-phone').value.trim(),
+  })).filter(p => p.name);
 }
 
 async function uploadTemplate() {
