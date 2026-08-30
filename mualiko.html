@@ -297,6 +297,19 @@
     padding:5px 14px; border-radius:20px; background:rgba(255,255,255,0.08); color:var(--ivory); opacity:0.85;
   }
   #loadState{z-index:60;}
+
+  /* ============ LANGUAGE TOGGLE (SW / EN) ============ */
+  .lang-toggle{
+    position:fixed; top:14px; right:14px; z-index:70;
+    display:none; gap:4px; background:rgba(23,10,32,0.55); backdrop-filter:blur(6px);
+    border:1px solid rgba(216,174,85,0.4); border-radius:20px; padding:3px;
+  }
+  .lang-toggle button{
+    font-family:'Jost'; font-weight:600; font-size:11px; letter-spacing:0.06em;
+    padding:5px 12px; border-radius:16px; border:none; background:transparent;
+    color:var(--gold-light); opacity:0.6; cursor:pointer; transition:all 0.2s ease;
+  }
+  .lang-toggle button.active{background:var(--gold); color:var(--plum-deep); opacity:1;}
 </style>
 </head>
 <body>
@@ -312,6 +325,12 @@
 <div id="loadState">
   <div class="load-spinner" id="loadSpinner"></div>
   <p id="loadText">Tafadhali subiri, tunapakia mualiko wako...</p>
+</div>
+
+<!-- ============ LANGUAGE TOGGLE (SW / EN) ============ -->
+<div class="lang-toggle" id="langToggle">
+  <button id="langBtnSw" onclick="setLanguage('sw')">SW</button>
+  <button id="langBtnEn" onclick="setLanguage('en')">EN</button>
 </div>
 
 <div class="curtain" id="curtain">
@@ -332,7 +351,7 @@
       <div class="cover-names" id="coverNames">JOSEPHINE &nbsp;·&nbsp; MARK</div>
       <div class="tap-hint" id="coverTapHint">
         <div class="hand">👆</div>
-        <div class="tap-label">Gusa Kufungua</div>
+        <div class="tap-label" id="tapLabel">Gusa Kufungua</div>
       </div>
     </div>
   </section>
@@ -350,30 +369,30 @@
     <h1 class="reveal" id="heroTitle" style="font-size:20px; letter-spacing:0.15em;">Wawili Wamekuwa Mmoja</h1>
     <p class="reveal" id="heroVerse" style="max-width:280px;">Kwa neema ya Mungu na furaha ya mioyo yetu, tunafunga ndoa na tunapenda uwe sehemu ya siku hii adhimu.</p>
     <div class="scroll-cue reveal">
-      <span>Scroll Kuendelea</span>
+      <span id="scrollCueLabel">Scroll Kuendelea</span>
       <div class="chevron"></div>
     </div>
   </section>
 
   <!-- 3. COUNTDOWN -->
   <section id="countdown">
-    <div class="eyebrow reveal">Siku Zinazobaki</div>
+    <div class="eyebrow reveal" id="cdEyebrow">Siku Zinazobaki</div>
     <div class="countdown reveal" id="countdownBoxes">
-      <div class="unit"><div class="num" id="cdDays">--</div><div class="lbl">Siku</div></div>
-      <div class="unit"><div class="num" id="cdHours">--</div><div class="lbl">Saa</div></div>
-      <div class="unit"><div class="num" id="cdMins">--</div><div class="lbl">Dakika</div></div>
+      <div class="unit"><div class="num" id="cdDays">--</div><div class="lbl" id="cdLblDays">Siku</div></div>
+      <div class="unit"><div class="num" id="cdHours">--</div><div class="lbl" id="cdLblHours">Saa</div></div>
+      <div class="unit"><div class="num" id="cdMins">--</div><div class="lbl" id="cdLblMins">Dakika</div></div>
     </div>
   </section>
 
   <!-- 4. WELCOME -->
   <section id="welcome">
     <div class="frame reveal" style="text-align:center;">
-      <div class="eyebrow">Karibu</div>
+      <div class="eyebrow" id="welcomeEyebrow">Karibu</div>
       <div class="guest-name" id="guestName">Neema Mushi</div>
       <div id="guestBadges"></div>
       <p style="max-width:280px; margin:0 auto;" id="welcomeMessage">Umealikwa rasmi kuungana nasi katika siku hii ya harusi.</p>
       <div class="date-badge">
-        <span class="eyebrow" style="font-size:9px;">Event Date</span>
+        <span class="eyebrow" style="font-size:9px;" id="eventDateEyebrow">Event Date</span>
         <span class="d" id="eventDateText">Jumamosi, 14 Februari 2027</span>
       </div>
     </div>
@@ -381,24 +400,24 @@
 
   <!-- 5. OUR STORY -->
   <section id="story">
-    <div class="eyebrow reveal">Hadithi Yetu</div>
+    <div class="eyebrow reveal" id="storyEyebrow">Hadithi Yetu</div>
     <div class="story-line reveal"><div class="dot"></div><div class="rule"></div><div class="dot"></div></div>
     <p class="reveal" style="max-width:290px; margin-top:16px;" id="storyText">Tulikutana miaka mitatu iliyopita, na tangu siku hiyo, safari yetu imejaa upendo, furaha, na shukrani. Leo tunafunga hatua mpya — na tunataka uwe shahidi wa agano hili.</p>
   </section>
 
   <!-- 6. ENTRY PASS -->
   <section id="pass">
-    <div class="eyebrow reveal">Your Entry Pass</div>
+    <div class="eyebrow reveal" id="passEyebrow">Your Entry Pass</div>
     <div class="pass-card reveal" style="margin-top:16px;">
       <div class="qr-box" id="qrBox"><span>SAMPLE QR</span></div>
-      <div class="pass-num">NAMBA: <span id="passNum">HARUSI2027-014</span></div>
-      <p style="font-size:14px; opacity:0.75;">Onyesha QR hii mlangoni kwa uthibitisho wa haraka</p>
+      <div class="pass-num"><span id="passNumLabel">NAMBA:</span> <span id="passNum">HARUSI2027-014</span></div>
+      <p style="font-size:14px; opacity:0.75;" id="passHint">Onyesha QR hii mlangoni kwa uthibitisho wa haraka</p>
     </div>
   </section>
 
   <!-- 7. RECEPTION -->
   <section id="reception">
-    <div class="eyebrow reveal">Reception Details</div>
+    <div class="eyebrow reveal" id="receptionEyebrow">Reception Details</div>
     <div class="venue-photo-grid reveal">
       <div class="venue-photo" id="venuePhoto1"><span class="venue-photo-label">Picha ya Ukumbi 1</span></div>
       <div class="venue-photo" id="venuePhoto2"><span class="venue-photo-label">Picha ya Ukumbi 2</span></div>
@@ -410,7 +429,7 @@
 
   <!-- 8. DRESS CODE -->
   <section id="dresscode">
-    <div class="eyebrow reveal">Dressing Code</div>
+    <div class="eyebrow reveal" id="dresscodeEyebrow">Dressing Code</div>
     <div class="swatch-grid reveal" id="swatchGrid">
       <div class="swatch"><div class="chip" style="background:#d8ae55;"><div class="color-dot" style="background:#d8ae55;"></div><div class="upload-hint">+ Picha</div></div><span class="name">Gold</span></div>
       <div class="swatch"><div class="chip" style="background:#6b1e3c;"><div class="color-dot" style="background:#6b1e3c;"></div><div class="upload-hint">+ Picha</div></div><span class="name">Wine</span></div>
@@ -423,7 +442,7 @@
 
   <!-- 9. PROGRAM -->
   <section id="program">
-    <div class="eyebrow reveal">Celebration Program</div>
+    <div class="eyebrow reveal" id="programEyebrow">Celebration Program</div>
     <div class="program-list reveal" id="programList">
       <div class="program-item"><div class="program-bar" style="background:#d8ae55;"></div>
         <div class="program-body"><span class="ev">Kupokelewa kwa Wageni</span><span class="tm">10:00</span></div></div>
@@ -440,7 +459,7 @@
 
   <!-- 10. WAZAZI / HOSTS -->
   <section id="hosts">
-    <div class="eyebrow reveal">Wazazi wa Harusi</div>
+    <div class="eyebrow reveal" id="hostsEyebrow">Wazazi wa Harusi</div>
     <div class="hosts-grid reveal" id="hostsGrid">
       <div class="host"><span class="lbl">Upande wa Bibi</span><span class="nm">Bw. na Bi. Mushi</span></div>
       <div class="host"><span class="lbl">Upande wa Bwana</span><span class="nm">Bw. na Bi. Komba</span></div>
@@ -449,7 +468,7 @@
 
   <!-- 11. WAHUDUMU / SERVICE PROVIDERS -->
   <section id="providers">
-    <div class="eyebrow reveal">Wahudumu wa Tukio</div>
+    <div class="eyebrow reveal" id="providersEyebrow">Wahudumu wa Tukio</div>
     <div class="providers-list reveal" id="providersList">
       <div class="provider-item"><span class="nm">MC - Baraka Ngowi</span><a class="phone" href="tel:0712345678">0712 345 678</a></div>
       <div class="provider-item"><span class="nm">DJ - Elia Massawe</span><a class="phone" href="tel:0765432109">0765 432 109</a></div>
@@ -458,7 +477,7 @@
 
   <!-- 12. ZAWADI -->
   <section id="gift">
-    <div class="eyebrow reveal">Zawadi</div>
+    <div class="eyebrow reveal" id="giftEyebrow">Zawadi</div>
     <div class="gift-card reveal" id="giftCard">
       <p>Uwepo wako ndio zawadi kubwa kwetu. Kama ungependa kuchangia, karibu:</p>
       <div class="line">M-PESA / Selcom: 0713 079 348</div>
@@ -468,7 +487,7 @@
 
   <!-- 13. NOTE -->
   <section id="note">
-    <div class="eyebrow reveal">Leave a Note to the Couple</div>
+    <div class="eyebrow reveal" id="noteEyebrow">Leave a Note to the Couple</div>
     <form class="note-form reveal" onsubmit="return sendNote(event)">
       <textarea id="noteTextarea" placeholder="Andika salamu zako kwa bibi na bwana harusi..." required maxlength="2000"></textarea>
       <button type="submit" id="noteSubmitBtn">Tuma Salamu</button>
@@ -479,8 +498,8 @@
 
   <!-- 14. THANK YOU -->
   <section id="thankyou">
-    <div class="script thankyou-script reveal">Asante</div>
-    <p class="reveal" style="margin-top:10px; max-width:260px;">Tunafurahi kukuwa nawe katika siku hii. Tuonane <span id="thankyouDate">14 Februari 2027</span>!</p>
+    <div class="script thankyou-script reveal" id="thankyouScript">Asante</div>
+    <p class="reveal" style="margin-top:10px; max-width:260px;"><span id="thankyouIntro">Tunafurahi kukuwa nawe katika siku hii. Tuonane </span><span id="thankyouDate">14 Februari 2027</span><span id="thankyouOutro">!</span></p>
   </section>
 
   <footer>
@@ -769,6 +788,112 @@
     }
   }
 
+  // ---------- LUGHA (SW/EN) - inaathiri UI-CHROME TULI pekee (vichwa vya sehemu,
+  // vitufe, maandishi ya mfumo). Maudhui ya event (content JSON: story, hero,
+  // welcome, dress code names, program labels, host names, gift lines) yanabaki
+  // KAMA ALIVYOANDIKA ADMIN - hayatafsiriwi kiotomatiki (si muhimu kubadili). ----------
+  const T = {
+    sw: {
+      tapLabel:'Gusa Kufungua', scrollCue:'Scroll Kuendelea',
+      cdEyebrow:'Siku Zinazobaki', cdDays:'Siku', cdHours:'Saa', cdMins:'Dakika',
+      welcomeEyebrow:'Karibu', eventDateEyebrow:'Tarehe ya Tukio',
+      storyEyebrow:'Hadithi Yetu',
+      passEyebrow:'Kadi Yako ya Kuingia', passNumLabel:'NAMBA:',
+      passHint:'Onyesha QR hii mlangoni kwa uthibitisho wa haraka',
+      receptionEyebrow:'Maelezo ya Ukumbi', mapBtn:'Fungua Ramani',
+      dresscodeEyebrow:'Mavazi Yanayopendekezwa', programEyebrow:'Ratiba ya Sherehe',
+      hostsEyebrow:'Wazazi wa Harusi', providersEyebrow:'Wahudumu wa Tukio',
+      giftEyebrow:'Zawadi', noteEyebrow:'Acha Ujumbe kwa Bibi na Bwana Harusi',
+      notePlaceholder:'Andika salamu zako kwa bibi na bwana harusi...',
+      noteSubmit:'Tuma Salamu', noteSent:'Asante! Salamu yako imepokelewa 💛',
+      noteErrEmpty:'Tafadhali andika ujumbe kabla ya kutuma.',
+      noteErrNoPhone:'Samahani, namba ya kuwasiliana haikupatikana kwa tukio hili.',
+      thankyouScript:'Asante', thankyouIntro:'Tunafurahi kukuwa nawe katika siku hii. Tuonane ', thankyouOutro:'!',
+      loadText:'Tafadhali subiri, tunapakia mualiko wako...'
+    },
+    en: {
+      tapLabel:'Tap to Open', scrollCue:'Scroll to Continue',
+      cdEyebrow:'Days Remaining', cdDays:'Days', cdHours:'Hours', cdMins:'Minutes',
+      welcomeEyebrow:'Welcome', eventDateEyebrow:'Event Date',
+      storyEyebrow:'Our Story',
+      passEyebrow:'Your Entry Pass', passNumLabel:'NUMBER:',
+      passHint:'Show this QR at the entrance for quick check-in',
+      receptionEyebrow:'Reception Details', mapBtn:'Open Map',
+      dresscodeEyebrow:'Dress Code', programEyebrow:'Celebration Program',
+      hostsEyebrow:'Parents of the Couple', providersEyebrow:'Event Service Providers',
+      giftEyebrow:'Gift', noteEyebrow:'Leave a Note to the Couple',
+      notePlaceholder:'Write your message to the couple...',
+      noteSubmit:'Send Note', noteSent:'Thank you! Your note has been received 💛',
+      noteErrEmpty:'Please write a message before sending.',
+      noteErrNoPhone:'Sorry, no contact number was found for this event.',
+      thankyouScript:'Thank You', thankyouIntro:"We're so glad to have you with us. See you on ", thankyouOutro:'!',
+      loadText:'Please wait, loading your invitation...'
+    }
+  };
+
+  let currentLang = 'sw';
+  let languageLocked = false;   // true = admin ame-force lugha kutoka index.html, kitufe kimefichwa
+  let lastEventDateStr = null;  // event_date halisi - kwa kuandika upya tarehe ukibadili lugha
+
+  function applyLanguage(lang){
+    if(!T[lang]) lang = 'sw';
+    currentLang = lang;
+    document.documentElement.lang = lang;
+    const t = T[lang];
+
+    const setText = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    setText('tapLabel', t.tapLabel);
+    setText('scrollCueLabel', t.scrollCue);
+    setText('cdEyebrow', t.cdEyebrow);
+    setText('cdLblDays', t.cdDays);
+    setText('cdLblHours', t.cdHours);
+    setText('cdLblMins', t.cdMins);
+    setText('welcomeEyebrow', t.welcomeEyebrow);
+    setText('eventDateEyebrow', t.eventDateEyebrow);
+    setText('storyEyebrow', t.storyEyebrow);
+    setText('passEyebrow', t.passEyebrow);
+    setText('passNumLabel', t.passNumLabel);
+    setText('passHint', t.passHint);
+    setText('receptionEyebrow', t.receptionEyebrow);
+    setText('mapBtn', t.mapBtn);
+    setText('dresscodeEyebrow', t.dresscodeEyebrow);
+    setText('programEyebrow', t.programEyebrow);
+    setText('hostsEyebrow', t.hostsEyebrow);
+    setText('providersEyebrow', t.providersEyebrow);
+    setText('giftEyebrow', t.giftEyebrow);
+    setText('noteEyebrow', t.noteEyebrow);
+    setText('noteSent', t.noteSent);
+    setText('thankyouScript', t.thankyouScript);
+    setText('thankyouIntro', t.thankyouIntro);
+    setText('thankyouOutro', t.thankyouOutro);
+    setText('loadText', t.loadText);
+
+    const noteTextarea = document.getElementById('noteTextarea');
+    if(noteTextarea) noteTextarea.placeholder = t.notePlaceholder;
+    const noteBtn = document.getElementById('noteSubmitBtn');
+    if(noteBtn) noteBtn.textContent = t.noteSubmit;
+
+    // Tarehe/muda - andika upya kulingana na lugha mpya
+    if(lastEventDateStr){
+      const dateText = formatDate(lastEventDateStr, lang);
+      if(dateText){
+        setText('eventDateText', dateText);
+        setText('thankyouDate', dateText);
+      }
+    }
+
+    const btnSw = document.getElementById('langBtnSw');
+    const btnEn = document.getElementById('langBtnEn');
+    if(btnSw) btnSw.classList.toggle('active', lang === 'sw');
+    if(btnEn) btnEn.classList.toggle('active', lang === 'en');
+  }
+
+  function setLanguage(lang){
+    if(languageLocked) return; // admin ame-force lugha - mgeni hawezi kubadili
+    applyLanguage(lang);
+    try{ localStorage.setItem('mualiko_lang', lang); }catch(e){}
+  }
+
   function renderGuestBadges(guest, eventData){
     const wrap = document.getElementById('guestBadges');
     if(!wrap) return;
@@ -835,7 +960,29 @@
       document.title = `${coverNamesForTitle} — Mualiko`;
 
       const dateLang = eventData.date_language || content?.date_language || 'sw';
-      const dateText = formatDate(eventData.event_date, dateLang);
+
+      // ---- LUGHA (SW/EN) ----
+      // ui_language_mode: '' (au haipo) → Otomatiki/Default - Kiswahili (au
+      // date_language ya event) ndiyo lugha ya mwanzo, na mgeni ANAWEZA
+      // kubadili kwa kitufe SW/EN - chaguo lake linahifadhiwa (localStorage).
+      // ui_language_mode === 'en' au 'sw' → admin ame-FORCE lugha hiyo kabisa
+      // (kitufe cha kubadilisha kimefichwa, mgeni HAWEZI kubadili).
+      const forcedLang = eventData.ui_language_mode || content?.ui_language_mode || null;
+      lastEventDateStr = eventData.event_date || null;
+
+      if(forcedLang === 'en' || forcedLang === 'sw'){
+        languageLocked = true;
+        document.getElementById('langToggle').style.display = 'none';
+        applyLanguage(forcedLang);
+      } else {
+        languageLocked = false;
+        document.getElementById('langToggle').style.display = 'flex';
+        let startLang = dateLang;
+        try{ startLang = localStorage.getItem('mualiko_lang') || dateLang; }catch(e){}
+        applyLanguage(startLang);
+      }
+
+      const dateText = formatDate(eventData.event_date, currentLang);
       if(dateText){
         document.getElementById('eventDateText').textContent = dateText;
         document.getElementById('thankyouDate').textContent = dateText;
@@ -903,14 +1050,14 @@
     errBox.style.display = 'none';
 
     if(!message){
-      errBox.textContent = 'Tafadhali andika ujumbe kabla ya kutuma.';
+      errBox.textContent = T[currentLang].noteErrEmpty;
       errBox.style.display = 'block';
       return false;
     }
 
     const waPhone = formatPhoneForWa(currentCoupleContactPhone);
     if(!waPhone){
-      errBox.textContent = 'Samahani, namba ya kuwasiliana haikupatikana kwa tukio hili.';
+      errBox.textContent = T[currentLang].noteErrNoPhone;
       errBox.style.display = 'block';
       return false;
     }

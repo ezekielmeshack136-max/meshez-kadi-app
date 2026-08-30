@@ -1546,6 +1546,20 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
               </div>
               <input type="hidden" id="invDateLanguage" value="sw">
             </div>
+            <div class="form-group">
+              <label>Lugha ya Ukurasa Mzima wa Mualiko (Page Language)</label>
+              <p style="font-size:11px;color:var(--gray-400);margin:0 0 8px;">
+                Hii inadhibiti maandishi yote ya kudumu ya ukurasa (vichwa vya sehemu, vitufe n.k) - si maandishi uliyoandika mwenyewe (majina, hadithi n.k).<br>
+                <b>Otomatiki:</b> mgeni ataona Kiswahili kwa default na anaweza kubadili mwenyewe (kitufe SW/EN kitaonekana kwake).<br>
+                <b>Force:</b> ukurasa unabaki lugha hiyo TU - mgeni hawezi kubadili, kitufe cha kubadilisha kinafichwa.
+              </p>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button type="button" id="uiLangBtnAuto" class="btn btn-outline btn-sm" onclick="setUiLanguageMode('')">🔁 Otomatiki (Default)</button>
+                <button type="button" id="uiLangBtnSw" class="btn btn-outline btn-sm" onclick="setUiLanguageMode('sw')">🇹🇿 Force Kiswahili</button>
+                <button type="button" id="uiLangBtnEn" class="btn btn-outline btn-sm" onclick="setUiLanguageMode('en')">🇬🇧 Force English</button>
+              </div>
+              <input type="hidden" id="invUiLanguageMode" value="">
+            </div>
             <div class="form-group" style="margin-bottom:0;">
               <label>Hadithi Yetu (Our Story)</label>
               <textarea id="invStoryText" rows="3" placeholder="Tulikutana miaka mitatu iliyopita..."></textarea>
@@ -2353,6 +2367,34 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
 </div>
 
 <!-- Update Location Modal (kwa events zilizokwishatengenezwa) -->
+<!-- SMS PREVIEW MODAL (angalia na hariri kabla ya kutuma) -->
+<div class="modal-overlay" id="smsPreviewModal">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-header">
+      <div class="modal-title" id="smsPreviewTitle"><i data-lucide="message-square" class="icon" style="color:#EA580C"></i> Angalia SMS kabla ya kutuma</div>
+      <button class="modal-close" onclick="closeSmsPreviewModal()"><i data-lucide="x" style="width:16px;height:16px;"></i></button>
+    </div>
+    <div class="modal-body">
+      <p id="smsPreviewCount" style="font-size:12px;color:var(--gray-500);margin-bottom:10px;"></p>
+      <div class="form-group">
+        <label>Ujumbe (unaweza kuuhariri)</label>
+        <textarea id="smsPreviewText" rows="10" style="font-family:inherit;font-size:13px;line-height:1.5;"></textarea>
+      </div>
+      <div class="form-group" id="smsPreviewExtraBox" style="display:none;">
+        <label>Maneno ya Ziada (hiari - yataongezwa mwishoni mwa kila SMS)</label>
+        <textarea id="smsPreviewExtra" rows="2" placeholder="Mfano: Karibu ufike mapema kwa ajili ya picha za pamoja."></textarea>
+      </div>
+      <p id="smsPreviewNote" style="display:none;font-size:11px;color:#92400E;background:#FEF3C7;padding:8px;border-radius:6px;margin-top:6px;">
+        <i data-lucide="triangle-alert" style="color:#D97706;width:13px;height:13px;vertical-align:-2px;"></i> Huu ni mfano wa mgeni mmoja - kila mgeni atapokea ujumbe wake binafsi (jina, Namba ya Kadi, na link ya mualiko vitabadilika kiotomatiki kwa kila mmoja). "Maneno ya Ziada" hapo juu ndiyo pekee yanayoweza kuhaririwa hapa na yataongezwa kwa wote.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeSmsPreviewModal()">Ghairi</button>
+      <button class="btn btn-primary" onclick="confirmSmsPreviewSend()"><i data-lucide="send" style="width:16px;height:16px;"></i> Tuma SMS</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="locationModal">
   <div class="modal" style="max-width:420px;">
     <div class="modal-header">
@@ -4446,28 +4488,7 @@ async function sendInvitations() {
     if (pendingSms.length === 0) {
       showToast('Hakuna wageni wanaosubiri SMS', 'info');
     } else {
-      showToast(`Inatuma SMS kwa wageni ${pendingSms.length}...`, 'info');
-      let okCount = 0, failCount = 0;
-
-      let firstError = null;
-      for (const g of pendingSms) {
-        const message = buildSmsMessage(g, eventData);
-        const outcome = await callSmsForGuest(g, message);
-        if (!outcome.ok) {
-          failCount++;
-          if (!firstError) firstError = outcome.error;
-        } else {
-          await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', g.id);
-          okCount++;
-        }
-      }
-      if (firstError) console.error('Sababu ya kushindwa SMS:', firstError);
-
-      const bulkMsg = failCount > 0
-        ? `SMS: zimetumwa ${okCount}, zimeshindwa ${failCount}. Sababu: ${firstError}`
-        : `SMS: zimetumwa ${okCount}, zimeshindwa ${failCount}`;
-      showToast(bulkMsg, okCount > 0 ? 'success' : 'error');
-      loadEventGuests();
+      openSmsPreviewModal({ mode: 'bulk', pendingGuests: pendingSms, eventData });
     }
   }
 
@@ -4596,7 +4617,86 @@ async function sendWhatsAppInvite(guestId) {
 }
 
 // Tuma SMS kwa mgeni MMOJA tu (kutoka kwenye orodha ya wageni) - kazi sawa na WhatsApp
-function buildSmsMessage(guest, eventData) {
+// Hutuma SMS kwa orodha ya wageni (bulk) - inaitwa BAADA ya kuthibitishwa
+// kwenye modal ya Preview, si moja kwa moja. extraMessage ni maneno ya ziada
+// aliyoongeza mtumiaji kwenye modal - yataongezwa mwishoni mwa kila ujumbe.
+async function sendBulkSmsConfirmed(pendingGuests, eventData, extraMessage) {
+  showToast(`Inatuma SMS kwa wageni ${pendingGuests.length}...`, 'info');
+  let okCount = 0, failCount = 0, firstError = null;
+
+  for (const g of pendingGuests) {
+    const message = buildSmsMessage(g, eventData, extraMessage);
+    const outcome = await callSmsForGuest(g, message);
+    if (!outcome.ok) {
+      failCount++;
+      if (!firstError) firstError = outcome.error;
+    } else {
+      await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', g.id);
+      okCount++;
+    }
+  }
+  if (firstError) console.error('Sababu ya kushindwa SMS:', firstError);
+
+  const bulkMsg = failCount > 0
+    ? `SMS: zimetumwa ${okCount}, zimeshindwa ${failCount}. Sababu: ${firstError}`
+    : `SMS: zimetumwa ${okCount}, zimeshindwa ${failCount}`;
+  showToast(bulkMsg, okCount > 0 ? 'success' : 'error');
+  loadEventGuests();
+}
+
+// ===== MODAL YA SMS PREVIEW (angalia na hariri kabla ya kutuma) =====
+// Huhifadhi context ya "Tuma" itakayotokea mtumiaji akibonyeza "Tuma SMS" kwenye modal.
+let smsPreviewCtx = { mode: null, guest: null, kenya: false, pendingGuests: [], eventData: null };
+
+function openSmsPreviewModal({ mode, guest, eventData, kenya, pendingGuests }) {
+  smsPreviewCtx = { mode, guest: guest || null, kenya: !!kenya, pendingGuests: pendingGuests || [], eventData };
+
+  const extraBox = document.getElementById('smsPreviewExtraBox');
+  const noteBox = document.getElementById('smsPreviewNote');
+  const titleEl = document.getElementById('smsPreviewTitle');
+  const countEl = document.getElementById('smsPreviewCount');
+  const extraInput = document.getElementById('smsPreviewExtra');
+  extraInput.value = '';
+
+  if (mode === 'single') {
+    titleEl.textContent = '👁 Angalia SMS kabla ya kutuma';
+    countEl.textContent = `Kwa: ${guest.name} (${guest.phone || 'hana namba'})`;
+    extraBox.style.display = 'none';
+    noteBox.style.display = 'none';
+    document.getElementById('smsPreviewText').value = buildSmsMessage(guest, eventData);
+    document.getElementById('smsPreviewText').readOnly = false;
+  } else {
+    titleEl.textContent = '👁 Angalia mfano wa SMS kabla ya kutuma kwa wote';
+    countEl.textContent = `Itatumwa kwa wageni ${pendingGuests.length} (kila mmoja atapata jina/ID/link yake binafsi)`;
+    extraBox.style.display = 'block';
+    noteBox.style.display = 'block';
+    document.getElementById('smsPreviewText').value = buildSmsMessage(pendingGuests[0], eventData, '');
+    document.getElementById('smsPreviewText').readOnly = true;
+    extraInput.oninput = () => {
+      document.getElementById('smsPreviewText').value = buildSmsMessage(pendingGuests[0], eventData, extraInput.value);
+    };
+  }
+
+  showModal('smsPreviewModal');
+}
+
+function closeSmsPreviewModal() {
+  closeModal('smsPreviewModal');
+}
+
+async function confirmSmsPreviewSend() {
+  const finalText = document.getElementById('smsPreviewText').value;
+  closeModal('smsPreviewModal');
+
+  if (smsPreviewCtx.mode === 'single') {
+    await sendSingleSmsConfirmed(smsPreviewCtx.guest, finalText, smsPreviewCtx.kenya);
+  } else {
+    const extra = document.getElementById('smsPreviewExtra').value;
+    await sendBulkSmsConfirmed(smsPreviewCtx.pendingGuests, smsPreviewCtx.eventData, extra);
+  }
+}
+
+function buildSmsMessage(guest, eventData, extraMessage) {
   const eventName = eventData?.name || 'Tukio';
   const hostName  = eventData?.host_name || '';
   const date      = eventData?.event_date || '';
@@ -4612,7 +4712,9 @@ function buildSmsMessage(guest, eventData) {
   if (venue) msg += `Mahali: ${venue}\n`;
   msg += `\nNamba ya Kadi: ${guest.card_id}\n`;
   msg += `Aina ya Kadi: ${guestCardTypeLabelFriendly(guest)}\n`;
+  msg += `Fungua Mualiko: ${getInvitationLink(guest)}\n`;
   msg += `Ionyeshe mlangoni siku ya tukio.\n`;
+  if (extraMessage && extraMessage.trim()) msg += `\n${extraMessage.trim()}\n`;
   msg += `Karibu sana!`;
   return msg;
 }
@@ -4763,19 +4865,7 @@ async function sendSmsInvite(guestId) {
   if (!guest.phone) return showToast('Mgeni huyu hana namba ya simu', 'error');
 
   const { data: eventData } = await sb.from('events').select('*').eq('id', guest.event_id).single();
-  const message = buildSmsMessage(guest, eventData);
-
-  showToast('Inatuma SMS...', 'info');
-
-  const outcome = await callSmsForGuest(guest, message);
-
-  if (!outcome.ok) {
-    return showToast('Imeshindwa: ' + outcome.error, 'error');
-  }
-
-  await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', guestId);
-  showToast('SMS imetumwa kwa ' + guest.name + '!', 'success');
-  loadEventGuests();
+  openSmsPreviewModal({ mode: 'single', guest, eventData, kenya: false });
 }
 
 // Kitufe cha "SMS Kenya" - kinaonekana TU kwa wageni wenye country_code '254'.
@@ -4787,20 +4877,24 @@ async function sendSmsInviteKenya(guestId) {
   if (!guest.phone) return showToast('Mgeni huyu hana namba ya simu', 'error');
 
   const { data: eventData } = await sb.from('events').select('*').eq('id', guest.event_id).single();
-  const message = buildSmsMessage(guest, eventData);
+  openSmsPreviewModal({ mode: 'single', guest, eventData, kenya: true });
+}
 
-  showToast('Inatuma SMS Kenya...', 'info');
+// Hutuma SMS moja baada ya kuthibitishwa kwenye modal ya Preview - inatumia
+// ujumbe HALISI ulioachwa/kuhaririwa na mtumiaji kwenye textarea, si kuutengeneza upya.
+async function sendSingleSmsConfirmed(guest, message, kenya) {
+  showToast(kenya ? 'Inatuma SMS Kenya...' : 'Inatuma SMS...', 'info');
 
   const outcome = await callSmsForGuest(guest, message);
 
-  if (outcome.notConfigured) {
+  if (kenya && outcome.notConfigured) {
     return showToast(outcome.error, 'error');
   }
   if (!outcome.ok) {
     return showToast('Imeshindwa: ' + outcome.error, 'error');
   }
 
-  await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', guestId);
+  await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', guest.id);
   showToast('SMS imetumwa kwa ' + guest.name + '!', 'success');
   loadEventGuests();
 }
@@ -6389,6 +6483,7 @@ async function loadInvitationDesign() {
   document.getElementById('invHeroVerse').value = data?.hero_verse || '';
   document.getElementById('invWelcomeMessage').value = data?.welcome_message || '';
   setDateLanguage(data?.date_language || 'sw');
+  setUiLanguageMode(data?.ui_language_mode || '');
   document.getElementById('invStoryText').value = data?.story_text || '';
   document.getElementById('invVenueName').value = data?.venue_name || '';
   document.getElementById('invVenueAddress').value = data?.venue_address || '';
@@ -6435,6 +6530,7 @@ async function saveInvitationDesign() {
     hero_verse: document.getElementById('invHeroVerse').value.trim(),
     welcome_message: document.getElementById('invWelcomeMessage').value.trim(),
     date_language: document.getElementById('invDateLanguage').value.trim() || 'sw',
+    ui_language_mode: document.getElementById('invUiLanguageMode').value.trim(),
     story_text: document.getElementById('invStoryText').value.trim(),
     venue_name: document.getElementById('invVenueName').value.trim(),
     venue_address: document.getElementById('invVenueAddress').value.trim(),
@@ -6535,6 +6631,19 @@ function setDateLanguage(lang) {
   swBtn.classList.toggle('btn-outline', lang !== 'sw');
   enBtn.classList.toggle('btn-primary', lang === 'en');
   enBtn.classList.toggle('btn-outline', lang !== 'en');
+}
+
+function setUiLanguageMode(mode) {
+  document.getElementById('invUiLanguageMode').value = mode;
+  const autoBtn = document.getElementById('uiLangBtnAuto');
+  const swBtn = document.getElementById('uiLangBtnSw');
+  const enBtn = document.getElementById('uiLangBtnEn');
+  autoBtn.classList.toggle('btn-primary', mode === '');
+  autoBtn.classList.toggle('btn-outline', mode !== '');
+  swBtn.classList.toggle('btn-primary', mode === 'sw');
+  swBtn.classList.toggle('btn-outline', mode !== 'sw');
+  enBtn.classList.toggle('btn-primary', mode === 'en');
+  enBtn.classList.toggle('btn-outline', mode !== 'en');
 }
 
 function adjustCoverPos(field, delta) {
