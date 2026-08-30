@@ -1538,18 +1538,9 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
               <textarea id="invWelcomeMessage" rows="2" placeholder="Umealikwa rasmi kuungana nasi katika siku hii ya harusi."></textarea>
             </div>
             <div class="form-group">
-              <label>Lugha ya Tarehe ya Tukio (Event Date)</label>
-              <p style="font-size:11px;color:var(--gray-400);margin:0 0 8px;">Mfano: "Ijumaa, 7 Agosti 2026" (Kiswahili) au "Friday, August 7, 2026" (English)</p>
-              <div style="display:flex; gap:8px;">
-                <button type="button" id="dateLangBtnSw" class="btn btn-outline btn-sm" onclick="setDateLanguage('sw')">🇹🇿 Kiswahili</button>
-                <button type="button" id="dateLangBtnEn" class="btn btn-outline btn-sm" onclick="setDateLanguage('en')">🇬🇧 English</button>
-              </div>
-              <input type="hidden" id="invDateLanguage" value="sw">
-            </div>
-            <div class="form-group">
               <label>Lugha ya Ukurasa Mzima wa Mualiko (Page Language)</label>
               <p style="font-size:11px;color:var(--gray-400);margin:0 0 8px;">
-                Hii inadhibiti maandishi yote ya kudumu ya ukurasa (vichwa vya sehemu, vitufe n.k) - si maandishi uliyoandika mwenyewe (majina, hadithi n.k).<br>
+                Hii inadhibiti maandishi yote ya kudumu ya ukurasa (vichwa vya sehemu, vitufe, hata tarehe na muda - mfano "Ijumaa, 7 Agosti 2026" dhidi ya "Friday, August 7, 2026") - si maandishi uliyoandika mwenyewe (majina, hadithi n.k).<br>
                 <b>Otomatiki:</b> mgeni ataona Kiswahili kwa default na anaweza kubadili mwenyewe (kitufe SW/EN kitaonekana kwake).<br>
                 <b>Force:</b> ukurasa unabaki lugha hiyo TU - mgeni hawezi kubadili, kitufe cha kubadilisha kinafichwa.
               </p>
@@ -6482,7 +6473,6 @@ async function loadInvitationDesign() {
   document.getElementById('invHeroTitle').value = data?.hero_title || '';
   document.getElementById('invHeroVerse').value = data?.hero_verse || '';
   document.getElementById('invWelcomeMessage').value = data?.welcome_message || '';
-  setDateLanguage(data?.date_language || 'sw');
   setUiLanguageMode(data?.ui_language_mode || '');
   document.getElementById('invStoryText').value = data?.story_text || '';
   document.getElementById('invVenueName').value = data?.venue_name || '';
@@ -6529,7 +6519,6 @@ async function saveInvitationDesign() {
     hero_title: document.getElementById('invHeroTitle').value.trim(),
     hero_verse: document.getElementById('invHeroVerse').value.trim(),
     welcome_message: document.getElementById('invWelcomeMessage').value.trim(),
-    date_language: document.getElementById('invDateLanguage').value.trim() || 'sw',
     ui_language_mode: document.getElementById('invUiLanguageMode').value.trim(),
     story_text: document.getElementById('invStoryText').value.trim(),
     venue_name: document.getElementById('invVenueName').value.trim(),
@@ -6621,16 +6610,6 @@ function removeVenuePhoto(slot) {
   document.getElementById(`invVenuePhoto${slot}Url`).value = '';
   document.getElementById(`venuePhoto${slot}Preview`).style.backgroundImage = 'none';
   document.getElementById(`invVenuePhoto${slot}File`).value = '';
-}
-
-function setDateLanguage(lang) {
-  document.getElementById('invDateLanguage').value = lang;
-  const swBtn = document.getElementById('dateLangBtnSw');
-  const enBtn = document.getElementById('dateLangBtnEn');
-  swBtn.classList.toggle('btn-primary', lang === 'sw');
-  swBtn.classList.toggle('btn-outline', lang !== 'sw');
-  enBtn.classList.toggle('btn-primary', lang === 'en');
-  enBtn.classList.toggle('btn-outline', lang !== 'en');
 }
 
 function setUiLanguageMode(mode) {

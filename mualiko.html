@@ -809,7 +809,7 @@
       noteErrEmpty:'Tafadhali andika ujumbe kabla ya kutuma.',
       noteErrNoPhone:'Samahani, namba ya kuwasiliana haikupatikana kwa tukio hili.',
       thankyouScript:'Asante', thankyouIntro:'Tunafurahi kukuwa nawe katika siku hii. Tuonane ', thankyouOutro:'!',
-      loadText:'Tafadhali subiri, tunapakia mualiko wako...'
+      loadText:'Tafadhali subiri, tunapakia mualiko wako...', timeLabel:'Muda:'
     },
     en: {
       tapLabel:'Tap to Open', scrollCue:'Scroll to Continue',
@@ -827,13 +827,14 @@
       noteErrEmpty:'Please write a message before sending.',
       noteErrNoPhone:'Sorry, no contact number was found for this event.',
       thankyouScript:'Thank You', thankyouIntro:"We're so glad to have you with us. See you on ", thankyouOutro:'!',
-      loadText:'Please wait, loading your invitation...'
+      loadText:'Please wait, loading your invitation...', timeLabel:'Time:'
     }
   };
 
   let currentLang = 'sw';
   let languageLocked = false;   // true = admin ame-force lugha kutoka index.html, kitufe kimefichwa
   let lastEventDateStr = null;  // event_date halisi - kwa kuandika upya tarehe ukibadili lugha
+  let lastEventTimeText = null; // muda halisi (mfano "10:00 AM") - kwa kuandika upya "Muda:"/"Time:" ukibadili lugha
 
   function applyLanguage(lang){
     if(!T[lang]) lang = 'sw';
@@ -880,6 +881,9 @@
         setText('eventDateText', dateText);
         setText('thankyouDate', dateText);
       }
+    }
+    if(lastEventTimeText){
+      setText('venueTime', `${t.timeLabel} ${lastEventTimeText}`);
     }
 
     const btnSw = document.getElementById('langBtnSw');
@@ -959,16 +963,15 @@
       const coverNamesForTitle = eventData.cover_names || content?.cover_names || eventData.name || 'Mualiko';
       document.title = `${coverNamesForTitle} — Mualiko`;
 
-      const dateLang = eventData.date_language || content?.date_language || 'sw';
-
       // ---- LUGHA (SW/EN) ----
-      // ui_language_mode: '' (au haipo) → Otomatiki/Default - Kiswahili (au
-      // date_language ya event) ndiyo lugha ya mwanzo, na mgeni ANAWEZA
-      // kubadili kwa kitufe SW/EN - chaguo lake linahifadhiwa (localStorage).
+      // ui_language_mode: '' (au haipo) → Otomatiki/Default - Kiswahili ndiyo
+      // lugha ya mwanzo, na mgeni ANAWEZA kubadili kwa kitufe SW/EN - chaguo
+      // lake linahifadhiwa (localStorage).
       // ui_language_mode === 'en' au 'sw' → admin ame-FORCE lugha hiyo kabisa
       // (kitufe cha kubadilisha kimefichwa, mgeni HAWEZI kubadili).
       const forcedLang = eventData.ui_language_mode || content?.ui_language_mode || null;
       lastEventDateStr = eventData.event_date || null;
+      lastEventTimeText = formatTimeAMPM(eventData.event_time) || null;
 
       if(forcedLang === 'en' || forcedLang === 'sw'){
         languageLocked = true;
@@ -977,16 +980,11 @@
       } else {
         languageLocked = false;
         document.getElementById('langToggle').style.display = 'flex';
-        let startLang = dateLang;
-        try{ startLang = localStorage.getItem('mualiko_lang') || dateLang; }catch(e){}
+        let startLang = 'sw';
+        try{ startLang = localStorage.getItem('mualiko_lang') || 'sw'; }catch(e){}
         applyLanguage(startLang);
       }
 
-      const dateText = formatDate(eventData.event_date, currentLang);
-      if(dateText){
-        document.getElementById('eventDateText').textContent = dateText;
-        document.getElementById('thankyouDate').textContent = dateText;
-      }
       if(eventData.event_date){
         const timeStr = eventData.event_time || '10:00';
         eventTargetMs = new Date(`${eventData.event_date}T${timeStr}:00+03:00`).getTime();
@@ -995,10 +993,6 @@
       if(eventData.venue){
         document.getElementById('venueName').textContent = eventData.venue;
       }
-      const timeText = formatTimeAMPM(eventData.event_time);
-      document.getElementById('venueTime').textContent = timeText
-        ? `Muda: ${timeText}`
-        : document.getElementById('venueTime').textContent;
       const mapBtn = document.getElementById('mapBtn');
       // Tumia mfumo uleule wa location.html (Fungua Maelekezo -> Google Maps
       // Directions kutoka alipo mgeni hadi eneo la tukio) badala ya link
