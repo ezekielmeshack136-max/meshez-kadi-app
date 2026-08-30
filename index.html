@@ -2446,10 +2446,19 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
         <input type="text" id="guestName" placeholder="Familia ya Juma">
       </div>
       <div class="input-row">
+        <div class="form-group" style="flex:0 0 150px;">
+          <label>Nchi</label>
+          <select id="guestCountryCode">
+            <option value="255" selected>🇹🇿 Tanzania (+255)</option>
+            <option value="254">🇰🇪 Kenya (+254)</option>
+          </select>
+        </div>
         <div class="form-group">
           <label>Namba ya Simu</label>
           <input type="text" id="guestPhone" placeholder="0713079348">
         </div>
+      </div>
+      <div class="input-row">
         <div class="form-group">
           <label>Idadi ya Watu (Group Size)</label>
           <input type="number" id="guestGroupSize" value="1" min="1" max="100">
@@ -2561,7 +2570,7 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
         <div style="font-size:13px;font-weight:600;margin-bottom:6px;" id="bulkPreviewCount"></div>
         <div class="table-wrap" style="max-height:220px;overflow-y:auto;">
           <table>
-            <thead><tr><th>Jina</th><th>Namba</th><th>Idadi</th><th>WhatsApp</th><th>Cheo</th></tr></thead>
+            <thead><tr><th>Jina</th><th>Namba</th><th>Nchi</th><th>Idadi</th><th>WhatsApp</th><th>Cheo</th></tr></thead>
             <tbody id="bulkPreviewTable"></tbody>
           </table>
         </div>
@@ -2589,10 +2598,19 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
         <input type="text" id="editGuestName" placeholder="Familia ya Juma">
       </div>
       <div class="input-row">
+        <div class="form-group" style="flex:0 0 150px;">
+          <label>Nchi</label>
+          <select id="editGuestCountryCode">
+            <option value="255">🇹🇿 Tanzania (+255)</option>
+            <option value="254">🇰🇪 Kenya (+254)</option>
+          </select>
+        </div>
         <div class="form-group">
           <label>Namba ya Simu</label>
           <input type="text" id="editGuestPhone" placeholder="0713079348">
         </div>
+      </div>
+      <div class="input-row">
         <div class="form-group">
           <label>Idadi ya Watu (Group Size)</label>
           <input type="number" id="editGuestGroupSize" value="1" min="1" max="100">
@@ -3852,17 +3870,19 @@ function renderGuestsTable(guests) {
         <span style="font-family:monospace;font-size:12px;background:var(--gray-50);padding:3px 6px;border-radius:4px;">${g.card_id}</span>
         <button class="btn btn-outline btn-sm" style="padding:2px 6px;margin-left:4px;" onclick="copyGuestId('${g.card_id}')" title="Nakili Guest ID">📋</button>
       </td>
-      <td>${g.phone || '-'}</td>
+      <td>${g.phone ? (g.country_code === '254' ? '🇰🇪 ' : '🇹🇿 ') + g.phone : '-'}</td>
       <td><span class="badge badge-gray">${label}</span></td>
       <td>${g.whatsapp === 'yes' ? '<span class="badge badge-green">✅ Ndiyo</span>' : '<span class="badge badge-gray">❌ Hapana</span>'}</td>
-      <td>${g.sms_sent === 'yes' ? '<span class="badge badge-green">Imetumwa</span>' : '<span class="badge badge-yellow">Haijatumwa</span>'}</td>
+      <td>${g.sms_sent === 'yes' ? `<span class="badge badge-green">${g.country_code === '254' ? '🇰🇪' : '🇹🇿'} Imetumwa</span>` : `<span class="badge badge-yellow">${g.country_code === '254' ? '🇰🇪' : '🇹🇿'} Haijatumwa</span>`}</td>
       <td>${g.wa_sent === 'yes' ? '<span class="badge badge-green">Imetumwa</span>' : '<span class="badge badge-yellow">Haijatumwa</span>'}</td>
       <td>${rsvpBadge}</td>
       <td>
   <button class="btn btn-outline btn-sm" onclick="generateCard('${g.id}')" title="Zalisha Kadi">🎫</button>
   <button class="btn btn-outline btn-sm" onclick="copyInvitationLink('${g.card_id}')" title="Nakili Link ya Mualiko">🔗</button>
   ${g.whatsapp === 'yes' ? `<button class="btn btn-outline btn-sm" onclick="sendWhatsAppInvite('${g.id}')" title="Tuma WhatsApp">💬</button>` : ''}
-  ${g.phone ? `<button class="btn btn-outline btn-sm" onclick="sendSmsInvite('${g.id}')" title="Tuma SMS">📨</button>` : ''}
+  ${g.phone ? (g.country_code === '254'
+    ? `<button class="btn btn-outline btn-sm" onclick="sendSmsInviteKenya('${g.id}')" title="Tuma SMS Kenya" style="color:#DC2626;">📨🇰🇪</button>`
+    : `<button class="btn btn-outline btn-sm" onclick="sendSmsInvite('${g.id}')" title="Tuma SMS">📨🇹🇿</button>`) : ''}
   <button class="btn btn-outline btn-sm" onclick="openEditGuestModal('${g.id}')">✏️</button>
   <button class="btn btn-outline btn-sm" onclick="deleteGuest('${g.id}')">🗑️</button>
 </td>
@@ -3878,10 +3898,10 @@ function downloadGuestsListCSV() {
     return;
   }
   const eventName = document.getElementById('invEventSelect')?.selectedOptions?.[0]?.text || 'Event';
-  const headers = ['Jina','Guest ID','Namba','Aina','WhatsApp','SMS','WA Status','RSVP','Muda wa RSVP'];
+  const headers = ['Jina','Guest ID','Namba','Nchi','Aina','WhatsApp','SMS','WA Status','RSVP','Muda wa RSVP'];
   const rsvpLabel = g => g.rsvp === 'yes' ? 'Atahudhuria' : g.rsvp === 'no' ? 'Hatohudhuria' : 'Bado hajajibu';
   const rows = allGuestsCache.map(g => [
-    g.name || '', g.card_id || '', g.phone || '', guestCardTypeLabel(g),
+    g.name || '', g.card_id || '', g.phone || '', COUNTRY_CODES[g.country_code] || 'Tanzania', guestCardTypeLabel(g),
     g.whatsapp === 'yes' ? 'Ndiyo' : 'Hapana',
     g.sms_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa',
     g.wa_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa',
@@ -3960,22 +3980,38 @@ function currentGuestModalEventId() {
     : document.getElementById('invEventSelect').value;
 }
 
+// Nchi zinazotumika kwenye mfumo - ukitaka kuongeza nchi nyingine baadaye,
+// ongeza hapa NA kwenye <select> za Nchi (Add/Edit Guest, Bulk Import mapping).
+const COUNTRY_CODES = { '255': 'Tanzania', '254': 'Kenya' };
+
+// Hurekebisha namba ya simu kulingana na country code ya mgeni husika - badala
+// ya kuhardcode '255' kila mara. Huondoa kila kitu kisicho namba (nafasi, +,
+// mistari, mabano), kisha huongeza country code mbele endapo namba inaanza na
+// '0' (namba ya ndani) au haina country code yoyote tayari mbele yake.
+function fixPhoneWithCountry(phone, countryCode) {
+  const cc = String(countryCode || '255').replace(/\D/g, '') || '255';
+  let p = String(phone || '').replace(/\D/g, '');
+  if (!p) return '';
+  if (p.startsWith('0')) p = cc + p.slice(1);
+  else if (!p.startsWith(cc)) p = cc + p;
+  return p;
+}
+
 async function addGuest() {
   const eventId = currentGuestModalEventId();
   if (!eventId) return showToast('Chagua event/folder kwanza', 'error');
 
   const name      = document.getElementById('guestName').value.trim();
   const phone     = document.getElementById('guestPhone').value.trim();
+  const countryCode = document.getElementById('guestCountryCode').value || '255';
   const groupSize = parseInt(document.getElementById('guestGroupSize').value) || 1;
   const whatsapp  = document.getElementById('guestWhatsapp').value;
 
   if (!name) return showToast('Weka jina la mgeni', 'error');
   const vipStatus = document.getElementById('guestVipStatus').value.trim();
 
-  // Rekebisha namba
-  let phoneFixed = phone.replace(/\s|-/g, '');
-  if (phoneFixed.startsWith('0')) phoneFixed = '255' + phoneFixed.slice(1);
-  else if (!phoneFixed.startsWith('255')) phoneFixed = '255' + phoneFixed;
+  // Rekebisha namba kulingana na Nchi iliyochaguliwa
+  let phoneFixed = fixPhoneWithCountry(phone, countryCode);
 
   // Tengeneza Card ID
   const { data: event } = await sb.from('events').select('prefix').eq('id', eventId).single();
@@ -3988,7 +4024,7 @@ const seqNumber = (count || 0) + 1;
 const { error } = await sb.from('guests').insert({
   user_id: ORG_OWNER_ID,
   event_id: eventId,
-  name, phone: phoneFixed, group_size: groupSize,
+  name, phone: phoneFixed, country_code: countryCode, group_size: groupSize,
   whatsapp, card_id: cardId, sequence_number: seqNumber,
   sms_sent: 'no', wa_sent: 'no', used_count: 0, status: 'Halali',
   vip_status: vipStatus || null
@@ -3999,6 +4035,7 @@ const { error } = await sb.from('guests').insert({
   closeModal('addGuestModal');
   document.getElementById('guestName').value = '';
   document.getElementById('guestPhone').value = '';
+  document.getElementById('guestCountryCode').value = '255';
   if (modalGuestTargetSource === 'rsvp') {
     onRsvpEventChange();
   } else {
@@ -4010,7 +4047,7 @@ let editGuestSnapshot = null; // "picha" ya taarifa wakati modal ilipofunguliwa 
 
 function buildGuestSnapshot(g) {
   return JSON.stringify({
-    name: g.name || '', phone: g.phone || '', group_size: g.group_size || 1,
+    name: g.name || '', phone: g.phone || '', country_code: g.country_code || '255', group_size: g.group_size || 1,
     whatsapp: g.whatsapp || 'no', sms_sent: g.sms_sent || 'no', wa_sent: g.wa_sent || 'no',
     vip_status: g.vip_status || ''
   });
@@ -4024,6 +4061,7 @@ async function openEditGuestModal(guestId, source) {
   document.getElementById('editGuestId').value = guest.id;
   document.getElementById('editGuestName').value = guest.name || '';
   document.getElementById('editGuestPhone').value = guest.phone || '';
+  document.getElementById('editGuestCountryCode').value = guest.country_code || '255';
   document.getElementById('editGuestGroupSize').value = guest.group_size || 1;
   document.getElementById('editGuestWhatsapp').value = guest.whatsapp || 'no';
   document.getElementById('editGuestSmsSent').value = guest.sms_sent || 'no';
@@ -4039,6 +4077,7 @@ async function saveEditGuest() {
   const id = document.getElementById('editGuestId').value;
   const name = document.getElementById('editGuestName').value.trim();
   const phone = document.getElementById('editGuestPhone').value.trim();
+  const countryCode = document.getElementById('editGuestCountryCode').value || '255';
   const groupSize = parseInt(document.getElementById('editGuestGroupSize').value) || 1;
   const whatsapp = document.getElementById('editGuestWhatsapp').value;
   const smsSent = document.getElementById('editGuestSmsSent').value;
@@ -4059,6 +4098,7 @@ async function saveEditGuest() {
     // ili mtumiaji aone kilichobadilika na aamue mwenyewe kabla ya kuendelea.
     document.getElementById('editGuestName').value = freshGuest.name || '';
     document.getElementById('editGuestPhone').value = freshGuest.phone || '';
+    document.getElementById('editGuestCountryCode').value = freshGuest.country_code || '255';
     document.getElementById('editGuestGroupSize').value = freshGuest.group_size || 1;
     document.getElementById('editGuestWhatsapp').value = freshGuest.whatsapp || 'no';
     document.getElementById('editGuestSmsSent').value = freshGuest.sms_sent || 'no';
@@ -4069,13 +4109,12 @@ async function saveEditGuest() {
     return showToast('⚠️ Taarifa za mgeni huyu tayari zimeshabadilishwa na mtu mwingine! Tumesasisha fomu na taarifa mpya - angalia kisha ubofye "Hifadhi" tena ukitaka kuendelea na mabadiliko yako.', 'error');
   }
 
-  let phoneFixed = phone.replace(/\s|-/g, '');
-  if (phoneFixed.startsWith('0')) phoneFixed = '255' + phoneFixed.slice(1);
-  else if (phoneFixed && !phoneFixed.startsWith('255')) phoneFixed = '255' + phoneFixed;
+  // Rekebisha namba kulingana na Nchi iliyochaguliwa
+  let phoneFixed = fixPhoneWithCountry(phone, countryCode);
 
  // Futa card_image_url ya zamani ili kadi izalishwe upya na cheo/VIP mpya ionekane
   const { error } = await sb.from('guests').update({
-    name, phone: phoneFixed, group_size: groupSize, whatsapp,
+    name, phone: phoneFixed, country_code: countryCode, group_size: groupSize, whatsapp,
     sms_sent: smsSent, wa_sent: waSent, vip_status: vipStatus || null,
     card_image_url: null
   }).eq('id', id);
@@ -4142,8 +4181,9 @@ async function openBulkImportModal(source) {
 
 function downloadGuestExcelTemplate() {
   const sampleData = [
-    { 'Jina': 'Familia ya Juma', 'Namba': '0713079348', 'Idadi': 2, 'WhatsApp': 'Ndiyo', 'Cheo': 'VIP' },
-    { 'Jina': 'Asha Mohamed', 'Namba': '0787654321', 'Idadi': 1, 'WhatsApp': 'Hapana', 'Cheo': '' },
+    { 'Jina': 'Familia ya Juma', 'Namba': '0713079348', 'Nchi': 'Tanzania', 'Idadi': 2, 'WhatsApp': 'Ndiyo', 'Cheo': 'VIP' },
+    { 'Jina': 'Asha Mohamed', 'Namba': '0787654321', 'Nchi': 'Tanzania', 'Idadi': 1, 'WhatsApp': 'Hapana', 'Cheo': '' },
+    { 'Jina': 'John Otieno', 'Namba': '0712345678', 'Nchi': 'Kenya', 'Idadi': 1, 'WhatsApp': 'Ndiyo', 'Cheo': '' },
   ];
   const ws = XLSX.utils.json_to_sheet(sampleData);
   const wb = XLSX.utils.book_new();
@@ -4153,6 +4193,17 @@ function downloadGuestExcelTemplate() {
 
 function normalizeHeaderKey(key) {
   return String(key || '').trim().toLowerCase();
+}
+
+// Hubadilisha thamani ya safu ya "Nchi" (Tanzania/Kenya/255/254/+255/+254...)
+// kuwa country code sahihi. Default salama ni Tanzania (255) endapo safu
+// haipo au haijajazwa - kama ilivyoombwa.
+function mapCountryToCode(raw) {
+  const v = String(raw || '').trim().toLowerCase();
+  if (!v) return '255';
+  if (v.includes('kenya') || v.replace(/\D/g, '') === '254') return '254';
+  if (v.includes('tanzania') || v.replace(/\D/g, '') === '255') return '255';
+  return '255';
 }
 
 function findColumnValue(row, possibleNames) {
@@ -4189,12 +4240,14 @@ function handleBulkFileSelect(evt) {
       const parsed = rows.map(row => {
         const name = String(findColumnValue(row, ['jina', 'name', 'jina la mgeni'])).trim();
         let phone = String(findColumnValue(row, ['namba', 'simu', 'phone', 'namba ya simu'])).trim();
+        let countryRaw = String(findColumnValue(row, ['nchi', 'country', 'nchi ya mgeni'])).trim();
+        let countryCode = mapCountryToCode(countryRaw);
         let groupSize = parseInt(findColumnValue(row, ['idadi', 'group', 'groupsize', 'idadi ya watu'])) || 1;
         let whatsapp = String(findColumnValue(row, ['whatsapp', 'wa'])).trim().toLowerCase();
         whatsapp = (whatsapp === 'ndiyo' || whatsapp === 'yes' || whatsapp === '1' || whatsapp === 'true') ? 'yes' : 'no';
         let vipStatus = String(findColumnValue(row, ['cheo', 'rank', 'kiwango', 'vip', 'cheo cha mgeni', 'title', 'status'])).trim();
         if (vipStatus.toLowerCase() === 'none' || vipStatus.toLowerCase() === 'kawaida') vipStatus = '';
-        return { name, phone, groupSize, whatsapp, vipStatus };
+        return { name, phone, countryCode, groupSize, whatsapp, vipStatus };
       }).filter(r => r.name);
 
       if (!parsed.length) {
@@ -4206,8 +4259,8 @@ function handleBulkFileSelect(evt) {
       bulkImportData = parsed;
       document.getElementById('bulkPreviewCount').textContent = `✅ Wageni ${parsed.length} wamepatikana kwenye faili`;
       document.getElementById('bulkPreviewTable').innerHTML = parsed.slice(0, 50).map(r => `
-        <tr><td>${r.name}</td><td>${r.phone}</td><td>${r.groupSize}</td><td>${r.whatsapp === 'yes' ? '✅' : '❌'}</td><td>${r.vipStatus || '-'}</td></tr>
-      `).join('') + (parsed.length > 50 ? `<tr><td colspan="5" style="text-align:center;color:var(--gray-400);">... na wengine ${parsed.length - 50}</td></tr>` : '');
+        <tr><td>${r.name}</td><td>${r.phone}</td><td>${COUNTRY_CODES[r.countryCode] || 'Tanzania'} (+${r.countryCode})</td><td>${r.groupSize}</td><td>${r.whatsapp === 'yes' ? '✅' : '❌'}</td><td>${r.vipStatus || '-'}</td></tr>
+      `).join('') + (parsed.length > 50 ? `<tr><td colspan="6" style="text-align:center;color:var(--gray-400);">... na wengine ${parsed.length - 50}</td></tr>` : '');
       document.getElementById('bulkPreviewArea').style.display = 'block';
       document.getElementById('bulkConfirmBtn').disabled = false;
     } catch (err) {
@@ -4234,9 +4287,7 @@ async function confirmBulkImport() {
   let seqNumber = (count || 0);
 
   const rowsToInsert = bulkImportData.map(g => {
-    let phoneFixed = (g.phone || '').replace(/\s|-/g, '');
-    if (phoneFixed.startsWith('0')) phoneFixed = '255' + phoneFixed.slice(1);
-    else if (phoneFixed && !phoneFixed.startsWith('255')) phoneFixed = '255' + phoneFixed;
+    let phoneFixed = fixPhoneWithCountry(g.phone, g.countryCode);
 
     seqNumber += 1;
     const cardId = prefix + '-' + Math.random().toString(36).substr(2, 6).toUpperCase();
@@ -4246,6 +4297,7 @@ async function confirmBulkImport() {
       event_id: eventId,
       name: g.name,
       phone: phoneFixed,
+      country_code: g.countryCode || '255',
       group_size: g.groupSize || 1,
       whatsapp: g.whatsapp,
       card_id: cardId,
@@ -4341,11 +4393,8 @@ function buildInvitationMessage(guest, eventData) {
   return msg;
 }
 
-function formatPhoneForWhatsApp(phone) {
-  let p = (phone || '').replace(/\D/g, '');
-  if (p.startsWith('0')) p = '255' + p.slice(1);
-  else if (!p.startsWith('255')) p = '255' + p;
-  return p;
+function formatPhoneForWhatsApp(phone, countryCode) {
+  return fixPhoneWithCountry(phone, countryCode);
 }
 
 
@@ -4388,7 +4437,7 @@ async function sendInvitations() {
       let firstError = null;
       for (const g of pendingSms) {
         const message = buildSmsMessage(g, eventData);
-        const outcome = await callSendSmsFunction(g.phone, message);
+        const outcome = await callSmsForGuest(g, message);
         if (!outcome.ok) {
           failCount++;
           if (!firstError) firstError = outcome.error;
@@ -4471,7 +4520,7 @@ async function processWaQueueStep() {
     nextBtn.textContent = '⏳ Inatuma...';
     try {
       const imageUrl = await generateAndUploadCard(g.id);
-      const phone = formatPhoneForWhatsApp(g.phone);
+      const phone = formatPhoneForWhatsApp(g.phone, g.country_code);
       const bodyParams = buildWhatsAppBodyParams(g, waQueueEventData);
       const rsvpButtonSuffix = buildRsvpButtonSuffix(g);
       const locationButtonSuffix = buildLocationButtonSuffix(g);
@@ -4518,7 +4567,7 @@ async function sendWhatsAppInvite(guestId) {
     return showToast('Imeshindwa kutengeneza/kupakia kadi: ' + e.message, 'error');
   }
 
-  const phone = formatPhoneForWhatsApp(guest.phone);
+  const phone = formatPhoneForWhatsApp(guest.phone, guest.country_code);
   const bodyParams = buildWhatsAppBodyParams(guest, eventData);
 
   const outcome = await callSendWhatsAppCardFunction(phone, imageUrl, bodyParams, rsvpButtonSuffix, locationButtonSuffix, invitationButtonSuffix);
@@ -4648,6 +4697,51 @@ async function callSendSmsFunction(phone, message) {
   return { ok: true, result };
 }
 
+// SMS Kenya - inaita Edge Function tofauti (send-sms-kenya). Kwa sasa Edge
+// Function hiyo ni MUUNDO TUPU tu (haina credentials/API ya SMS gateway ya
+// Kenya bado), kwa hiyo popote itakaposhindwa (haijadeploy-iwa, imerudisha
+// "not_configured", au kosa lolote la mtandao) tunaonyesha ujumbe mmoja wa
+// kirafiki badala ya kosa la kiufundi - hadi tutakapoweka credentials halisi.
+async function callSendSmsKenyaFunction(phone, message) {
+  const NOT_CONFIGURED_MSG = 'Bado haijawekwa, tunasubiri API';
+  try {
+    const { data: sessionData } = await sb.auth.getSession();
+    const token = sessionData?.session?.access_token || SUPABASE_KEY;
+
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-sms-kenya`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'apikey': SUPABASE_KEY
+      },
+      body: JSON.stringify({ phone, message })
+    });
+
+    let result = {};
+    try { result = await res.json(); } catch (e) { /* jibu si JSON */ }
+
+    if (!res.ok || result.error === 'not_configured') {
+      return { ok: false, notConfigured: true, error: NOT_CONFIGURED_MSG };
+    }
+    return { ok: true, result };
+  } catch (e) {
+    // Edge Function haijadeploy-iwa bado / hakuna mtandao / n.k. - bado ni
+    // "haijawekwa" kwa mtumiaji, si kosa la kiufundi la kumchanganya.
+    return { ok: false, notConfigured: true, error: NOT_CONFIGURED_MSG };
+  }
+}
+
+// Dispatcher moja - huchagua gateway sahihi (Tanzania au Kenya) kulingana na
+// country_code ya mgeni husika, ili kila mahali SMS inapotumwa (single au
+// bulk) iende kwenye API sahihi bila kuhitaji kubadilisha kila function.
+async function callSmsForGuest(guest, message) {
+  if (guest.country_code === '254') {
+    return await callSendSmsKenyaFunction(guest.phone, message);
+  }
+  return await callSendSmsFunction(guest.phone, message);
+}
+
 async function sendSmsInvite(guestId) {
   const { data: guest } = await sb.from('guests').select('*').eq('id', guestId).single();
   if (!guest) return showToast('Mgeni hajapatikana', 'error');
@@ -4658,8 +4752,35 @@ async function sendSmsInvite(guestId) {
 
   showToast('Inatuma SMS...', 'info');
 
-  const outcome = await callSendSmsFunction(guest.phone, message);
+  const outcome = await callSmsForGuest(guest, message);
 
+  if (!outcome.ok) {
+    return showToast('Imeshindwa: ' + outcome.error, 'error');
+  }
+
+  await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', guestId);
+  showToast('SMS imetumwa kwa ' + guest.name + '!', 'success');
+  loadEventGuests();
+}
+
+// Kitufe cha "SMS Kenya" - kinaonekana TU kwa wageni wenye country_code '254'.
+// Kwa sasa itaonyesha "Bado haijawekwa, tunasubiri API" mpaka Edge Function
+// send-sms-kenya iwekewe credentials halisi za SMS gateway ya Kenya.
+async function sendSmsInviteKenya(guestId) {
+  const { data: guest } = await sb.from('guests').select('*').eq('id', guestId).single();
+  if (!guest) return showToast('Mgeni hajapatikana', 'error');
+  if (!guest.phone) return showToast('Mgeni huyu hana namba ya simu', 'error');
+
+  const { data: eventData } = await sb.from('events').select('*').eq('id', guest.event_id).single();
+  const message = buildSmsMessage(guest, eventData);
+
+  showToast('Inatuma SMS Kenya...', 'info');
+
+  const outcome = await callSmsForGuest(guest, message);
+
+  if (outcome.notConfigured) {
+    return showToast(outcome.error, 'error');
+  }
   if (!outcome.ok) {
     return showToast('Imeshindwa: ' + outcome.error, 'error');
   }
@@ -4730,11 +4851,13 @@ function renderRsvpGuestsTable(guests) {
     return `
     <tr>
       <td><strong>${g.name}</strong></td>
-      <td>${g.phone || '-'}</td>
+      <td>${g.phone ? (g.country_code === '254' ? '🇰🇪 ' : '🇹🇿 ') + g.phone : '-'}</td>
       <td><span class="badge badge-gray">${label}</span></td>
-      <td>${g.sms_sent === 'yes' ? '<span class="badge badge-green">Imetumwa</span>' : '<span class="badge badge-yellow">Haijatumwa</span>'}</td>
+      <td>${g.sms_sent === 'yes' ? `<span class="badge badge-green">${g.country_code === '254' ? '🇰🇪' : '🇹🇿'} Imetumwa</span>` : `<span class="badge badge-yellow">${g.country_code === '254' ? '🇰🇪' : '🇹🇿'} Haijatumwa</span>`}</td>
       <td>
-        ${g.phone ? `<button class="btn btn-outline btn-sm" onclick="sendRsvpSingleSms('${g.id}')" title="Tuma SMS kwa huyu pekee">📨</button>` : ''}
+        ${g.phone ? (g.country_code === '254'
+          ? `<button class="btn btn-outline btn-sm" onclick="sendRsvpSingleSmsKenya('${g.id}')" title="Tuma SMS Kenya kwa huyu pekee" style="color:#DC2626;">📨🇰🇪</button>`
+          : `<button class="btn btn-outline btn-sm" onclick="sendRsvpSingleSms('${g.id}')" title="Tuma SMS kwa huyu pekee">📨🇹🇿</button>`) : ''}
         <button class="btn btn-outline btn-sm" onclick="openEditGuestModal('${g.id}','rsvp')" title="Hariri">✏️</button>
         <button class="btn btn-outline btn-sm" onclick="deleteGuest('${g.id}','rsvp')" title="Futa">🗑️</button>
       </td>
@@ -4752,7 +4875,26 @@ async function sendRsvpSingleSms(guestId) {
   if (!guest || !guest.phone) return showToast('Mgeni huyu hana namba ya simu', 'error');
 
   showToast('Inatuma SMS kwa ' + guest.name + '...', 'info');
-  const outcome = await callSendSmsFunction(guest.phone, message);
+  const outcome = await callSmsForGuest(guest, message);
+  if (!outcome.ok) return showToast('Imeshindwa: ' + outcome.error, 'error');
+
+  await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', guestId);
+  showToast('SMS imetumwa kwa ' + guest.name + '!', 'success');
+  onRsvpEventChange();
+}
+
+// Kitufe cha "SMS Kenya" upande wa RSVP - kinaonekana TU kwa wageni wenye
+// country_code '254'. Bado ni muundo tu mpaka credentials ziwekwe.
+async function sendRsvpSingleSmsKenya(guestId) {
+  const message = document.getElementById('rsvpMessageText').value.trim();
+  if (!message) return showToast('Andika ujumbe kwanza (au uhifadhi mmoja uliopo)', 'error');
+
+  const guest = rsvpGuestsCache.find(g => g.id === guestId);
+  if (!guest || !guest.phone) return showToast('Mgeni huyu hana namba ya simu', 'error');
+
+  showToast('Inatuma SMS Kenya kwa ' + guest.name + '...', 'info');
+  const outcome = await callSmsForGuest(guest, message);
+  if (outcome.notConfigured) return showToast(outcome.error, 'error');
   if (!outcome.ok) return showToast('Imeshindwa: ' + outcome.error, 'error');
 
   await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', guestId);
@@ -4795,7 +4937,7 @@ async function sendRsvpBulkMessage() {
 
   let okCount = 0, failCount = 0, firstError = null;
   for (const g of recipients) {
-    const outcome = await callSendSmsFunction(g.phone, message);
+    const outcome = await callSmsForGuest(g, message);
     if (outcome.ok) {
       okCount++;
       await sb.from('guests').update({ sms_sent: 'yes' }).eq('id', g.id);
@@ -5059,7 +5201,7 @@ async function loadWhatsappMonitor() {
     return `
     <tr>
       <td>${g.name}</td>
-      <td>+${g.phone || '-'}</td>
+      <td>${g.phone ? (g.country_code === '254' ? '🇰🇪 +' : '🇹🇿 +') + g.phone : '-'}</td>
       <td style="font-size:12px;">${eventNameById[g.event_id] || '-'}</td>
       <td>${g.wa_sent === 'yes'
         ? '<span class="badge badge-green">✅ Imetumwa</span>'
