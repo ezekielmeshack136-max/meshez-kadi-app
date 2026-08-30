@@ -623,7 +623,12 @@
   }
 
   function renderCover(eventData, content){
-    const names = eventData?.cover_names || content?.cover_names || null;
+    const properCoverNames = eventData?.cover_names || content?.cover_names || null;
+    // Fallback: kama 'cover_names' haijajazwa kwa event hii, tumia jina la event
+    // (events.name) badala ya kubaki na maandishi ya default ("JOSEPHINE & MARK")
+    // yaliyowekwa kwenye HTML - hii inazuia event tofauti kuonyesha jina la couple
+    // isiyohusiana kabisa.
+    const names = properCoverNames || eventData?.name || null;
     const photoUrl = eventData?.cover_photo_url || content?.cover_photo_url || null;
     const monogramY = eventData?.cover_monogram_y ?? content?.cover_monogram_y ?? 0;
     const namesY    = eventData?.cover_names_y    ?? content?.cover_names_y    ?? 0;
@@ -632,7 +637,13 @@
     if(names && names.trim()){
       document.getElementById('coverNames').textContent = names.trim();
       const initials = deriveInitials(names.trim());
-      if(initials) document.getElementById('coverMonogram').textContent = initials;
+      if(initials){
+        document.getElementById('coverMonogram').textContent = initials;
+      } else if(!properCoverNames){
+        // Jina la event (si "X & Y") halitoi monogram yenye maana - ficha badala
+        // ya kuonyesha "J & M" isiyohusiana.
+        document.getElementById('coverMonogram').style.display = 'none';
+      }
     }
 
     if(photoUrl){
@@ -817,6 +828,12 @@
       if(typeof content === 'string'){
         try{ content = JSON.parse(content); }catch(e){ content = null; }
       }
+
+      // Tab ya browser (na link preview WhatsApp/Facebook itakaposhare) - lazima
+      // ilingane na event HALISI, isibaki na "Harusi ya Josephine & Mark" tuli.
+      const coverNamesForTitle = eventData.cover_names || content?.cover_names || eventData.name || 'Mualiko';
+      document.title = `${coverNamesForTitle} — Mualiko`;
+
       const dateLang = eventData.date_language || content?.date_language || 'sw';
       const dateText = formatDate(eventData.event_date, dateLang);
       if(dateText){
