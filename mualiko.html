@@ -778,7 +778,8 @@
     wrap.innerHTML = html;
   }
 
-  let currentGuestCardId = null; // inatumika na fomu ya "Ujumbe wa Shukrani"
+  let currentGuestCardId = null;      // (bado inatunzwa - inaweza kutumika baadaye)
+  let currentCoupleContactPhone = ''; // events.contact_phone - lengwa la "Ujumbe wa Shukrani" kupitia WhatsApp
 
   async function loadInvitation(){
     const params = new URLSearchParams(window.location.search);
@@ -853,6 +854,7 @@
       renderHero(eventData, content);
       renderWelcome(eventData, content);
       renderVenuePhotos(eventData, content);
+      currentCoupleContactPhone = eventData.contact_phone || '';
     } else {
       renderContentSections(null);
     }
@@ -863,12 +865,22 @@
 
   loadInvitation();
 
-  // ---------- NOTE SUBMIT (inatuma Ujumbe wa Shukrani kwenda Supabase) ----------
-  async function sendNote(ev){
+  // ---------- NOTE SUBMIT (inafungua WhatsApp - moja kwa moja, bila Supabase) ----------
+  // Ujumbe unaotumwa ni ULE ULE aliouandika mgeni - bila kuongeza jina, tarehe, au
+  // maandishi mengine yoyote. Mgeni ndiye anayebonyeza "Send" mwenyewe ndani ya
+  // WhatsApp yake - hatua hii haiwezi kuwa ya kiotomatiki kabisa (sera ya WhatsApp),
+  // lakini HAKUNA Supabase wala mfumo wetu unaohusika kwenye utumaji huu.
+  function formatPhoneForWa(phone){
+    let p = (phone || '').replace(/\D/g, '');
+    if(!p) return '';
+    if(p.startsWith('0')) p = '255' + p.slice(1);
+    else if(!p.startsWith('255')) p = '255' + p;
+    return p;
+  }
+
+  function sendNote(ev){
     ev.preventDefault();
-    const form = ev.target;
     const textarea = document.getElementById('noteTextarea');
-    const btn = document.getElementById('noteSubmitBtn');
     const errBox = document.getElementById('noteError');
     const message = textarea.value.trim();
 
@@ -879,31 +891,17 @@
       errBox.style.display = 'block';
       return false;
     }
-    if(!currentGuestCardId){
-      errBox.textContent = 'Samahani, taarifa za mualiko bado hazijapakia. Jaribu tena baada ya sekunde chache.';
+
+    const waPhone = formatPhoneForWa(currentCoupleContactPhone);
+    if(!waPhone){
+      errBox.textContent = 'Samahani, namba ya kuwasiliana haikupatikana kwa tukio hili.';
       errBox.style.display = 'block';
       return false;
     }
 
-    btn.disabled = true;
-    btn.textContent = 'Inatuma...';
-
-    const { error } = await sb.rpc('submit_guest_note', {
-      p_card_id: currentGuestCardId,
-      p_message: message
-    });
-
-    if(error){
-      console.error('Imeshindwa kutuma ujumbe:', error);
-      errBox.textContent = 'Samahani, imeshindwa kutuma ujumbe wako. Tafadhali jaribu tena.';
-      errBox.style.display = 'block';
-      btn.disabled = false;
-      btn.textContent = 'Tuma Salamu';
-      return false;
-    }
-
-    form.style.display = 'none';
-    document.getElementById('noteSent').style.display = 'block';
+    // encodeURIComponent inahifadhi ujumbe HALISI wa mgeni - hakuna kuongeza wala kupunguza
+    const waLink = `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`;
+    window.open(waLink, '_blank');
     return false;
   }
 
