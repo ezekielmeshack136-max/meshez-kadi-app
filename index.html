@@ -2310,7 +2310,14 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
         </div>
         <div class="form-group">
           <label>Namba ya Mawasiliano</label>
-          <input type="text" id="evtPhone" placeholder="0713079348">
+          <div style="display:flex; gap:8px;">
+            <select id="evtContactCountryCode" style="flex:0 0 130px;">
+              <option value="255" selected>🇹🇿 TZ (+255)</option>
+              <option value="254">🇰🇪 KE (+254)</option>
+            </select>
+            <input type="text" id="evtPhone" placeholder="0713079348" style="flex:1;">
+          </div>
+          <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Hii ndiyo namba itakayopokea "Ujumbe wa Shukrani" kutoka kwa wageni kupitia WhatsApp (kitufe cha "Tuma Salamu" kwenye Mualiko wa Kidijitali - mualiko.html). Weka namba ya bwana/bibi harusi au msimamizi wa event. Chagua nchi sahihi (TZ/KE) ili namba isibadilishwe vibaya.</p>
         </div>
       </div>
       <div class="form-group">
@@ -3477,6 +3484,7 @@ function openNewEventModal() {
   document.getElementById('evtCoordinates').value = '';
   document.getElementById('evtTime').value = '12:00';
   document.getElementById('evtPhone').value = '';
+  document.getElementById('evtContactCountryCode').value = '255';
   document.getElementById('evtPrefix').value = '';
   document.getElementById('evtShowVipBadge').checked = true;
   document.getElementById('evtShowGroupLabel').checked = true;
@@ -3500,6 +3508,7 @@ async function openEditEventModal(eventId) {
   document.getElementById('evtCoordinates').value = e.coordinates || '';
   document.getElementById('evtTime').value = e.event_time || '12:00';
   document.getElementById('evtPhone').value = e.contact_phone || '';
+  document.getElementById('evtContactCountryCode').value = e.contact_country_code || '255';
   document.getElementById('evtPrefix').value = e.prefix || '';
   document.getElementById('evtShowVipBadge').checked = e.show_vip_badge !== false;
   document.getElementById('evtShowGroupLabel').checked = e.show_group_label !== false;
@@ -3519,6 +3528,7 @@ async function saveNewEvent() {
   const coordinates = document.getElementById('evtCoordinates').value.trim();
   const time        = document.getElementById('evtTime').value;
   const phone       = document.getElementById('evtPhone').value.trim();
+  const contactCountryCode = document.getElementById('evtContactCountryCode').value || '255';
   const prefix      = document.getElementById('evtPrefix').value.trim().toUpperCase();
   const showVipBadge   = document.getElementById('evtShowVipBadge').checked;
   const showGroupLabel = document.getElementById('evtShowGroupLabel').checked;
@@ -3527,10 +3537,15 @@ async function saveNewEvent() {
 
   // location_url sasa inatengenezwa kiotomatiki kutoka coordinates pekee
   // (Directions URL) - hakuna field tofauti ya "Google Maps Link" tena.
+  // contact_phone inahifadhiwa kwa FOMATI YA KIMATAIFA (sawa na guests.phone),
+  // ikitumia fixPhoneWithCountry() ile ile inayotumika kwa wageni, ili mualiko.html
+  // isihitaji "kudhania" nchi - namba tayari iko sahihi (255... au 254...).
   const eventFields = {
     name, type, event_date: date, venue, host_name: hostName,
     location_url: buildDirectionsUrl(coordinates), coordinates, event_time: time,
-    contact_phone: phone, prefix: prefix || 'EVENT2026',
+    contact_phone: fixPhoneWithCountry(phone, contactCountryCode),
+    contact_country_code: contactCountryCode,
+    prefix: prefix || 'EVENT2026',
     show_vip_badge: showVipBadge, show_group_label: showGroupLabel,
   };
 

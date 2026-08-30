@@ -870,12 +870,11 @@
   // maandishi mengine yoyote. Mgeni ndiye anayebonyeza "Send" mwenyewe ndani ya
   // WhatsApp yake - hatua hii haiwezi kuwa ya kiotomatiki kabisa (sera ya WhatsApp),
   // lakini HAKUNA Supabase wala mfumo wetu unaohusika kwenye utumaji huu.
+  // contact_phone sasa inahifadhiwa NA index.html ikiwa tayari kwa fomati kamili ya
+  // kimataifa (255... au 254...) - hakuna haja ya "kudhania" nchi humu, tunaondoa tu
+  // herufi zisizo namba.
   function formatPhoneForWa(phone){
-    let p = (phone || '').replace(/\D/g, '');
-    if(!p) return '';
-    if(p.startsWith('0')) p = '255' + p.slice(1);
-    else if(!p.startsWith('255')) p = '255' + p;
-    return p;
+    return (phone || '').replace(/\D/g, '');
   }
 
   function sendNote(ev){
