@@ -128,12 +128,6 @@
     content:''; position:absolute; inset:0; z-index:1;
     background:linear-gradient(180deg, rgba(23,10,32,0.28), rgba(23,10,32,0.55) 55%, rgba(23,10,32,0.8));
   }
-  .tap-hint{display:flex; flex-direction:column; align-items:center; gap:10px; margin-top:6px; position:relative; z-index:2;}
-  .hand{font-size:26px; animation:tapPulse 1.4s ease-in-out infinite;}
-  @keyframes tapPulse{0%,100%{transform:translateY(0) scale(1); opacity:0.9;} 50%{transform:translateY(6px) scale(0.92); opacity:0.55;}}
-  .tap-label{font-family:'Jost'; letter-spacing:0.25em; font-size:11px; text-transform:uppercase; color:var(--gold-light);
-    animation:blink 1.8s ease-in-out infinite;}
-  @keyframes blink{0%,100%{opacity:1;} 50%{opacity:0.35;}}
 
   /* ============ WELCOME SCREEN (badala ya "curtain" ya zamani) ============ */
   /* Ukurasa mkali/mwepesi wenye maua pembezoni, ujumbe "Hello" na kijana
@@ -142,70 +136,60 @@
   .welcome-screen{
     position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center;
     overflow:hidden; cursor:pointer; text-align:center; padding:24px;
-    background:linear-gradient(180deg, #bfe0f7 0%, #d9edf9 30%, #fdf0dc 68%, #ffdfb8 100%);
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(216,174,85,0.12), transparent 60%),
+      linear-gradient(180deg, #170a20 0%, #23102f 14%, #2c1240 30%, #3a1650 46%, #2c1240 62%, #23102f 80%, #170a20 100%);
     transition:opacity 0.85s ease, transform 0.85s cubic-bezier(.76,0,.24,1);
   }
   .welcome-screen.open{ opacity:0; transform:scale(1.05); pointer-events:none; }
   .welcome-screen.hidden{ display:none; }
 
-  /* ---- Anga: jua/miale + mawingu yanayotembea ---- */
-  .welcome-sun{
-    position:absolute; top:6%; left:50%; transform:translateX(-50%); z-index:0;
-    width:280px; height:280px; border-radius:50%; pointer-events:none;
-    background:radial-gradient(circle, rgba(255,241,196,0.95) 0%, rgba(255,214,140,0.5) 38%, transparent 72%);
-    filter:blur(1px); animation:sunGlow 4.2s ease-in-out infinite;
+  /* ---- Anga: nyota tulivu + sayari (mtindo uleule wa ukurasa mzima, mpangilio tofauti) ---- */
+  .welcome-stars{
+    position:absolute; inset:0; z-index:0; pointer-events:none; opacity:0.85;
+    background-image:
+      radial-gradient(1.4px 1.4px at 12% 18%, rgba(255,255,255,0.9), transparent),
+      radial-gradient(1.4px 1.4px at 28% 64%, rgba(255,255,255,0.7), transparent),
+      radial-gradient(1px 1px at 42% 30%, rgba(255,255,255,0.8), transparent),
+      radial-gradient(1.4px 1.4px at 58% 78%, rgba(255,255,255,0.6), transparent),
+      radial-gradient(1px 1px at 68% 22%, rgba(255,255,255,0.9), transparent),
+      radial-gradient(1.4px 1.4px at 82% 55%, rgba(255,255,255,0.7), transparent),
+      radial-gradient(1px 1px at 90% 85%, rgba(255,255,255,0.8), transparent),
+      radial-gradient(1.4px 1.4px at 20% 88%, rgba(255,255,255,0.6), transparent),
+      radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.7), transparent);
+    background-repeat:no-repeat;
   }
-  @keyframes sunGlow{0%,100%{opacity:0.85; transform:translateX(-50%) scale(1);} 50%{opacity:1; transform:translateX(-50%) scale(1.1);}}
-  .welcome-rays{
-    position:absolute; top:6%; left:50%; transform:translateX(-50%); z-index:0; pointer-events:none;
-    width:560px; height:560px; border-radius:50%; opacity:0.5;
-    background:repeating-conic-gradient(from 0deg, rgba(255,255,255,0.55) 0deg 3deg, transparent 3deg 16deg);
-    -webkit-mask-image:radial-gradient(circle, black 42%, transparent 74%);
-    mask-image:radial-gradient(circle, black 42%, transparent 74%);
-    animation:raysRotate 44s linear infinite;
-  }
-  @keyframes raysRotate{to{transform:translateX(-50%) rotate(360deg);}}
-  .welcome-cloud{position:absolute; z-index:1; opacity:0.92; pointer-events:none;}
-  .welcome-cloud svg{display:block; width:100%; height:100%;}
-  .cloud-a{top:14%; width:150px; height:54px; left:-30%; animation:driftCloud 26s linear infinite;}
-  .cloud-b{top:26%; width:110px; height:40px; left:-25%; animation:driftCloud 34s linear infinite; animation-delay:-10s; opacity:0.75;}
-  .cloud-c{top:9%; width:90px; height:34px; left:-20%; animation:driftCloud 20s linear infinite; animation-delay:-5s; opacity:0.65;}
-  @keyframes driftCloud{from{transform:translateX(0);} to{transform:translateX(160vw);}}
-
-  .welcome-flowers{position:absolute; top:0; bottom:0; width:min(120px,26vw); opacity:0.9; z-index:1;}
-  .welcome-flowers.left{left:0;}
-  .welcome-flowers.right{right:0; transform:scaleX(-1);}
-  .welcome-flowers svg{width:100%; height:100%; display:block;}
+  .welcome-planet{position:absolute; border-radius:50%; z-index:0; pointer-events:none; opacity:0.9; animation:orbitDrift 42s ease-in-out infinite;}
+  .welcome-planet::after{content:''; position:absolute; border-radius:50%; pointer-events:none;}
+  .wp1{width:58px; height:58px; top:12%; right:10%;
+    background:radial-gradient(circle at 34% 30%, #d9ecff, #7fa8d9 60%, #3f6390 100%);
+    box-shadow:0 0 26px rgba(127,168,217,0.32); animation-duration:48s;}
+  .wp1::after{inset:-10px -28px; border:2px solid rgba(127,168,217,0.4); transform:rotate(18deg);}
+  .wp2{width:26px; height:26px; bottom:16%; left:9%;
+    background:radial-gradient(circle at 35% 30%, #f3d9e2, #d98aa8 60%, #82405c 100%);
+    box-shadow:0 0 16px rgba(217,138,168,0.35); animation-duration:30s; animation-delay:-8s;}
+  .wp3{width:40px; height:40px; top:60%; right:18%;
+    background:radial-gradient(circle at 32% 30%, #f7e2a8, #d8ae55 55%, #8a611f 100%);
+    box-shadow:0 0 24px rgba(216,174,85,0.28); animation-duration:52s; animation-delay:-16s;}
 
   .welcome-content{position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:4px;}
   .welcome-hello{
     font-family:'Cinzel', serif; font-weight:700; text-transform:uppercase;
     font-size:clamp(44px,13vw,68px); line-height:1; letter-spacing:0.05em;
-    color:#c1892f; text-shadow:0 2px 4px rgba(122,74,20,0.25), 0 0 26px rgba(255,255,255,0.85);
+    color:var(--gold-light); text-shadow:0 2px 10px rgba(0,0,0,0.4), 0 0 32px rgba(216,174,85,0.45);
   }
   .welcome-guest-name{
     font-family:'Cormorant Garamond'; font-style:italic; font-weight:600;
-    font-size:clamp(20px,6vw,28px); color:#8a5a2e; margin-top:2px;
+    font-size:clamp(20px,6vw,28px); color:var(--ivory); opacity:0.92; margin-top:2px;
   }
   .welcome-sub{
     font-family:'Jost', sans-serif; font-size:10.5px; letter-spacing:0.3em; text-transform:uppercase;
-    color:#9c6b4f; opacity:0.75; margin-top:8px;
-  }
-  .wave-guy-wrap{margin:10px 0 4px; position:relative; z-index:2;}
-  .wave-arm{
-    transform-box:fill-box; transform-origin:85% 12%;
-    animation:waveHand 1.15s ease-in-out infinite;
-  }
-  @keyframes waveHand{
-    0%,100%{transform:rotate(0deg);}
-    25%{transform:rotate(-22deg);}
-    50%{transform:rotate(6deg);}
-    75%{transform:rotate(-16deg);}
+    color:var(--gold-light); opacity:0.75; margin-top:8px;
   }
 
   /* ---- Kitufe cha "Gusa Kuendelea" (dhahabu, kinapiga "bip" taratibu) ---- */
   .welcome-cta{
-    position:relative; z-index:2; margin-top:20px; padding:14px 34px; border-radius:40px; border:none;
+    position:relative; z-index:2; margin-top:32px; padding:14px 34px; border-radius:40px; border:none;
     font-family:'Jost', sans-serif; font-weight:600; font-size:12px; letter-spacing:0.22em; text-transform:uppercase;
     color:#3a2a05; background:linear-gradient(135deg, var(--gold-light), var(--gold)); cursor:pointer;
     box-shadow:0 4px 16px rgba(180,130,40,0.35);
@@ -387,7 +371,7 @@
   .load-bar-fill{
     height:100%; width:4%; border-radius:4px;
     background:linear-gradient(90deg, var(--gold), var(--gold-light));
-    animation:loadBarGrow 2.2s cubic-bezier(.3,.7,.4,1) forwards;
+    animation:loadBarGrow 3.6s cubic-bezier(.3,.7,.4,1) forwards;
   }
   @keyframes loadBarGrow{0%{width:4%;} 100%{width:92%;}}
   .qr-real{position:relative; z-index:2; width:122px; height:122px; border-radius:4px; background:#fff; display:block;}
@@ -444,98 +428,15 @@
 </div>
 
 <div class="welcome-screen" id="welcomeScreen" onclick="openWelcome()">
-  <div class="welcome-sun" aria-hidden="true"></div>
-  <div class="welcome-rays" aria-hidden="true"></div>
-  <div class="welcome-cloud cloud-a" aria-hidden="true">
-    <svg viewBox="0 0 150 54"><path d="M20 44 Q5 44 5 30 Q5 16 20 18 Q22 4 42 6 Q60 -4 74 10 Q92 4 100 18 Q120 16 122 32 Q135 32 135 44 Z" fill="#fff" opacity="0.9"/></svg>
-  </div>
-  <div class="welcome-cloud cloud-b" aria-hidden="true">
-    <svg viewBox="0 0 150 54"><path d="M20 44 Q5 44 5 30 Q5 16 20 18 Q22 4 42 6 Q60 -4 74 10 Q92 4 100 18 Q120 16 122 32 Q135 32 135 44 Z" fill="#fff" opacity="0.85"/></svg>
-  </div>
-  <div class="welcome-cloud cloud-c" aria-hidden="true">
-    <svg viewBox="0 0 150 54"><path d="M20 44 Q5 44 5 30 Q5 16 20 18 Q22 4 42 6 Q60 -4 74 10 Q92 4 100 18 Q120 16 122 32 Q135 32 135 44 Z" fill="#fff" opacity="0.8"/></svg>
-  </div>
-
-  <div class="welcome-flowers left" aria-hidden="true">
-    <svg viewBox="0 0 100 640" preserveAspectRatio="xMinYMid slice">
-      <path d="M18 -10 C 46 60, -8 120, 22 190 C 48 250, -6 310, 20 375 C 46 435, -8 495, 18 560 C 34 600, 12 620, 20 650"
-            stroke="#a9c9ab" stroke-width="4" fill="none" opacity="0.65"/>
-      <g transform="translate(20,60)">
-        <circle r="16" fill="#f7c9d4"/><circle r="10.5" fill="#ee97ac"/><circle r="5" fill="#d8607e"/>
-      </g>
-      <path d="M8 92 Q-10 80 -2 104 Q12 112 8 92Z" fill="#a9c9ab"/>
-      <g transform="translate(14,205)">
-        <circle r="13" fill="#fbe0c8"/><circle r="8.5" fill="#f2b678"/><circle r="4" fill="#d8ae55"/>
-      </g>
-      <path d="M28 220 Q46 210 36 234 Q22 238 28 220Z" fill="#a9c9ab"/>
-      <g transform="translate(24,340)">
-        <circle r="15" fill="#f7c9d4"/><circle r="10" fill="#ee97ac"/><circle r="4.5" fill="#d8607e"/>
-      </g>
-      <path d="M6 358 Q-12 348 -2 372 Q14 378 6 358Z" fill="#a9c9ab"/>
-      <g transform="translate(16,475)">
-        <circle r="12" fill="#e3ecd6"/><circle r="7.5" fill="#bcd6ad"/><circle r="3.5" fill="#8fb887"/>
-      </g>
-      <g transform="translate(24,560)">
-        <circle r="14" fill="#fbe0c8"/><circle r="9" fill="#f2b678"/><circle r="4" fill="#d8ae55"/>
-      </g>
-      <path d="M32 578 Q50 570 40 592 Q26 596 32 578Z" fill="#a9c9ab"/>
-    </svg>
-  </div>
-  <div class="welcome-flowers right" aria-hidden="true">
-    <svg viewBox="0 0 100 640" preserveAspectRatio="xMinYMid slice">
-      <path d="M18 -10 C 46 60, -8 120, 22 190 C 48 250, -6 310, 20 375 C 46 435, -8 495, 18 560 C 34 600, 12 620, 20 650"
-            stroke="#a9c9ab" stroke-width="4" fill="none" opacity="0.65"/>
-      <g transform="translate(20,60)">
-        <circle r="16" fill="#f7c9d4"/><circle r="10.5" fill="#ee97ac"/><circle r="5" fill="#d8607e"/>
-      </g>
-      <path d="M8 92 Q-10 80 -2 104 Q12 112 8 92Z" fill="#a9c9ab"/>
-      <g transform="translate(14,205)">
-        <circle r="13" fill="#fbe0c8"/><circle r="8.5" fill="#f2b678"/><circle r="4" fill="#d8ae55"/>
-      </g>
-      <path d="M28 220 Q46 210 36 234 Q22 238 28 220Z" fill="#a9c9ab"/>
-      <g transform="translate(24,340)">
-        <circle r="15" fill="#f7c9d4"/><circle r="10" fill="#ee97ac"/><circle r="4.5" fill="#d8607e"/>
-      </g>
-      <path d="M6 358 Q-12 348 -2 372 Q14 378 6 358Z" fill="#a9c9ab"/>
-      <g transform="translate(16,475)">
-        <circle r="12" fill="#e3ecd6"/><circle r="7.5" fill="#bcd6ad"/><circle r="3.5" fill="#8fb887"/>
-      </g>
-      <g transform="translate(24,560)">
-        <circle r="14" fill="#fbe0c8"/><circle r="9" fill="#f2b678"/><circle r="4" fill="#d8ae55"/>
-      </g>
-      <path d="M32 578 Q50 570 40 592 Q26 596 32 578Z" fill="#a9c9ab"/>
-    </svg>
-  </div>
+  <div class="welcome-stars" aria-hidden="true"></div>
+  <div class="welcome-planet wp1" aria-hidden="true"></div>
+  <div class="welcome-planet wp2" aria-hidden="true"></div>
+  <div class="welcome-planet wp3" aria-hidden="true"></div>
 
   <div class="welcome-content">
     <div class="welcome-hello">Hello</div>
     <div class="welcome-guest-name" id="welcomeGuestName">Mgeni</div>
     <div class="welcome-sub" id="welcomeSub">Karibu Kwenye Mualiko Wetu</div>
-    <div class="wave-guy-wrap">
-      <svg width="120" height="170" viewBox="0 0 140 200">
-        <ellipse cx="70" cy="192" rx="34" ry="6" fill="#e8879f" opacity="0.18"/>
-        <rect x="55" y="150" width="12" height="38" rx="6" fill="#3b2f63"/>
-        <rect x="73" y="150" width="12" height="38" rx="6" fill="#3b2f63"/>
-        <rect x="52" y="182" width="18" height="8" rx="3" fill="#2a2145"/>
-        <rect x="70" y="182" width="18" height="8" rx="3" fill="#2a2145"/>
-        <rect x="45" y="92" width="50" height="64" rx="18" fill="#6a8fd8"/>
-        <rect x="60" y="92" width="20" height="20" rx="4" fill="#557bc4"/>
-        <rect x="35" y="97" width="14" height="48" rx="7" fill="#6a8fd8"/>
-        <circle cx="42" cy="148" r="9" fill="#f0c39a"/>
-        <g class="wave-arm">
-          <rect x="90" y="55" width="14" height="50" rx="7" fill="#6a8fd8"/>
-          <circle cx="97" cy="52" r="10" fill="#f0c39a"/>
-        </g>
-        <rect x="62" y="78" width="16" height="16" fill="#f0c39a"/>
-        <circle cx="70" cy="58" r="28" fill="#f0c39a"/>
-        <path d="M42 53 Q45 22 70 22 Q95 22 98 53 Q90 36 70 36 Q50 36 42 53 Z" fill="#3b2b23"/>
-        <circle cx="60" cy="58" r="2.6" fill="#2b2b2b"/>
-        <circle cx="80" cy="58" r="2.6" fill="#2b2b2b"/>
-        <path d="M58 68 Q70 76 82 68" stroke="#8a5a3a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-        <circle cx="50" cy="65" r="4" fill="#f3b6c4" opacity="0.55"/>
-        <circle cx="90" cy="65" r="4" fill="#f3b6c4" opacity="0.55"/>
-      </svg>
-    </div>
     <button type="button" class="welcome-cta" id="welcomeTapLabel" onclick="openWelcome()">Gusa Kuendelea</button>
   </div>
 </div>
@@ -553,10 +454,10 @@
       </div>
       <div class="monogram" id="coverMonogram">J &amp; M</div>
       <div class="cover-names" id="coverNames">JOSEPHINE &nbsp;·&nbsp; MARK</div>
-      <div class="tap-hint" id="coverTapHint">
-        <div class="hand">👆</div>
-        <div class="tap-label" id="tapLabel">Gusa Kufungua</div>
-      </div>
+    </div>
+    <div class="scroll-cue reveal" id="coverScrollCue">
+      <span id="scrollCueLabel">Scroll Kuendelea</span>
+      <div class="chevron"></div>
     </div>
   </section>
 
@@ -572,10 +473,6 @@
     </div>
     <h1 class="reveal" id="heroTitle" style="font-size:20px; letter-spacing:0.15em;">Wawili Wamekuwa Mmoja</h1>
     <p class="reveal" id="heroVerse" style="max-width:280px;">Kwa neema ya Mungu na furaha ya mioyo yetu, tunafunga ndoa na tunapenda uwe sehemu ya siku hii adhimu.</p>
-    <div class="scroll-cue reveal">
-      <span id="scrollCueLabel">Scroll Kuendelea</span>
-      <div class="chevron"></div>
-    </div>
   </section>
 
   <!-- 3. COUNTDOWN -->
@@ -858,7 +755,6 @@
     const photoUrl = eventData?.cover_photo_url || content?.cover_photo_url || null;
     const monogramY = eventData?.cover_monogram_y ?? content?.cover_monogram_y ?? 0;
     const namesY    = eventData?.cover_names_y    ?? content?.cover_names_y    ?? 0;
-    const tapHintY  = eventData?.cover_taphint_y  ?? content?.cover_taphint_y  ?? 0;
 
     if(names && names.trim()){
       document.getElementById('coverNames').textContent = names.trim();
@@ -882,7 +778,6 @@
     // Zikiwa 0 (default) hakuna mabadiliko - muonekano unabaki kama wa kawaida.
     if(monogramY) document.getElementById('coverMonogram').style.transform = `translateY(${monogramY}px)`;
     if(namesY)    document.getElementById('coverNames').style.transform = `translateY(${namesY}px)`;
-    if(tapHintY)  document.getElementById('coverTapHint').style.transform = `translateY(${tapHintY}px)`;
   }
 
   // ---------- HERO (kichwa cha ujumbe + ujumbe wa karibisho) ----------
@@ -1001,7 +896,7 @@
   // KAMA ALIVYOANDIKA ADMIN - hayatafsiriwi kiotomatiki (si muhimu kubadili). ----------
   const T = {
     sw: {
-      tapLabel:'Gusa Kufungua', scrollCue:'Scroll Kuendelea',
+      scrollCue:'Scroll Kuendelea',
       welcomeSubText:'Karibu Kwenye Mualiko Wetu', welcomeTapLabel:'Gusa Kuendelea',
       cdEyebrow:'Siku Zinazobaki', cdDays:'Siku', cdHours:'Saa', cdMins:'Dakika',
       welcomeEyebrow:'Karibu', eventDateEyebrow:'Tarehe ya Tukio',
@@ -1020,7 +915,7 @@
       loadText:'Inapakia Mualiko Wako...', timeLabel:'Muda:'
     },
     en: {
-      tapLabel:'Tap to Open', scrollCue:'Scroll to Continue',
+      scrollCue:'Scroll to Continue',
       welcomeSubText:'Welcome to Our Invitation', welcomeTapLabel:'Tap to Continue',
       cdEyebrow:'Days Remaining', cdDays:'Days', cdHours:'Hours', cdMins:'Minutes',
       welcomeEyebrow:'Welcome', eventDateEyebrow:'Event Date',
@@ -1052,7 +947,6 @@
     const t = T[lang];
 
     const setText = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
-    setText('tapLabel', t.tapLabel);
     setText('welcomeSub', t.welcomeSubText);
     setText('welcomeTapLabel', t.welcomeTapLabel);
     setText('scrollCueLabel', t.scrollCue);
@@ -1133,6 +1027,7 @@
   let currentCoupleContactPhone = ''; // events.contact_phone - lengwa la "Ujumbe wa Shukrani" kupitia WhatsApp
 
   async function loadInvitation(){
+    const loadStartTs = Date.now(); // hutumika kuhakikisha loader haitoweki upesi mno
     const params = new URLSearchParams(window.location.search);
     const token = params.get('id') || params.get('token');
 
@@ -1230,15 +1125,23 @@
       renderContentSections(null);
     }
 
-    // ---- Onyesha ukurasa, ficha loader (bar inajaa 100% kwanza kwa flourish) ----
+    // ---- Onyesha ukurasa, ficha loader baada ya muda wa kutosha wa kusoma/kuvutiwa ----
+    // Hata kama data imepatikana upesi, loader inabaki angalau MIN_LOAD_MS kabla
+    // ya kuanza kufifia - hii inazuia mualiko "kuruka" haraka mno mbele ya mgeni.
+    const MIN_LOAD_MS = 3200;
+    const elapsed = Date.now() - loadStartTs;
+    const remaining = Math.max(0, MIN_LOAD_MS - elapsed);
     const barFill = document.getElementById('loadBarFill');
-    if(barFill){
-      barFill.style.animation = 'none';
-      barFill.style.width = '100%';
-    }
+
     setTimeout(() => {
-      document.getElementById('loadState').classList.add('hidden');
-    }, 300);
+      if(barFill){
+        barFill.style.animation = 'none';
+        barFill.style.width = '100%';
+      }
+      setTimeout(() => {
+        document.getElementById('loadState').classList.add('hidden');
+      }, 450);
+    }, remaining);
   }
 
   loadInvitation();
