@@ -6,8 +6,6 @@
 <title>Harusi ya Josephine & Mark — Mualiko</title>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,500&family=Sacramento&family=Jost:wght@300;400;500;600&display=swap');
 
@@ -26,8 +24,8 @@
   html{scroll-behavior:smooth;}
   body{
     font-family:'Jost', sans-serif;
-    color:var(--ivory);
-    background:var(--plum-deep);
+    color:var(--plum-deep);
+    background:var(--ivory);
     overflow-x:hidden;
     -webkit-tap-highlight-color:transparent;
   }
@@ -39,8 +37,8 @@
   #bgGradient{
     position:fixed; inset:0; z-index:0;
     background:
-      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(216,174,85,0.10), transparent 60%),
-      linear-gradient(180deg, #170a20 0%, #23102f 14%, #2c1240 30%, #3a1650 46%, #2c1240 62%, #23102f 80%, #170a20 100%);
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(199,154,62,0.14), transparent 60%),
+      linear-gradient(180deg, #FBF3E6 0%, #F3E7D3 20%, #FBF3E6 45%, #F6EBDA 65%, #FBF3E6 85%, #F3E7D3 100%);
   }
   #sparkleCanvas{position:fixed; inset:0; z-index:1; pointer-events:none;}
 
@@ -85,11 +83,11 @@
   /* ============ TIPOGRAFIA ============ */
   .eyebrow{
     font-family:'Jost'; font-weight:500; letter-spacing:0.35em; text-transform:uppercase;
-    font-size:11px; color:var(--gold-light); opacity:0.85; text-align:center;
+    font-size:11px; color:var(--gold); opacity:0.9; text-align:center;
   }
-  h1,h2{font-family:'Cinzel'; font-weight:600; color:var(--gold-light); text-align:center; letter-spacing:0.02em;}
-  .script{font-family:'Sacramento'; color:var(--gold-light); line-height:1;}
-  p{font-family:'Cormorant Garamond'; font-size:19px; line-height:1.6; color:var(--ivory); text-align:center;}
+  h1,h2{font-family:'Cinzel'; font-weight:600; color:var(--plum-deep); text-align:center; letter-spacing:0.02em;}
+  .script{font-family:'Sacramento'; color:var(--gold); line-height:1;}
+  p{font-family:'Cormorant Garamond'; font-size:19px; line-height:1.6; color:var(--plum-deep); text-align:center;}
 
   /* ============ ORNAMENT: pembe za dhahabu (corner flourish) ============ */
   .frame{position:relative; padding:38px 22px;}
@@ -117,8 +115,9 @@
   .cover-frame .corner.tr{top:10px; right:10px; border-left:none; border-bottom:none;}
   .cover-frame .corner.bl{bottom:10px; left:10px; border-right:none; border-top:none;}
   .cover-frame .corner.br{bottom:10px; right:10px; border-left:none; border-top:none;}
-  .monogram{font-family:'Sacramento'; font-size:44px; color:var(--gold-light); position:relative; z-index:2;}
-  .cover-names{font-family:'Cinzel'; font-size:15px; letter-spacing:0.3em; color:var(--ivory); opacity:0.8; position:relative; z-index:2;}
+  .monogram{font-family:'Sacramento'; font-size:44px; color:var(--gold); position:relative; z-index:2;}
+  .cover-names{font-family:'Cinzel'; font-size:15px; letter-spacing:0.3em; color:var(--plum-deep); opacity:0.85; position:relative; z-index:2;}
+  .cover-frame.has-cover-photo .cover-names{color:var(--ivory); opacity:0.9;}
   /* Picha ya cover - inajaza jedwali zima kama background, maandishi
      yanabaki juu yake (overlay nyeusi-nyembamba inaongezwa kwa usomekaji) */
   .cover-photo-wrap{
@@ -139,8 +138,8 @@
     position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center;
     overflow:hidden; cursor:pointer; text-align:center; padding:24px;
     background:
-      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(216,174,85,0.12), transparent 60%),
-      linear-gradient(180deg, #170a20 0%, #23102f 14%, #2c1240 30%, #3a1650 46%, #2c1240 62%, #23102f 80%, #170a20 100%);
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(199,154,62,0.16), transparent 60%),
+      linear-gradient(180deg, #FBF3E6 0%, #F3E7D3 20%, #FBF3E6 45%, #F6EBDA 65%, #FBF3E6 85%, #F3E7D3 100%);
     transition:opacity 0.85s ease, transform 0.85s cubic-bezier(.76,0,.24,1);
   }
   .welcome-screen.open{ opacity:0; transform:scale(1.05); pointer-events:none; }
@@ -180,15 +179,15 @@
   .welcome-hello{
     font-family:'Cinzel', serif; font-weight:700; text-transform:uppercase;
     font-size:clamp(44px,13vw,68px); line-height:1; letter-spacing:0.05em;
-    color:var(--gold-light); text-shadow:0 2px 10px rgba(0,0,0,0.4), 0 0 32px rgba(216,174,85,0.45);
+    color:var(--plum-deep); text-shadow:0 2px 8px rgba(42,18,32,0.12), 0 0 26px rgba(199,154,62,0.35);
   }
   .welcome-guest-name{
     font-family:'Cormorant Garamond'; font-style:italic; font-weight:600;
-    font-size:clamp(20px,6vw,28px); color:var(--ivory); opacity:0.92; margin-top:2px;
+    font-size:clamp(20px,6vw,28px); color:var(--plum-deep); opacity:0.92; margin-top:2px;
   }
   .welcome-sub{
     font-family:'Jost', sans-serif; font-size:10.5px; letter-spacing:0.3em; text-transform:uppercase;
-    color:var(--gold-light); opacity:0.75; margin-top:8px;
+    color:var(--gold); opacity:0.85; margin-top:8px;
   }
 
   /* ---- Kitufe cha "Gusa Kuendelea" (dhahabu, kinapiga "bip" taratibu) ---- */
@@ -212,7 +211,7 @@
   #hero{min-height:100svh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:24px;}
   .doves{width:min(230px,60vw); height:150px;}
   .scroll-cue{display:flex; flex-direction:column; align-items:center; gap:6px; margin-top:30px;}
-  .scroll-cue span{font-size:11px; letter-spacing:0.3em; text-transform:uppercase; color:var(--gold-light); opacity:0.85;}
+  .scroll-cue span{font-size:11px; letter-spacing:0.3em; text-transform:uppercase; color:var(--gold); opacity:0.9;}
   .chevron{width:14px; height:14px; border-right:1.5px solid var(--gold); border-bottom:1.5px solid var(--gold);
     transform:rotate(45deg); animation:chevBounce 1.6s ease-in-out infinite;}
   @keyframes chevBounce{0%,100%{transform:rotate(45deg) translate(0,0); opacity:0.4;} 50%{transform:rotate(45deg) translate(5px,5px); opacity:1;}}
@@ -224,15 +223,15 @@
   section{min-height:60svh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:70px 22px;}
 
   /* ============ WELCOME / JINA + TAREHE ============ */
-  .guest-name{font-family:'Cinzel'; font-size:clamp(26px,7vw,38px); color:var(--gold-light); text-align:center; margin:14px 0 6px;}
+  .guest-name{font-family:'Cinzel'; font-size:clamp(26px,7vw,38px); color:var(--plum-deep); text-align:center; margin:14px 0 6px;}
   .date-badge{margin-top:22px; display:inline-flex; flex-direction:column; align-items:center; gap:4px;
     border-top:1px solid var(--gold); border-bottom:1px solid var(--gold); padding:12px 30px;}
-  .date-badge .d{font-family:'Cinzel'; font-size:22px; letter-spacing:0.08em; color:var(--ivory);}
+  .date-badge .d{font-family:'Cinzel'; font-size:22px; letter-spacing:0.08em; color:var(--plum-deep);}
 
   /* ============ COUNTDOWN ============ */
   .countdown{display:flex; gap:16px; margin-top:18px;}
   .countdown .unit{display:flex; flex-direction:column; align-items:center; gap:4px; min-width:56px;}
-  .countdown .num{font-family:'Cinzel'; font-size:26px; color:var(--gold-light); border:1px solid var(--gold);
+  .countdown .num{font-family:'Cinzel'; font-size:26px; color:var(--plum-deep); border:1px solid var(--gold);
     border-radius:8px; padding:10px 6px; width:100%; text-align:center;}
   .countdown .lbl{font-size:9px; letter-spacing:0.15em; text-transform:uppercase; opacity:0.7;}
 
@@ -250,14 +249,14 @@
   .qr-box::before{content:''; position:absolute; inset:14px; background:var(--plum-deep); border-radius:3px;}
   .qr-box.has-qr::before{content:none;}
   .qr-box span{position:relative; z-index:2; font-family:'Jost'; font-size:10px; color:var(--gold-light); letter-spacing:0.1em;}
-  .pass-num{font-family:'Cinzel'; letter-spacing:0.15em; font-size:13px; color:var(--gold-light);}
+  .pass-num{font-family:'Cinzel'; letter-spacing:0.15em; font-size:13px; color:var(--plum-deep);}
 
   /* ============ RECEPTION ============ */
   .venue-photo-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px; width:100%; max-width:340px; margin:16px auto 0;}
   .venue-photo{aspect-ratio:4/5; border-radius:8px;
     background:linear-gradient(135deg, var(--plum-soft), var(--emerald)); border:1px solid var(--gold);
     display:flex; align-items:center; justify-content:center; background-size:cover; background-position:center;}
-  .venue-photo-label{font-family:'Cormorant Garamond'; font-style:italic; color:var(--gold-light); opacity:0.7; font-size:12.5px; padding:0 8px; text-align:center;}
+  .venue-photo-label{font-family:'Cormorant Garamond'; font-style:italic; color:var(--gold); opacity:0.85; font-size:12.5px; padding:0 8px; text-align:center;}
   .venue-photo.has-photo .venue-photo-label{display:none;}
   .map-btn{margin-top:18px; font-family:'Jost'; letter-spacing:0.15em; text-transform:uppercase; font-size:12px;
     color:var(--plum-deep); background:var(--gold-light); border:none; padding:13px 26px; border-radius:30px;
@@ -281,20 +280,20 @@
     position:absolute; top:8px; left:8px; width:18px; height:18px; border-radius:50%;
     border:2px solid rgba(255,255,255,0.85); box-shadow:0 2px 6px rgba(0,0,0,0.45); z-index:2;
   }
-  .swatch .name{font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ivory); opacity:0.75;}
+  .swatch .name{font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--plum-deep); opacity:0.8;}
 
   /* ============ PROGRAM ============ */
   .program-list{width:100%; max-width:340px; display:flex; flex-direction:column; gap:16px; margin-top:14px;}
   .program-item{display:flex; align-items:stretch; gap:14px;}
   .program-bar{width:4px; border-radius:4px; flex-shrink:0;}
   .program-body{flex:1; display:flex; justify-content:space-between; align-items:center; padding:10px 0;}
-  .program-body .ev{font-family:'Cormorant Garamond'; font-size:17px; color:var(--ivory);}
-  .program-body .tm{font-family:'Jost'; font-size:12px; letter-spacing:0.1em; color:var(--gold-light);}
+  .program-body .ev{font-family:'Cormorant Garamond'; font-size:17px; color:var(--plum-deep);}
+  .program-body .tm{font-family:'Jost'; font-size:12px; letter-spacing:0.1em; color:var(--gold);}
 
   /* ============ WAZAZI / HOSTS ============ */
   .hosts-grid{display:flex; gap:34px; margin-top:16px; flex-wrap:wrap; justify-content:center;}
   .host{display:flex; flex-direction:column; align-items:center; gap:4px; max-width:130px;}
-  .host .lbl{font-size:9px; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold-light); opacity:0.75;}
+  .host .lbl{font-size:9px; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold); opacity:0.9;}
   .host .nm{font-family:'Cormorant Garamond'; font-size:16px;}
 
   /* ============ WAHUDUMU / SERVICE PROVIDERS ============ */
@@ -303,43 +302,43 @@
     display:flex; justify-content:space-between; align-items:center; gap:16px;
     padding:12px 0; border-bottom:1px solid rgba(216,174,85,0.22);
   }
-  .provider-item .nm{font-family:'Cormorant Garamond'; font-size:16px; color:var(--ivory); text-align:left;}
+  .provider-item .nm{font-family:'Cormorant Garamond'; font-size:16px; color:var(--plum-deep); text-align:left;}
   .provider-item .phone{
-    font-family:'Jost'; font-size:13px; letter-spacing:0.03em; color:var(--gold-light);
+    font-family:'Jost'; font-size:13px; letter-spacing:0.03em; color:var(--gold);
     white-space:nowrap; text-decoration:none;
   }
 
   /* ============ ZAWADI / GIFT ============ */
   .gift-card{border:1px solid var(--gold); border-radius:10px; padding:22px; max-width:300px; width:100%; text-align:center; margin-top:12px;}
-  .gift-card .line{font-family:'Jost'; font-size:13px; letter-spacing:0.08em; color:var(--gold-light); margin-top:6px;}
+  .gift-card .line{font-family:'Jost'; font-size:13px; letter-spacing:0.08em; color:var(--gold); margin-top:6px;}
 
   /* ============ NOTE / GUESTBOOK ============ */
   .note-form{width:100%; max-width:320px; display:flex; flex-direction:column; gap:14px; margin-top:14px;}
   .note-form textarea{
-    background:rgba(255,255,255,0.05); border:1px solid rgba(216,174,85,0.4); border-radius:10px;
-    padding:14px; color:var(--ivory); font-family:'Cormorant Garamond'; font-size:16px; min-height:100px; resize:vertical;
+    background:rgba(42,18,32,0.04); border:1px solid rgba(199,154,62,0.4); border-radius:10px;
+    padding:14px; color:var(--plum-deep); font-family:'Cormorant Garamond'; font-size:16px; min-height:100px; resize:vertical;
   }
-  .note-form textarea::placeholder{color:rgba(251,243,231,0.4);}
+  .note-form textarea::placeholder{color:rgba(42,18,32,0.35);}
   .note-form button{
     font-family:'Jost'; letter-spacing:0.15em; text-transform:uppercase; font-size:12px;
     color:var(--plum-deep); background:var(--gold); border:none; padding:14px; border-radius:30px; cursor:pointer;
   }
-  .note-sent{display:none; font-family:'Cormorant Garamond'; font-style:italic; color:var(--gold-light); margin-top:10px;}
+  .note-sent{display:none; font-family:'Cormorant Garamond'; font-style:italic; color:var(--emerald); margin-top:10px;}
 
   /* ============ THANK YOU ============ */
   #thankyou{min-height:80svh;}
   .thankyou-script{font-size:clamp(38px,10vw,58px);}
 
   footer{padding:40px 20px 70px; text-align:center;}
-  footer .brand{font-family:'Jost'; font-size:10px; letter-spacing:0.3em; text-transform:uppercase; color:var(--gold-light); opacity:0.55;}
+  footer .brand{font-family:'Jost'; font-size:10px; letter-spacing:0.3em; text-transform:uppercase; color:var(--gold); opacity:0.7;}
 
   /* ============ LOADER / ERROR STATE (data kutoka Supabase) ============ */
   #loadState{
     position:fixed; inset:0; z-index:65; display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:18px; text-align:center; padding:30px; overflow:hidden;
     background:
-      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(216,174,85,0.12), transparent 60%),
-      linear-gradient(180deg, #170a20 0%, #23102f 14%, #2c1240 30%, #3a1650 46%, #2c1240 62%, #23102f 80%, #170a20 100%);
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(199,154,62,0.16), transparent 60%),
+      linear-gradient(180deg, #FBF3E6 0%, #F3E7D3 20%, #FBF3E6 45%, #F6EBDA 65%, #FBF3E6 85%, #F3E7D3 100%);
   }
   #loadState.hidden{display:none;}
   .load-spinner{
@@ -348,8 +347,8 @@
     animation:loadSpin 0.9s linear infinite;
   }
   @keyframes loadSpin{to{transform:rotate(360deg);}}
-  #loadState p{position:relative; z-index:2; font-family:'Cormorant Garamond'; font-size:16px; color:var(--ivory); opacity:0.85; max-width:280px;}
-  #loadState .err-title{position:relative; z-index:2; font-family:'Cinzel'; font-size:20px; color:var(--gold-light); letter-spacing:0.05em;}
+  #loadState p{position:relative; z-index:2; font-family:'Cormorant Garamond'; font-size:16px; color:var(--plum-deep); opacity:0.85; max-width:280px;}
+  #loadState .err-title{position:relative; z-index:2; font-family:'Cinzel'; font-size:20px; color:var(--gold); letter-spacing:0.05em;}
   #loadState .err-icon{position:relative; z-index:2; font-size:34px;}
   /* ---- Logo ya Glass (glassmorphism) + Progress Bar ---- */
   .load-logo{
@@ -388,10 +387,10 @@
     padding:5px 14px; border-radius:20px; font-weight:600;
   }
   .vip-pill.vvip{background:#f2d889; color:#3a2a05;}
-  .vip-pill.vip{background:rgba(216,174,85,0.25); color:var(--gold-light); border:1px solid rgba(216,174,85,0.5);}
+  .vip-pill.vip{background:rgba(199,154,62,0.22); color:var(--plum-deep); border:1px solid rgba(199,154,62,0.5);}
   .group-pill{
     display:inline-block; margin-top:8px; margin-left:6px; font-family:'Jost'; font-size:11px; letter-spacing:0.08em;
-    padding:5px 14px; border-radius:20px; background:rgba(255,255,255,0.08); color:var(--ivory); opacity:0.85;
+    padding:5px 14px; border-radius:20px; background:rgba(42,18,32,0.06); color:var(--plum-deep); opacity:0.85;
   }
 
   /* ============ LANGUAGE TOGGLE (SW / EN) ============ */
@@ -407,76 +406,13 @@
   }
   .lang-toggle button.active{background:var(--gold); color:var(--plum-deep); opacity:1;}
 
-  /* =====================================================================
-     ALFAJIRI (DAWN) — badala ya "sanduku" lenye rangi iliyokatwakatwa,
-     anga lenyewe la usiku (fixed) linabadilika taratibu wakati wa
-     ku-scroll: giza -> chokoleti -> dhahabu -> creamy, likiwa na "jua"
-     (glow) lenye opacity ndogo kwa mvuto. Nyota/sayari za usiku zina-fade
-     kadri "jua" linavyoinuka, na chembechembe za sparkle zinabadilika
-     rangi kuelekea rangi ya udongo/dhahabu badala ya dhahabu-nyeupe ya
-     usiku - ili kila kitu kiendane na creamy background ya Meshez Kadi.
-     ===================================================================== */
-  #dawnGlow{
-    position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0;
-    background:
-      radial-gradient(circle 380px at 50% 84%, rgba(255,214,140,0.5), transparent 70%),
-      linear-gradient(180deg,
-        #241512 0%, #402a22 18%, #6b4530 36%, #a06b3e 54%,
-        #cf9b5f 70%, #ecceA0 85%, #FBF3E6 100%);
-  }
-  .planet, .comet{ will-change:opacity; }
-
-  #bridge{
-    position:relative; z-index:2; min-height:56svh;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center; padding:60px 26px 76px; background:transparent;
-  }
-  #bridge .bridge-divider{
-    position:relative; z-index:2; display:flex; align-items:center; gap:14px;
-    width:min(300px, 78vw); margin-bottom:24px;
-  }
-  #bridge .bridge-divider .bridge-line{
-    flex:1; height:1px; background:linear-gradient(90deg, transparent, #a06b3e, transparent);
-    opacity:0.75;
-  }
-  #bridge .bridge-divider .bridge-mark{
-    font-size:15px; color:#a06b3e;
-  }
-  #bridge .bridge-eyebrow{
-    position:relative; z-index:2; font-family:'Jost', sans-serif; font-weight:500;
-    letter-spacing:0.35em; text-transform:uppercase; font-size:11px;
-    color:#8a5a34; opacity:0.95; margin-bottom:14px;
-  }
-  #bridge .bridge-title{
-    position:relative; z-index:2; font-family:'Cinzel', serif; font-weight:600;
-    font-size:clamp(22px,6vw,30px); line-height:1.35; letter-spacing:0.02em;
-    color:#2A1220; max-width:310px;
-  }
-  #bridge .bridge-title span{ color:#8a5124; }
-  #bridge .bridge-sub{
-    position:relative; z-index:2; font-family:'Cormorant Garamond'; font-size:18px;
-    line-height:1.6; color:#4a332c; max-width:290px; margin-top:16px;
-  }
-  #bridge .bridge-cue{
-    position:relative; z-index:2; margin-top:28px; display:flex; flex-direction:column;
-    align-items:center; gap:8px; opacity:0.85;
-  }
-  #bridge .bridge-cue span{
-    font-family:'Jost', sans-serif; font-size:10.5px; letter-spacing:0.28em;
-    text-transform:uppercase; color:#6b4a2e;
-  }
-  #bridge .bridge-chev{
-    width:9px; height:9px; border-right:1.5px solid #8a5124; border-bottom:1.5px solid #8a5124;
-    transform:rotate(45deg); animation:chevBounce 1.8s ease-in-out infinite;
-  }
-
-  #landingApp{ display:block; position:relative; z-index:2; background:#FBF3E6; }
+  /* Anga (nyota/sayari/comet) haihitajiki tena - background sasa ni nyepesi (cream) */
+  .planet, .comet, #sparkleCanvas, .space-stars, .space-planet{display:none !important;}
 </style>
 </head>
 <body>
 
 <div id="bgGradient"></div>
-<div id="dawnGlow"></div>
 <div class="planet p1"></div>
 <div class="planet p2"></div>
 <div class="planet p3"></div>
@@ -683,21 +619,8 @@
 
   <footer>
     <div class="brand">me. brands — digital invitations</div>
+    <a href="#landing-extra" style="display:inline-block; margin-top:14px; font-family:'Jost'; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); text-decoration:none; border-bottom:1px solid var(--gold); padding-bottom:2px;">Angalia Huduma Zetu ↓</a>
   </footer>
-
-  <!-- ============ BRIDGE: mwisho wa mualiko -> mwanzo wa Meshez Kadi (alfajiri) ============ -->
-  <section id="bridge">
-    <div class="bridge-divider"><span class="bridge-line"></span><span class="bridge-mark">&#10022;</span><span class="bridge-line"></span></div>
-    <div class="bridge-eyebrow">Karibu Pia</div>
-    <h2 class="bridge-title">Umependa Mualiko Huu? <span>Tutakutengenezea na Wewe.</span></h2>
-    <p class="bridge-sub">Meshez Kadi tunatengeneza mialiko ya kielektroniki kama hii kwa harusi, send-off, birthday na mahafali — karibu uone huduma zetu.</p>
-    <div class="bridge-cue">
-      <span>Endelea Kusoma</span>
-      <div class="bridge-chev"></div>
-    </div>
-  </section>
-
-  <div id="landingApp"></div>
 
 </div>
 
@@ -1313,11 +1236,7 @@
       const twinkle = 0.4 + 0.6 * Math.abs(Math.sin(t/1000 + p.phase));
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-      const dp = window.__dawnProgress || 0;
-      const pr = Math.round(216 + (150 - 216) * dp);
-      const pg = Math.round(174 + (96 - 174) * dp);
-      const pb = Math.round(85 + (48 - 85) * dp);
-      ctx.fillStyle = `rgba(${pr},${pg},${pb},${twinkle * 0.8})`;
+      ctx.fillStyle = `rgba(216,174,85,${twinkle * 0.8})`;
       ctx.fill();
       p.y -= p.speed;
       if(p.y < -5){ p.y = canvas.height + 5; p.x = Math.random() * canvas.width; }
@@ -1332,50 +1251,26 @@
   }
 </script>
 
+<!-- ============ SEHEMU YA PILI: Huduma za Meshez Kadi (landing page) ============ -->
+<!-- Imewekwa ndani ya iframe yake yenyewe ili muundo/CSS ya ukurasa huu isigongane
+     na muundo wa mualiko ulio juu yake. Background ya mualiko (juu) sasa ni cream
+     kuendana na rangi za ukurasa huu. -->
+<div id="landing-extra" style="position:relative; z-index:2; display:block; min-height:0; padding:0; margin:0;">
+  <iframe id="landingFrame" title="Huduma za Meshez Kadi" scrolling="no"
+    style="width:100%; border:0; display:block; background:#FBF3E6;" loading="lazy"></iframe>
+</div>
 
 <script>
-  // =====================================================================
-  // ===== ALFAJIRI (DAWN) - mpito wa rangi kutoka usiku hadi creamy =====
-  // Badala ya "sanduku" lenye mpaka dhahiri, anga lenyewe la usiku
-  // linafifia kuelekea #dawnGlow (giza->chokoleti->dhahabu->creamy) kadri
-  // mtumiaji anavyokaribia mwisho wa mualiko. Sayari/comet zinafifia,
-  // na chembe za sparkle zinabadilika rangi (angalia drawParticles juu).
-  // =====================================================================
-  (function(){
-    const dawn = document.getElementById('dawnGlow');
-    const bridge = document.getElementById('bridge');
-    const cosmic = document.getElementById('sparkleCanvas');
-    const drifters = document.querySelectorAll('.planet, .comet');
-    if(!dawn || !bridge) return;
-
-    function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
-
-    function update(){
-      const vh = window.innerHeight || 1;
-      const bridgeTop = bridge.getBoundingClientRect().top;
-      // Anza kufifisha usiku takribani skrini 1.3 kabla ya Bridge kuonekana,
-      // ikamilike kabla Bridge haijafika juu ya skrini.
-      const progress = clamp(1 - bridgeTop / (vh * 1.3), 0, 1);
-      dawn.style.opacity = progress;
-      drifters.forEach(function(el){ el.style.opacity = String(1 - progress); });
-      if(cosmic){ cosmic.style.opacity = String(clamp(1 - progress * 0.7, 0.3, 1)); }
-      window.__dawnProgress = progress;
-    }
-    window.addEventListener('scroll', update, {passive:true});
-    window.addEventListener('resize', update);
-    update();
-  })();
-</script>
-
-<script>
-  // =====================================================================
-  // ===== MESHEZ KADI LANDING - imewekwa ndani ya Shadow DOM ===========
-  // =====================================================================
-  (function(){
-    const host = document.getElementById('landingApp');
-    if(!host) return;
-    const shadow = host.attachShadow({mode:'open'});
-    shadow.innerHTML = `<style>
+(function(){
+  var landingHtml = `<!DOCTYPE html>
+<html lang="sw">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meshez Kadi — Mialiko ya Kielektroniki Afrika Mashariki</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
   :root{
     --ink:#241318;
     --plum:#3B1B2B;
@@ -1601,7 +1496,11 @@
     .inquiry{grid-template-columns:1fr;}
     .update-row{grid-template-columns:1fr;gap:6px;}
   }
-</style><nav class="nav">
+</style>
+</head>
+<body>
+
+<nav class="nav">
   <div class="mark">Meshez <span>Kadi</span></div>
   <div class="links">
     <a href="#kazi">Kazi Zetu</a>
@@ -1817,22 +1716,60 @@
   <p class="display" style="font-size:26px;color:var(--plum-deep);">Me. Kadi - Digital Invitation</p>
   <p style="margin-top:10px;font-size:17px;color:#4a3a3f;">Simply Invite Better</p>
   <p style="margin-top:22px;font-size:11px;color:#8a7a7e;">Powered by Meshez Brands</p>
-</section>`;
-    shadow.getElementById('inquiryForm').addEventListener('submit', function(e){
-        e.preventDefault();
-        var jina = shadow.getElementById('jina').value;
-        var simu = shadow.getElementById('simu').value;
-        var mji = shadow.getElementById('mji').value;
-        var tukio = shadow.getElementById('tukio').value;
-        var tarehe = shadow.getElementById('tarehe').value;
-        var ujumbe = shadow.getElementById('ujumbe').value;
-        var text = "Habari, naitwa " + jina + " (namba yangu: " + simu + "). Nipo " + mji + " na ninahitaji kadi ya " + tukio + "."
-          + (tarehe ? " Tarehe ya tukio: " + tarehe + "." : "")
-          + (ujumbe ? " " + ujumbe : "");
-        var url = "https://wa.me/255000000000?text=" + encodeURIComponent(text);
-        window.open(url, "_blank");
+</section>
+
+<script>
+  document.getElementById('inquiryForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var jina = document.getElementById('jina').value;
+    var simu = document.getElementById('simu').value;
+    var mji = document.getElementById('mji').value;
+    var tukio = document.getElementById('tukio').value;
+    var tarehe = document.getElementById('tarehe').value;
+    var ujumbe = document.getElementById('ujumbe').value;
+    var text = "Habari, naitwa " + jina + " (namba yangu: " + simu + "). Nipo " + mji + " na ninahitaji kadi ya " + tukio + "."
+      + (tarehe ? " Tarehe ya tukio: " + tarehe + "." : "")
+      + (ujumbe ? " " + ujumbe : "");
+    var url = "https://wa.me/255000000000?text=" + encodeURIComponent(text);
+    window.open(url, "_blank");
+  });
+<\/script>
+
+</body>
+</html>
+`;
+  var frame = document.getElementById('landingFrame');
+
+  function resizeFrame(){
+    try{
+      var doc = frame.contentWindow.document;
+      var h = Math.max(
+        doc.documentElement.scrollHeight,
+        doc.body ? doc.body.scrollHeight : 0
+      );
+      if(h > 0){ frame.style.height = h + 'px'; }
+    }catch(e){}
+  }
+
+  frame.addEventListener('load', function(){
+    resizeFrame();
+    setTimeout(resizeFrame, 250);
+    setTimeout(resizeFrame, 800);
+    setTimeout(resizeFrame, 1800);
+  });
+
+  window.addEventListener('resize', resizeFrame);
+  if(window.ResizeObserver){
+    try{
+      var ro = new ResizeObserver(resizeFrame);
+      frame.addEventListener('load', function(){
+        try{ ro.observe(frame.contentWindow.document.body); }catch(e){}
       });
-  })();
+    }catch(e){}
+  }
+
+  frame.srcdoc = landingHtml;
+})();
 </script>
 
 </body>
