@@ -10,14 +10,14 @@
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,500&family=Sacramento&family=Jost:wght@300;400;500;600&display=swap');
 
   :root{
-    --plum-deep:#170a20;
-    --plum:#2c1240;
-    --plum-soft:#4a1f5c;
-    --gold:#d8ae55;
-    --gold-light:#f2d889;
+    --plum-deep:#2A1220;
+    --plum:#3B1B2B;
+    --plum-soft:#4A2036;
+    --gold:#C79A3E;
+    --gold-light:#E4C888;
     --blush:#f3b6c4;
-    --ivory:#fbf3e7;
-    --emerald:#2f6b57;
+    --ivory:#FBF3E6;
+    --emerald:#1F4436;
   }
 
   *{box-sizing:border-box; margin:0; padding:0;}
@@ -36,9 +36,7 @@
   /* ============ BACKGROUND (moja, endelevu, hakuna mistari ya mgawanyo) ============ */
   #bgGradient{
     position:fixed; inset:0; z-index:0;
-    background:
-      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(199,154,62,0.14), transparent 60%),
-      linear-gradient(180deg, #FBF3E6 0%, #F3E7D3 20%, #FBF3E6 45%, #F6EBDA 65%, #FBF3E6 85%, #F3E7D3 100%);
+    background:var(--ivory);
   }
   #sparkleCanvas{position:fixed; inset:0; z-index:1; pointer-events:none;}
 
@@ -46,9 +44,9 @@
   .planet{position:fixed; border-radius:50%; z-index:1; pointer-events:none; opacity:0.9; animation:orbitDrift 42s ease-in-out infinite;}
   .planet::after{content:''; position:absolute; border-radius:50%; pointer-events:none;}
   .planet.p1{width:64px; height:64px; top:9%; left:7%;
-    background:radial-gradient(circle at 32% 30%, #f7e2a8, #d8ae55 55%, #8a611f 100%);
-    box-shadow:0 0 34px rgba(216,174,85,0.28);}
-  .planet.p1::after{inset:-13px -34px; border:2px solid rgba(216,174,85,0.4); transform:rotate(-20deg);}
+    background:radial-gradient(circle at 32% 30%, #f7e2a8, #C79A3E 55%, #8a611f 100%);
+    box-shadow:0 0 34px rgba(199,154,62,0.28);}
+  .planet.p1::after{inset:-13px -34px; border:2px solid rgba(199,154,62,0.4); transform:rotate(-20deg);}
   .planet.p2{width:40px; height:40px; top:66%; right:6%;
     background:radial-gradient(circle at 34% 30%, #d9ecff, #7fa8d9 60%, #3f6390 100%);
     box-shadow:0 0 24px rgba(127,168,217,0.32); animation-duration:55s; animation-delay:-14s;}
@@ -106,8 +104,8 @@
   .cover-frame{
     width:min(280px, 78vw); aspect-ratio:3/4; border:1.5px solid var(--gold);
     border-radius:4px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
-    gap:18px; padding-bottom:36px; background:linear-gradient(160deg, rgba(216,174,85,0.06), rgba(216,174,85,0.01));
-    box-shadow:0 0 60px rgba(216,174,85,0.08), inset 0 0 40px rgba(216,174,85,0.05);
+    gap:18px; padding-bottom:36px; background:linear-gradient(160deg, rgba(199,154,62,0.06), rgba(199,154,62,0.01));
+    box-shadow:0 0 60px rgba(199,154,62,0.08), inset 0 0 40px rgba(199,154,62,0.05);
     position:relative; overflow:hidden;
   }
   .cover-frame .corner{position:absolute; width:20px; height:20px; border:1px solid var(--gold); z-index:2;}
@@ -137,9 +135,7 @@
   .welcome-screen{
     position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center;
     overflow:hidden; cursor:pointer; text-align:center; padding:24px;
-    background:
-      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(199,154,62,0.16), transparent 60%),
-      linear-gradient(180deg, #FBF3E6 0%, #F3E7D3 20%, #FBF3E6 45%, #F6EBDA 65%, #FBF3E6 85%, #F3E7D3 100%);
+    background:var(--ivory);
     transition:opacity 0.85s ease, transform 0.85s cubic-bezier(.76,0,.24,1);
   }
   .welcome-screen.open{ opacity:0; transform:scale(1.05); pointer-events:none; }
@@ -171,8 +167,8 @@
     background:radial-gradient(circle at 35% 30%, #f3d9e2, #d98aa8 60%, #82405c 100%);
     box-shadow:0 0 16px rgba(217,138,168,0.35); animation-duration:30s; animation-delay:-8s;}
   .sp3{width:40px; height:40px; top:60%; right:18%;
-    background:radial-gradient(circle at 32% 30%, #f7e2a8, #d8ae55 55%, #8a611f 100%);
-    box-shadow:0 0 24px rgba(216,174,85,0.28); animation-duration:52s; animation-delay:-16s;}
+    background:radial-gradient(circle at 32% 30%, #f7e2a8, #C79A3E 55%, #8a611f 100%);
+    box-shadow:0 0 24px rgba(199,154,62,0.28); animation-duration:52s; animation-delay:-16s;}
 
 
   .welcome-content{position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:4px;}
@@ -199,9 +195,9 @@
     animation:ctaPulse 1.9s ease-in-out infinite;
   }
   @keyframes ctaPulse{
-    0%{box-shadow:0 4px 16px rgba(180,130,40,0.35), 0 0 0 0 rgba(216,174,85,0.55);}
-    70%{box-shadow:0 4px 16px rgba(180,130,40,0.35), 0 0 0 15px rgba(216,174,85,0);}
-    100%{box-shadow:0 4px 16px rgba(180,130,40,0.35), 0 0 0 0 rgba(216,174,85,0);}
+    0%{box-shadow:0 4px 16px rgba(180,130,40,0.35), 0 0 0 0 rgba(199,154,62,0.55);}
+    70%{box-shadow:0 4px 16px rgba(180,130,40,0.35), 0 0 0 15px rgba(199,154,62,0);}
+    100%{box-shadow:0 4px 16px rgba(180,130,40,0.35), 0 0 0 0 rgba(199,154,62,0);}
   }
 
   /* Pazia (curtain) - iliyobaki kwa uoanifu wa nyuma (haitumiki tena) */
@@ -241,7 +237,7 @@
   .story-line .rule{width:26px; height:1px; background:var(--gold); opacity:0.6;}
 
   /* ============ ENTRY PASS / QR ============ */
-  .pass-card{background:linear-gradient(160deg, rgba(216,174,85,0.08), rgba(216,174,85,0.02));
+  .pass-card{background:linear-gradient(160deg, rgba(199,154,62,0.08), rgba(199,154,62,0.02));
     border:1px solid var(--gold); border-radius:10px; padding:28px; display:flex; flex-direction:column; align-items:center; gap:14px;
     max-width:280px; width:100%;}
   .qr-box{width:150px; height:150px; background:repeating-conic-gradient(var(--ivory) 0% 25%, transparent 0% 50%) 0 0/16px 16px, var(--ivory);
@@ -300,7 +296,7 @@
   .providers-list{width:100%; max-width:320px; display:flex; flex-direction:column; gap:0; margin-top:16px;}
   .provider-item{
     display:flex; justify-content:space-between; align-items:center; gap:16px;
-    padding:12px 0; border-bottom:1px solid rgba(216,174,85,0.22);
+    padding:12px 0; border-bottom:1px solid rgba(199,154,62,0.22);
   }
   .provider-item .nm{font-family:'Cormorant Garamond'; font-size:16px; color:var(--plum-deep); text-align:left;}
   .provider-item .phone{
@@ -336,14 +332,12 @@
   #loadState{
     position:fixed; inset:0; z-index:65; display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:18px; text-align:center; padding:30px; overflow:hidden;
-    background:
-      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(199,154,62,0.16), transparent 60%),
-      linear-gradient(180deg, #FBF3E6 0%, #F3E7D3 20%, #FBF3E6 45%, #F6EBDA 65%, #FBF3E6 85%, #F3E7D3 100%);
+    background:var(--ivory);
   }
   #loadState.hidden{display:none;}
   .load-spinner{
     width:38px; height:38px; border-radius:50%;
-    border:3px solid rgba(216,174,85,0.25); border-top-color:var(--gold);
+    border:3px solid rgba(199,154,62,0.25); border-top-color:var(--gold);
     animation:loadSpin 0.9s linear infinite;
   }
   @keyframes loadSpin{to{transform:rotate(360deg);}}
@@ -373,7 +367,7 @@
   .load-bar-track{
     position:relative; z-index:2;
     width:180px; height:5px; border-radius:4px; overflow:hidden;
-    background:rgba(255,255,255,0.12); border:1px solid rgba(216,174,85,0.25);
+    background:rgba(255,255,255,0.12); border:1px solid rgba(199,154,62,0.25);
   }
   .load-bar-fill{
     height:100%; width:4%; border-radius:4px;
@@ -386,7 +380,7 @@
     display:inline-block; margin-top:8px; font-family:'Jost'; font-size:11px; letter-spacing:0.12em; text-transform:uppercase;
     padding:5px 14px; border-radius:20px; font-weight:600;
   }
-  .vip-pill.vvip{background:#f2d889; color:#3a2a05;}
+  .vip-pill.vvip{background:#E4C888; color:#3a2a05;}
   .vip-pill.vip{background:rgba(199,154,62,0.22); color:var(--plum-deep); border:1px solid rgba(199,154,62,0.5);}
   .group-pill{
     display:inline-block; margin-top:8px; margin-left:6px; font-family:'Jost'; font-size:11px; letter-spacing:0.08em;
@@ -397,7 +391,7 @@
   .lang-toggle{
     position:fixed; top:14px; right:14px; z-index:70;
     display:none; gap:4px; background:rgba(23,10,32,0.55); backdrop-filter:blur(6px);
-    border:1px solid rgba(216,174,85,0.4); border-radius:20px; padding:3px;
+    border:1px solid rgba(199,154,62,0.4); border-radius:20px; padding:3px;
   }
   .lang-toggle button{
     font-family:'Jost'; font-weight:600; font-size:11px; letter-spacing:0.06em;
@@ -479,10 +473,10 @@
   <section id="hero">
     <div class="doves-wrap reveal">
       <svg class="dove dove-left" viewBox="0 0 60 40" fill="none">
-        <path d="M2 30 C10 10, 25 6, 30 20 C25 10, 40 6, 48 22 C40 18, 32 24, 30 34 C28 26, 14 34, 2 30 Z" fill="#d8ae55" opacity="0.92"/>
+        <path d="M2 30 C10 10, 25 6, 30 20 C25 10, 40 6, 48 22 C40 18, 32 24, 30 34 C28 26, 14 34, 2 30 Z" fill="#C79A3E" opacity="0.92"/>
       </svg>
       <svg class="dove dove-right" viewBox="0 0 60 40" fill="none">
-        <path d="M2 30 C10 10, 25 6, 30 20 C25 10, 40 6, 48 22 C40 18, 32 24, 30 34 C28 26, 14 34, 2 30 Z" fill="#d8ae55" opacity="0.92"/>
+        <path d="M2 30 C10 10, 25 6, 30 20 C25 10, 40 6, 48 22 C40 18, 32 24, 30 34 C28 26, 14 34, 2 30 Z" fill="#C79A3E" opacity="0.92"/>
       </svg>
     </div>
     <h1 class="reveal" id="heroTitle" style="font-size:20px; letter-spacing:0.15em;">Wawili Wamekuwa Mmoja</h1>
@@ -546,7 +540,7 @@
   <section id="dresscode">
     <div class="eyebrow reveal" id="dresscodeEyebrow">Dressing Code</div>
     <div class="swatch-grid reveal" id="swatchGrid">
-      <div class="swatch"><div class="chip" style="background:#d8ae55;"><div class="color-dot" style="background:#d8ae55;"></div><div class="upload-hint">+ Picha</div></div><span class="name">Gold</span></div>
+      <div class="swatch"><div class="chip" style="background:#C79A3E;"><div class="color-dot" style="background:#C79A3E;"></div><div class="upload-hint">+ Picha</div></div><span class="name">Gold</span></div>
       <div class="swatch"><div class="chip" style="background:#6b1e3c;"><div class="color-dot" style="background:#6b1e3c;"></div><div class="upload-hint">+ Picha</div></div><span class="name">Wine</span></div>
       <div class="swatch"><div class="chip" style="background:#f3b6c4;"><div class="color-dot" style="background:#f3b6c4;"></div><div class="upload-hint">+ Picha</div></div><span class="name">Blush</span></div>
       <div class="swatch"><div class="chip" style="background:#fbf3e7;"><div class="color-dot" style="background:#fbf3e7;"></div><div class="upload-hint" style="color:rgba(23,10,32,0.5);">+ Picha</div></div><span class="name">Ivory</span></div>
@@ -559,7 +553,7 @@
   <section id="program">
     <div class="eyebrow reveal" id="programEyebrow">Celebration Program</div>
     <div class="program-list reveal" id="programList">
-      <div class="program-item"><div class="program-bar" style="background:#d8ae55;"></div>
+      <div class="program-item"><div class="program-bar" style="background:#C79A3E;"></div>
         <div class="program-body"><span class="ev">Kupokelewa kwa Wageni</span><span class="tm">10:00</span></div></div>
       <div class="program-item"><div class="program-bar" style="background:#f3b6c4;"></div>
         <div class="program-body"><span class="ev">Kuingia kwa Bibi &amp; Bwana Harusi</span><span class="tm">11:30</span></div></div>
@@ -567,7 +561,7 @@
         <div class="program-body"><span class="ev">Chakula cha Mchana</span><span class="tm">13:00</span></div></div>
       <div class="program-item"><div class="program-bar" style="background:#6b1e3c;"></div>
         <div class="program-body"><span class="ev">Kukata Keki</span><span class="tm">15:00</span></div></div>
-      <div class="program-item"><div class="program-bar" style="background:#d8ae55;"></div>
+      <div class="program-item"><div class="program-bar" style="background:#C79A3E;"></div>
         <div class="program-body"><span class="ev">Densi &amp; Sherehe</span><span class="tm">16:00</span></div></div>
     </div>
   </section>
@@ -731,8 +725,8 @@
   // eventData.content inatarajiwa kuwa na muundo (sehemu zote ni hiari):
   // {
   //   "story": "maandishi ya Hadithi Yetu",
-  //   "program": [{ "label": "Kupokelewa kwa Wageni", "time": "10:00", "color": "#d8ae55" }, ...],
-  //   "dress_code": [{ "name": "Gold", "color": "#d8ae55", "photo_url": "https://..." }, ...],
+  //   "program": [{ "label": "Kupokelewa kwa Wageni", "time": "10:00", "color": "#C79A3E" }, ...],
+  //   "dress_code": [{ "name": "Gold", "color": "#C79A3E", "photo_url": "https://..." }, ...],
   //   "hosts": [{ "label": "Upande wa Bibi", "name": "Bw. na Bi. Mushi" }, ...],
   //   "gift": { "message": "...", "lines": ["M-PESA: 0713...", "Jina: ..."] }
   // }
@@ -851,7 +845,7 @@
     const programList = document.getElementById('programList');
     if(Array.isArray(content.program) && content.program.length){
       programList.innerHTML = content.program.map(item => `
-        <div class="program-item"><div class="program-bar" style="background:${escapeHtml(item.color || '#d8ae55')};"></div>
+        <div class="program-item"><div class="program-bar" style="background:${escapeHtml(item.color || '#C79A3E')};"></div>
           <div class="program-body"><span class="ev">${escapeHtml(item.label)}</span><span class="tm">${escapeHtml(item.time)}</span></div></div>
       `).join('');
     } else {
@@ -1236,7 +1230,7 @@
       const twinkle = 0.4 + 0.6 * Math.abs(Math.sin(t/1000 + p.phase));
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(216,174,85,${twinkle * 0.8})`;
+      ctx.fillStyle = `rgba(199,154,62,${twinkle * 0.8})`;
       ctx.fill();
       p.y -= p.speed;
       if(p.y < -5){ p.y = canvas.height + 5; p.x = Math.random() * canvas.width; }
