@@ -408,64 +408,57 @@
   .lang-toggle button.active{background:var(--gold); color:var(--plum-deep); opacity:1;}
 
   /* =====================================================================
-     BRIDGE / TRANSITION — kutoka usiku wa harusi (mualiko) hadi mchana wa
-     Meshez Kadi (landing). Rangi zinabadilika taratibu: plum-deep ya usiku
-     -> zambarau-dhahabu ya alfajiri -> cream ya mchana, ili muunganiko
-     usionekane kukatika ghafla.
+     ALFAJIRI (DAWN) — badala ya "sanduku" lenye rangi iliyokatwakatwa,
+     anga lenyewe la usiku (fixed) linabadilika taratibu wakati wa
+     ku-scroll: giza -> chokoleti -> dhahabu -> creamy, likiwa na "jua"
+     (glow) lenye opacity ndogo kwa mvuto. Nyota/sayari za usiku zina-fade
+     kadri "jua" linavyoinuka, na chembechembe za sparkle zinabadilika
+     rangi kuelekea rangi ya udongo/dhahabu badala ya dhahabu-nyeupe ya
+     usiku - ili kila kitu kiendane na creamy background ya Meshez Kadi.
      ===================================================================== */
-  #bridge{
-    position:relative; z-index:2; overflow:hidden;
-    min-height:78svh; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; text-align:center; padding:70px 26px 90px;
-    background:linear-gradient(180deg,
-      var(--plum-deep) 0%,
-      var(--plum) 22%,
-      #5a2f4a 42%,
-      #8a5344 58%,
-      #c98f5e 72%,
-      #f0cf9b 86%,
-      #FBF3E6 100%);
+  #dawnGlow{
+    position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0;
+    background:
+      radial-gradient(circle 380px at 50% 84%, rgba(255,214,140,0.5), transparent 70%),
+      linear-gradient(180deg,
+        #241512 0%, #402a22 18%, #6b4530 36%, #a06b3e 54%,
+        #cf9b5f 70%, #ecceA0 85%, #FBF3E6 100%);
   }
-  #bridge .bridge-stars{
-    position:absolute; inset:0; z-index:0; pointer-events:none;
-    background-image:
-      radial-gradient(1.3px 1.3px at 14% 12%, rgba(255,255,255,0.8), transparent),
-      radial-gradient(1px 1px at 32% 24%, rgba(255,255,255,0.6), transparent),
-      radial-gradient(1.3px 1.3px at 68% 8%, rgba(255,255,255,0.7), transparent),
-      radial-gradient(1px 1px at 84% 20%, rgba(255,255,255,0.55), transparent),
-      radial-gradient(1px 1px at 48% 16%, rgba(255,255,255,0.6), transparent);
-    background-repeat:no-repeat;
-    -webkit-mask-image:linear-gradient(180deg, #000 0%, transparent 55%);
-    mask-image:linear-gradient(180deg, #000 0%, transparent 55%);
+  .planet, .comet{ will-change:opacity; }
+
+  #bridge{
+    position:relative; z-index:2; min-height:56svh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:60px 26px 76px; background:transparent;
   }
   #bridge .bridge-divider{
     position:relative; z-index:2; display:flex; align-items:center; gap:14px;
-    width:min(320px, 80vw); margin-bottom:26px;
+    width:min(300px, 78vw); margin-bottom:24px;
   }
   #bridge .bridge-divider .bridge-line{
-    flex:1; height:1px; background:linear-gradient(90deg, transparent, var(--gold-light), transparent);
-    opacity:0.8;
+    flex:1; height:1px; background:linear-gradient(90deg, transparent, #a06b3e, transparent);
+    opacity:0.75;
   }
   #bridge .bridge-divider .bridge-mark{
-    font-size:15px; color:var(--gold-light); text-shadow:0 0 10px rgba(216,174,85,0.6);
+    font-size:15px; color:#a06b3e;
   }
   #bridge .bridge-eyebrow{
     position:relative; z-index:2; font-family:'Jost', sans-serif; font-weight:500;
     letter-spacing:0.35em; text-transform:uppercase; font-size:11px;
-    color:var(--gold-light); opacity:0.9; margin-bottom:14px;
+    color:#8a5a34; opacity:0.95; margin-bottom:14px;
   }
   #bridge .bridge-title{
     position:relative; z-index:2; font-family:'Cinzel', serif; font-weight:600;
-    font-size:clamp(22px,6vw,32px); line-height:1.3; letter-spacing:0.02em;
-    color:#2A1220; max-width:320px;
+    font-size:clamp(22px,6vw,30px); line-height:1.35; letter-spacing:0.02em;
+    color:#2A1220; max-width:310px;
   }
   #bridge .bridge-title span{ color:#8a5124; }
   #bridge .bridge-sub{
     position:relative; z-index:2; font-family:'Cormorant Garamond'; font-size:18px;
-    line-height:1.6; color:#3f2c33; max-width:290px; margin-top:16px;
+    line-height:1.6; color:#4a332c; max-width:290px; margin-top:16px;
   }
   #bridge .bridge-cue{
-    position:relative; z-index:2; margin-top:30px; display:flex; flex-direction:column;
+    position:relative; z-index:2; margin-top:28px; display:flex; flex-direction:column;
     align-items:center; gap:8px; opacity:0.85;
   }
   #bridge .bridge-cue span{
@@ -477,15 +470,13 @@
     transform:rotate(45deg); animation:chevBounce 1.8s ease-in-out infinite;
   }
 
-  /* Sehemu ya Meshez Kadi (landing) inaingia moja kwa moja, bila mstari wa
-     mkato - background ya cream inaanza kubeba mwendelezo wa rangi kutoka
-     kwenye bridge. */
   #landingApp{ display:block; position:relative; z-index:2; background:#FBF3E6; }
 </style>
 </head>
 <body>
 
 <div id="bgGradient"></div>
+<div id="dawnGlow"></div>
 <div class="planet p1"></div>
 <div class="planet p2"></div>
 <div class="planet p3"></div>
@@ -694,9 +685,8 @@
     <div class="brand">me. brands — digital invitations</div>
   </footer>
 
-  <!-- ============ BRIDGE: mwisho wa mualiko -> mwanzo wa Meshez Kadi ============ -->
+  <!-- ============ BRIDGE: mwisho wa mualiko -> mwanzo wa Meshez Kadi (alfajiri) ============ -->
   <section id="bridge">
-    <div class="bridge-stars" aria-hidden="true"></div>
     <div class="bridge-divider"><span class="bridge-line"></span><span class="bridge-mark">&#10022;</span><span class="bridge-line"></span></div>
     <div class="bridge-eyebrow">Karibu Pia</div>
     <h2 class="bridge-title">Umependa Mualiko Huu? <span>Tutakutengenezea na Wewe.</span></h2>
@@ -1323,7 +1313,11 @@
       const twinkle = 0.4 + 0.6 * Math.abs(Math.sin(t/1000 + p.phase));
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(216,174,85,${twinkle * 0.8})`;
+      const dp = window.__dawnProgress || 0;
+      const pr = Math.round(216 + (150 - 216) * dp);
+      const pg = Math.round(174 + (96 - 174) * dp);
+      const pb = Math.round(85 + (48 - 85) * dp);
+      ctx.fillStyle = `rgba(${pr},${pg},${pb},${twinkle * 0.8})`;
       ctx.fill();
       p.y -= p.speed;
       if(p.y < -5){ p.y = canvas.height + 5; p.x = Math.random() * canvas.width; }
@@ -1341,9 +1335,41 @@
 
 <script>
   // =====================================================================
+  // ===== ALFAJIRI (DAWN) - mpito wa rangi kutoka usiku hadi creamy =====
+  // Badala ya "sanduku" lenye mpaka dhahiri, anga lenyewe la usiku
+  // linafifia kuelekea #dawnGlow (giza->chokoleti->dhahabu->creamy) kadri
+  // mtumiaji anavyokaribia mwisho wa mualiko. Sayari/comet zinafifia,
+  // na chembe za sparkle zinabadilika rangi (angalia drawParticles juu).
+  // =====================================================================
+  (function(){
+    const dawn = document.getElementById('dawnGlow');
+    const bridge = document.getElementById('bridge');
+    const cosmic = document.getElementById('sparkleCanvas');
+    const drifters = document.querySelectorAll('.planet, .comet');
+    if(!dawn || !bridge) return;
+
+    function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+    function update(){
+      const vh = window.innerHeight || 1;
+      const bridgeTop = bridge.getBoundingClientRect().top;
+      // Anza kufifisha usiku takribani skrini 1.3 kabla ya Bridge kuonekana,
+      // ikamilike kabla Bridge haijafika juu ya skrini.
+      const progress = clamp(1 - bridgeTop / (vh * 1.3), 0, 1);
+      dawn.style.opacity = progress;
+      drifters.forEach(function(el){ el.style.opacity = String(1 - progress); });
+      if(cosmic){ cosmic.style.opacity = String(clamp(1 - progress * 0.7, 0.3, 1)); }
+      window.__dawnProgress = progress;
+    }
+    window.addEventListener('scroll', update, {passive:true});
+    window.addEventListener('resize', update);
+    update();
+  })();
+</script>
+
+<script>
+  // =====================================================================
   // ===== MESHEZ KADI LANDING - imewekwa ndani ya Shadow DOM ===========
-  // Hii inahakikisha CSS ya ukurasa wa landing (fonts, rangi, muundo)
-  // haichanganyiki na CSS ya mualiko, na kinyume chake.
   // =====================================================================
   (function(){
     const host = document.getElementById('landingApp');
