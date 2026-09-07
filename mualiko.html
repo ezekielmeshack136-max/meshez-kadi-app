@@ -96,6 +96,14 @@
   .frame::before{top:8px; left:8px; border-right:none; border-bottom:none;}
   .frame::after{bottom:8px; right:8px; border-left:none; border-top:none;}
 
+  /* ============ TOP BRAND WORDMARK (Meshez Kadi) ============ */
+  .top-brand{
+    position:relative; z-index:2; text-align:center; padding:18px 20px 0;
+    font-family:'Cinzel'; font-weight:600; font-size:15px; letter-spacing:0.28em;
+    text-transform:uppercase; color:var(--plum-deep);
+  }
+  .top-brand span{color:var(--gold);}
+
   /* ============ SECTION 1: COVER / TAP TO OPEN ============ */
   #cover{
     min-height:100svh; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -453,6 +461,8 @@
 
 <div class="page" id="page-content">
 
+  <div class="top-brand">Meshez <span>Kadi</span></div>
+
   <!-- 1. COVER -->
   <section id="cover" onclick="openCurtain()">
     <div class="cover-frame" id="coverFrame">
@@ -612,8 +622,9 @@
   </section>
 
   <footer>
-    <div class="brand">me. brands — digital invitations</div>
-    <a href="#landing-extra" style="display:inline-block; margin-top:14px; font-family:'Jost'; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); text-decoration:none; border-bottom:1px solid var(--gold); padding-bottom:2px;">Angalia Huduma Zetu ↓</a>
+    <div class="brand" style="font-size:14px; letter-spacing:0.12em; text-transform:none; font-family:'Cinzel'; font-weight:600; color:var(--plum-deep); opacity:1;">Me. Kadi - Digital Invitation</div>
+    <div style="margin-top:8px; font-family:'Cormorant Garamond'; font-size:16px; color:var(--plum-deep); opacity:0.75;">Simply Invite Better</div>
+    <div style="margin-top:12px; font-family:'Jost'; font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); opacity:0.8;">Powered by Meshez Brands</div>
   </footer>
 
 </div>
@@ -1555,21 +1566,6 @@
 </style>
 </head>
 <body>
-
-<nav class="nav">
-  <div class="mark">Meshez <span>Kadi</span></div>
-  <div class="links">
-    <a href="#kazi" id="navKazi">Kazi Zetu</a>
-    <a href="#uliza" id="navUliza1">Uliza Sasa</a>
-  </div>
-  <div style="display:flex;align-items:center;gap:14px;">
-    <div class="lang-toggle" id="landingLangToggle">
-      <button id="landingLangSw" onclick="setLandingLang('sw')">SW</button>
-      <button id="landingLangEn" onclick="setLandingLang('en')">EN</button>
-    </div>
-    <a class="cta-small" href="#uliza" id="navUliza2">Uliza Sasa</a>
-  </div>
-</nav>
 
 <header class="hero">
   <div class="hero-grid">
