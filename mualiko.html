@@ -98,7 +98,7 @@
 
   /* ============ TOP BRAND WORDMARK (Meshez Kadi) ============ */
   .top-brand{
-    position:relative; z-index:2; text-align:center; padding:18px 20px 0;
+    position:relative; z-index:2; text-align:center; padding:0 20px 14px;
     font-family:'Cinzel'; font-weight:600; font-size:15px; letter-spacing:0.28em;
     text-transform:uppercase; color:var(--plum-deep);
   }
@@ -406,7 +406,7 @@
     padding:5px 12px; border-radius:16px; border:none; background:transparent;
     color:var(--gold-light); opacity:0.6; cursor:pointer; transition:all 0.2s ease;
   }
-  .lang-toggle button.active{background:var(--gold); color:var(--plum-deep); opacity:1;}
+  .lang-toggle button.active{background:var(--plum); color:var(--ivory); opacity:1;}
 
   /* Anga (nyota/sayari/comet) haihitajiki tena - background sasa ni nyepesi (cream) */
   .planet, .comet, #sparkleCanvas, .space-stars, .space-planet{display:none !important;}
@@ -461,10 +461,9 @@
 
 <div class="page" id="page-content">
 
-  <div class="top-brand">Meshez <span>Kadi</span></div>
-
   <!-- 1. COVER -->
   <section id="cover" onclick="openCurtain()">
+    <div class="top-brand">Meshez <span>Kadi</span></div>
     <div class="cover-frame" id="coverFrame">
       <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
       <div class="cover-photo-wrap" id="coverPhotoWrap">
@@ -989,6 +988,7 @@
   let lastEventTimeText = null; // muda halisi (mfano "10:00 AM") - kwa kuandika upya "Muda:"/"Time:" ukibadili lugha
   let lastEventData = null;     // eventData nzima - inatunzwa ili maudhui ya admin (bilingual) yaandikwe
   let lastContent = null;       // upya kila lugha inapobadilika (bila kupakia upya Supabase)
+  let lastGuestName = null;     // jina halisi la mgeni - kwa ajili ya "invite-card" mfano kwenye landing
 
   function applyLanguage(lang){
     if(!T[lang]) lang = 'sw';
@@ -1060,11 +1060,18 @@
     }
 
     // Landing page (Meshez Kadi, sehemu ya pili ya ukurasa) - ijulishwe lugha
-    // mpya pia, ili ibadilike sambamba na mualiko hapo juu.
+    // mpya pia, ili ibadilike sambamba na mualiko hapo juu. Pia tunatuma jina
+    // halisi la mgeni na tarehe halisi ya tukio, ili "invite-card" ya mfano
+    // kwenye landing ionyeshe taarifa halisi badala ya "Fulani"/tarehe tuli.
     try{
       var landingFr = document.getElementById('landingFrame');
       if(landingFr && landingFr.contentWindow){
-        landingFr.contentWindow.postMessage({ type:'meshezSetLang', lang: lang }, '*');
+        landingFr.contentWindow.postMessage({
+          type:'meshezSetLang',
+          lang: lang,
+          guestName: lastGuestName,
+          eventDate: lastEventDateStr ? formatDate(lastEventDateStr, lang) : null
+        }, '*');
       }
     }catch(e){}
   }
@@ -1124,6 +1131,7 @@
 
     // ---- Jaza taarifa halisi kwenye ukurasa ----
     currentGuestCardId = guest.card_id;
+    lastGuestName = guest.name || null;
     document.getElementById('guestName').textContent = guest.name || 'Mgeni';
     const welcomeGuestNameEl = document.getElementById('welcomeGuestName');
     if(welcomeGuestNameEl) welcomeGuestNameEl.textContent = guest.name || 'Mgeni';
@@ -1605,7 +1613,7 @@
         <div class="eyebrow" id="mockEyebrow">MESHEZ KADI NI FURAHA YETU KUKUALIKA</div>
         <div class="names" id="mockNames">Fulani</div>
         <hr>
-        <div class="date" id="mockDate">Jumamosi, 14 Novemba · Dodoma</div>
+        <div class="date" id="mockDate">Jumamosi, 14 Novemba</div>
       </div>
       <div class="qr-seal">
         <svg viewBox="0 0 100 100" fill="none">
@@ -1812,13 +1820,13 @@
       ecoLine2:"Hakuna Kutumia Karatasi",
       mockEyebrow:"MESHEZ KADI NI FURAHA YETU KUKUALIKA",
       mockNames:"Fulani",
-      mockDate:"Jumamosi, 14 Novemba · Dodoma",
+      mockDate:"Jumamosi, 14 Novemba",
       stripHarusi:"Harusi", stripVikao:"Vikao",
       aboutH2:"Sasa Tumekupa Suluhisho Jipya na la Kisasa",
       cmpOldTitle:"Njia ya zamani",
       cmpOld1:"Kadi zinachapishwa, zinasambazwa kwa mkono, wakati mwingine zinapotea njiani",
       cmpOld2:"Huwezi kujua ni wangapi hasa watakaokuja",
-      cmpOld3:"Mlangoni, ni vigumu kutofautisha mgeni halisi na mgeni wa \"kupitia tu\"",
+      cmpOld3:"Mlangoni, ni vigumu kutofautisha mgeni halisi na mgeni wa \\"kupitia tu\\"",
       cmpOld4:"Kadi haziwezi kufika kwa haraka kwa mgeni aliye mbali",
       cmpNewTitle:"Na Meshez Kadi",
       cmpNew1:"Kadi inatumwa moja kwa moja simu ya mgeni kupitia WhatsApp au SMS",
@@ -1846,7 +1854,7 @@
       workTagHarusi:"HARUSI",
       inqKicker:"ULIZA SASA",
       inqH2:"Je, una tukio hivi karibuni? Tujulishe kuhusu tukio lako!",
-      inqIntro:"Wasiliana nasi. Jaza taarifa za awali kisha bonyeza kitufe \"Tuma Kupitia Whatsapp\" kufungua ukurasa wa Whatsapp. Karibu Sana.",
+      inqIntro:"Wasiliana nasi. Jaza taarifa za awali kisha bonyeza kitufe \\"Tuma Kupitia Whatsapp\\" kufungua ukurasa wa Whatsapp. Karibu Sana.",
       lblJina:"Jina lako", lblSimu:"Namba yako ya simu", lblMji:"Mji / Nchi", lblTukio:"Aina ya tukio",
       lblTarehe:"Tarehe ya tukio", lblUjumbe:"Ujumbe wako",
       phMji:"Andika mji au nchi yako", phTukio:"Mfano: Harusi, Send-off, Birthday...", phUjumbe:"Tuambie zaidi kuhusu tukio lako...",
@@ -1870,13 +1878,13 @@
       ecoLine2:"No Paper Used",
       mockEyebrow:"MESHEZ KADI IS DELIGHTED TO INVITE YOU",
       mockNames:"So-and-so",
-      mockDate:"Saturday, 14 November · Dodoma",
+      mockDate:"Saturday, 14 November",
       stripHarusi:"Wedding", stripVikao:"Meetings",
       aboutH2:"Now We Bring You a New, Modern Solution",
       cmpOldTitle:"The old way",
       cmpOld1:"Cards are printed and distributed by hand, sometimes getting lost along the way",
       cmpOld2:"You can't know exactly how many guests will actually come",
-      cmpOld3:"At the door, it's hard to tell a real guest from someone just \"passing through\"",
+      cmpOld3:"At the door, it's hard to tell a real guest from someone just \\"passing through\\"",
       cmpOld4:"Cards can't reach a guest quickly if they're far away",
       cmpNewTitle:"With Meshez Kadi",
       cmpNew1:"The card is sent straight to the guest's phone via WhatsApp or SMS",
@@ -1904,7 +1912,7 @@
       workTagHarusi:"WEDDING",
       inqKicker:"ENQUIRE NOW",
       inqH2:"Have an upcoming event? Tell us about it!",
-      inqIntro:"Get in touch with us. Fill in the details below then tap \"Send via WhatsApp\" to open WhatsApp. You're most welcome.",
+      inqIntro:"Get in touch with us. Fill in the details below then tap \\"Send via WhatsApp\\" to open WhatsApp. You're most welcome.",
       lblJina:"Your name", lblSimu:"Your phone number", lblMji:"City / Country", lblTukio:"Type of event",
       lblTarehe:"Event date", lblUjumbe:"Your message",
       phMji:"Enter your city or country", phTukio:"E.g: Wedding, Send-off, Birthday...", phUjumbe:"Tell us more about your event...",
@@ -2012,10 +2020,23 @@
     try{ localStorage.setItem("mualiko_lang", lang); }catch(e){}
   }
 
+  // "invite-card" mfano - kwa kawaida ni "Fulani"/tarehe tuli, lakini
+  // ukurasa mkuu wa mualiko unatuma jina halisi la mgeni na tarehe halisi
+  // ya tukio (ikishapatikana), ili mfano huu uonyeshe taarifa halisi.
+  function applyLandingGuestInfo(name, dateTxt){
+    var mn = document.getElementById("mockNames");
+    if(mn && name){ mn.textContent = name; }
+    var md = document.getElementById("mockDate");
+    if(md && dateTxt){ md.textContent = dateTxt; }
+  }
+
   // Sikiliza lugha inayotoka kwenye ukurasa mkuu wa mualiko (juu ya sehemu hii)
   window.addEventListener("message", function(ev){
-    if(ev && ev.data && ev.data.type === "meshezSetLang" && (ev.data.lang === "sw" || ev.data.lang === "en")){
-      applyLandingLang(ev.data.lang);
+    if(ev && ev.data && ev.data.type === "meshezSetLang"){
+      if(ev.data.lang === "sw" || ev.data.lang === "en"){
+        applyLandingLang(ev.data.lang);
+      }
+      applyLandingGuestInfo(ev.data.guestName, ev.data.eventDate);
     }
   });
 
@@ -2050,10 +2071,16 @@
     setTimeout(resizeFrame, 800);
     setTimeout(resizeFrame, 1800);
     // Landing page ijue lugha ya sasa (mfano: admin ame-force lugha, au mgeni
-    // alishachagua EN awali) mara tu itakapopakia.
+    // alishachagua EN awali) mara tu itakapopakia - pamoja na jina la mgeni
+    // na tarehe ya tukio kama tayari zimeshapatikana wakati huo.
     try{
       if(frame.contentWindow){
-        frame.contentWindow.postMessage({ type:'meshezSetLang', lang: currentLang }, '*');
+        frame.contentWindow.postMessage({
+          type:'meshezSetLang',
+          lang: currentLang,
+          guestName: lastGuestName,
+          eventDate: lastEventDateStr ? formatDate(lastEventDateStr, currentLang) : null
+        }, '*');
       }
     }catch(e){}
   });
