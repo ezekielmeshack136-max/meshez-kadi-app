@@ -1798,7 +1798,8 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
               <button class="btn btn-outline btn-sm" onclick="openAddGuestModal('rsvp')">+ Ongeza Mgeni/Mchangiaji Mmoja</button>
-              <button class="btn btn-outline btn-sm" onclick="openBulkImportModal('rsvp')">📥 Pakia Contacts (Excel)</button>
+                            <button class="btn btn-outline btn-sm" onclick="openBulkImportModal('rsvp')">📥 Pakia Contacts (Excel)</button>
+              <button class="btn btn-outline btn-sm" onclick="downloadRsvpContactsCSV()" title="Pakua contacts za event/folder hii kama CSV">📤 Pakua Contacts (CSV)</button>
             </div>
           </div>
         </div>
@@ -4925,6 +4926,38 @@ async function onRsvpEventChange() {
   filterRsvpGuestsTable();
 }
 
+  // Inapakua contacts zote za event/folder iliyochaguliwa kwenye RSVP kama CSV.
+// Safu zinafanana na template ya Excel ya Bulk Import (Jina, Namba, Nchi, Idadi,
+// WhatsApp, Cheo) - hivyo faili hili unaweza kulipakia tena baadaye bila kubadilisha.
+function downloadRsvpContactsCSV() {
+  if (!rsvpGuestsCache.length) {
+    return showToast('Hakuna contacts za kupakua - chagua event/folder yenye contacts kwanza', 'error');
+  }
+
+  const sel = document.getElementById('rsvpEventSelect');
+  const rawName = sel?.options[sel.selectedIndex]?.text || 'Contacts';
+  const folderName = rawName.replace('📁', '').trim();
+
+  const headers = ['Jina', 'Namba', 'Nchi', 'Idadi', 'WhatsApp', 'Cheo', 'SMS'];
+  const csvEscape = v => `"${String(v).replace(/"/g, '""')}"`;
+  // Namba inalazimishwa kuwa maandishi ili Excel isiibadilishe kuwa 2.55E+11
+  const phoneAsText = v => v ? `="${String(v).replace(/"/g, '')}"` : '';
+
+  const rows = rsvpGuestsCache.map(g => [
+    csvEscape(g.name || ''),
+    phoneAsText(g.phone),
+    csvEscape(COUNTRY_CODES[g.country_code] || 'Tanzania'),
+    csvEscape(g.group_size || 1),
+    csvEscape(g.whatsapp === 'yes' ? 'Ndiyo' : 'Hapana'),
+    csvEscape((g.vip_status && g.vip_status.toLowerCase() !== 'none') ? g.vip_status : ''),
+    csvEscape(g.sms_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa')
+  ].join(','));
+
+  const csv = [headers.map(csvEscape).join(','), ...rows].join('\n');
+  downloadCSVBlob(csv, `Contacts_${folderName}.csv`.replace(/[^a-zA-Z0-9_\-\.]/g, '_'));
+  showToast(`Contacts ${rows.length} zimepakuliwa!`, 'success');
+}
+  
 // Tafuta ndani ya orodha ya RSVP (jina/namba) bila kuita database tena
 function filterRsvpGuestsTable() {
   const q = (document.getElementById('rsvpGuestSearchInput')?.value || '').trim().toLowerCase();
