@@ -1799,7 +1799,7 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
               <button class="btn btn-outline btn-sm" onclick="openAddGuestModal('rsvp')">+ Ongeza Mgeni/Mchangiaji Mmoja</button>
                             <button class="btn btn-outline btn-sm" onclick="openBulkImportModal('rsvp')">📥 Pakia Contacts (Excel)</button>
-              <button class="btn btn-outline btn-sm" onclick="downloadRsvpContactsCSV()" title="Pakua contacts za event/folder hii kama CSV">📤 Pakua Contacts (CSV)</button>
+              <button class="btn btn-outline btn-sm" onclick="downloadRsvpContactsCSV()" title="Pakua contacts za event/folder hii kama CSV">📤 Pakua Contacts (Excel)</button>
             </div>
           </div>
         </div>
@@ -4939,22 +4939,32 @@ function downloadRsvpContactsCSV() {
   const folderName = rawName.replace('📁', '').trim();
 
   const headers = ['Jina', 'Namba', 'Nchi', 'Idadi', 'WhatsApp', 'Cheo', 'SMS'];
-  const csvEscape = v => `"${String(v).replace(/"/g, '""')}"`;
-  // Namba inalazimishwa kuwa maandishi ili Excel isiibadilishe kuwa 2.55E+11
-  const phoneAsText = v => v ? `="${String(v).replace(/"/g, '')}"` : '';
-
   const rows = rsvpGuestsCache.map(g => [
-    csvEscape(g.name || ''),
-    phoneAsText(g.phone),
-    csvEscape(COUNTRY_CODES[g.country_code] || 'Tanzania'),
-    csvEscape(g.group_size || 1),
-    csvEscape(g.whatsapp === 'yes' ? 'Ndiyo' : 'Hapana'),
-    csvEscape((g.vip_status && g.vip_status.toLowerCase() !== 'none') ? g.vip_status : ''),
-    csvEscape(g.sms_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa')
-  ].join(','));
+    g.name || '',
+    g.phone || '',
+    COUNTRY_CODES[g.country_code] || 'Tanzania',
+    g.group_size || 1,
+    g.whatsapp === 'yes' ? 'Ndiyo' : 'Hapana',
+    (g.vip_status && g.vip_status.toLowerCase() !== 'none') ? g.vip_status : '',
+    g.sms_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa'
+  ]);
 
-  const csv = [headers.map(csvEscape).join(','), ...rows].join('\n');
-  downloadCSVBlob(csv, `Contacts_${folderName}.csv`.replace(/[^a-zA-Z0-9_\-\.]/g, '_'));
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+
+  // Safu ya Namba (column B): iwe namba kamili yenye muundo "0" - bila E+11, bila formula
+  rows.forEach((r, i) => {
+    const phone = String(r[1] || '').replace(/\D/g, '');
+    if (phone) {
+      ws[XLSX.utils.encode_cell({ r: i + 1, c: 1 })] = { t: 'n', v: Number(phone), z: '0' };
+    }
+  });
+
+  ws['!cols'] = [{ wch: 28 }, { wch: 16 }, { wch: 12 }, { wch: 8 }, { wch: 10 }, { wch: 14 }, { wch: 14 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Contacts');
+  const fileName = `Contacts_${folderName}.xlsx`.replace(/[^a-zA-Z0-9_\-\.]/g, '_');
+  XLSX.writeFile(wb, fileName);
   showToast(`Contacts ${rows.length} zimepakuliwa!`, 'success');
 }
   
