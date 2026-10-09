@@ -1302,12 +1302,9 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
                   <span id="jinaColorSwatch" title="Muonekano wa rangi" style="display:inline-block;width:30px;height:30px;border-radius:6px;border:1px solid var(--gray-200);background:#000000;flex-shrink:0;"></span>
                 </div>
               </div>
-              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;margin-bottom:12px;">
+                           <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;margin-bottom:12px;">
                 <input type="checkbox" id="posVipShow" checked style="width:16px;height:16px;" onchange="renderPositionPreview()">
-                <div>
-                  <div style="font-size:13px;font-weight:600;">👑 Onyesha Badge ya VIP/VVIP (default ya template hii)</div>
-                  <div style="font-size:11px;color:var(--gray-400);">Zima kama template hii haihitaji badge ya VIP/VVIP kwenye kadi. Unaweza pia kuzima/kuwasha kwa event maalum kwenye "Hariri Event".</div>
-                </div>
+                <div style="font-size:13px;font-weight:600;">👑 Onyesha Badge ya VIP/VVIP</div>
               </label>
               <div class="input-row">
                 <div class="form-group">
@@ -1319,7 +1316,6 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
                   <input type="number" id="posVipY" placeholder="Default: juu ya Label" oninput="renderPositionPreview()">
                 </div>
               </div>
-              <p style="font-size:11px;color:var(--gray-400);margin-top:-8px;margin-bottom:12px;">Acha wazi kubaki na mpangilio wa default (juu kabisa ya Group Size Label). Jaza namba kuhamishia badge ya VIP/VVIP mahali pengine.</p>
               <div class="form-group">
                 <label><i data-lucide="palette" class="icon" style="color:#A855F7;width:14px;height:14px;vertical-align:-2px;"></i> Rangi ya VIP/VVIP Badge</label>
                 <div style="display:flex;align-items:center;gap:8px;">
@@ -1338,12 +1334,9 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
               </div>
             </div>
             <div>
-              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;margin-bottom:12px;">
+                            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;margin-bottom:12px;">
                 <input type="checkbox" id="posQrShow" checked style="width:16px;height:16px;" onchange="renderPositionPreview()">
-                <div>
-                  <div style="font-size:13px;font-weight:600;">📷 Onyesha QR Code kwenye Kadi (default ya template hii)</div>
-                  <div style="font-size:11px;color:var(--gray-400);">Zima kama template hii haihitaji QR Code kwenye kadi.</div>
-                </div>
+                <div style="font-size:13px;font-weight:600;">📷 Onyesha QR Code</div>
               </label>
               <div class="form-group">
                 <label>QR Code - Position X</label>
@@ -1357,12 +1350,9 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
                 <label>QR Code Ukubwa</label>
                 <input type="number" id="posQrSize" value="250" placeholder="250" oninput="renderPositionPreview()">
               </div>
-              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;margin-bottom:12px;">
+                            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;margin-bottom:12px;">
                 <input type="checkbox" id="posLabelShow" checked style="width:16px;height:16px;" onchange="renderPositionPreview()">
-                <div>
-                  <div style="font-size:13px;font-weight:600;">👥 Onyesha Group Size Label (default ya template hii)</div>
-                  <div style="font-size:11px;color:var(--gray-400);">Zima kama template hii haihitaji lebo ya #SINGLE/#DOUBLE/#GROUP kwenye kadi. Unaweza pia kuzima/kuwasha kwa event maalum kwenye "Hariri Event".</div>
-                </div>
+                <div style="font-size:13px;font-weight:600;">👥 Onyesha Group Size Label</div>
               </label>
               <div class="form-group">
                 <label><i data-lucide="palette" class="icon" style="color:#A855F7;width:14px;height:14px;vertical-align:-2px;"></i> Rangi ya Group Size (#SINGLE/#DOUBLE/#GROUP)</label>
@@ -1397,7 +1387,6 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
                   <input type="number" id="posLabelY" placeholder="Default: juu ya QR" oninput="renderPositionPreview()">
                 </div>
               </div>
-              <p style="font-size:11px;color:var(--gray-400);margin-top:-8px;margin-bottom:12px;">Acha wazi kubaki na mpangilio wa default (juu kabisa ya QR Code). Jaza namba kuhamishia label mahali pengine kwenye kadi.</p>
             </div>
           </div>
           <button class="btn btn-primary" style="width:auto;" onclick="savePositions()">
