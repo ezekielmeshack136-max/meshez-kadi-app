@@ -1202,11 +1202,9 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
       <div class="page" id="page-events">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
           <div>
-            <h2 style="font-size:18px;font-weight:700;">Events Zako</h2>
-            <p style="font-size:13px;color:var(--gray-400);margin-top:2px;">Simamia matukio yako yote</p>
           </div>
           <div style="display:flex;gap:8px;">
-            <button class="btn btn-outline" onclick="loadEvents()" title="Sasisha - ona mabadiliko ya wenzako"><i data-lucide="refresh-cw" class="icon" style="color:#3B82F6"></i> Sasisha</button>
+            <button class="btn btn-outline" onclick="loadEvents()" title="Sasisha"><i data-lucide="refresh-cw" class="icon" style="color:#3B82F6"></i> Sasisha</button>
             <button class="btn btn-primary" onclick="openNewEventModal()">+ Event Mpya</button>
           </div>
         </div>
@@ -1224,8 +1222,6 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
       <div class="page" id="page-templates">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
           <div>
-            <h2 style="font-size:18px;font-weight:700;">Template Management</h2>
-            <p style="font-size:13px;color:var(--gray-400);margin-top:2px;">Upload na simamia templates za kadi</p>
           </div>
           <button class="btn btn-primary" onclick="showModal('uploadTemplateModal')">+ Upload Template</button>
         </div>
@@ -1417,8 +1413,6 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
       <div class="page" id="page-invitedesign">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
           <div>
-            <h2 style="font-size:18px;font-weight:700;">Digital Invitation</h2>
-            <p style="font-size:13px;color:var(--gray-400);margin-top:2px;">Buni muonekano wa mualiko wa kidijitali (scroll) kwa kila event - rangi, hadithi, program, dress code</p>
           </div>
         </div>
 
@@ -1427,7 +1421,6 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
             <div class="card-title"><i data-lucide="calendar-days" class="icon" style="color:#F97316"></i> Chagua Event</div>
           </div>
           <div class="form-group" style="margin-bottom:0;">
-            <label>Event unayotaka kuibunia Digital Invitation</label>
             <select id="inviteDesignEventSelect" onchange="loadInvitationDesign()">
               <option value="">-- Chagua Event --</option>
             </select>
@@ -1450,12 +1443,11 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
               <div class="card-title"><i data-lucide="sparkles" class="icon" style="color:#F59E0B"></i> Cover &amp; Hadithi</div>
             </div>
             <div class="form-group">
-              <label>Majina ya Wapenzi (kwenye Cover)</label>
+              <label>Majina ya Wapenzi </label>
               <input type="text" id="invCoverNames" placeholder="JOSEPHINE · MARK" oninput="renderCoverLivePreview()">
-              <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Herufi (mfano J &amp; M) zinatengenezwa kiotomatiki kutoka kwenye majina haya.</p>
             </div>
             <div class="form-group">
-              <label>Picha ya Cover (itaonekana kwenye jedwali la kwanza la mualiko)</label>
+              <label>Picha ya Cover </label>
               <div style="display:flex; align-items:center; gap:12px;">
                 <div id="coverPhotoPreview" style="width:64px;height:85px;border-radius:6px;background:var(--gray-100);background-size:cover;background-position:center;border:1px solid var(--gray-200);flex-shrink:0;"></div>
                 <div>
@@ -1464,12 +1456,10 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
                   <button type="button" class="btn btn-outline btn-sm" onclick="removeCoverPhoto()" title="Ondoa Picha"><i data-lucide="trash-2" style="width:14px;height:14px;color:#EF4444;"></i></button>
                 </div>
               </div>
-              <p style="font-size:11px;color:var(--gray-400);margin-top:6px;">Picha itajaza jedwali lote la Cover (background) na maandishi yataonekana juu yake.</p>
               <input type="hidden" id="invCoverPhotoUrl">
             </div>
             <div class="form-group">
               <label>Nafasi ya Maandishi kwenye Cover (juu/chini)</label>
-              <p style="font-size:11px;color:var(--gray-400);margin:0 0 10px;">Sogeza herufi, majina na "Gusa Kufungua" juu au chini ndani ya jedwali. Preview upande wa kulia inasasishwa papo hapo.</p>
               <div style="display:flex; gap:16px; flex-wrap:wrap;">
                 <div style="flex:1; min-width:230px; display:flex; flex-direction:column; gap:8px;">
                   <div class="pos-row" style="display:flex; align-items:center; gap:8px;">
@@ -1566,7 +1556,7 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
               <input type="text" id="invVenueMapUrl" placeholder="https://maps.google.com/?q=...">
             </div>
             <div class="form-group" style="margin-bottom:0;">
-              <label>Picha za Ukumbi (zitaonekana kama jedwali mbili chini ya "Reception Details")</label>
+              <label>Picha za Ukumbi ("Reception Details")</label>
               <div style="display:flex; gap:16px; flex-wrap:wrap;">
                 <div>
                   <div id="venuePhoto1Preview" style="width:110px;height:138px;border-radius:8px;background:var(--gray-100);background-size:cover;background-position:center;border:1px solid var(--gray-200);"></div>
@@ -1596,7 +1586,7 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
               <div class="card-title"><i data-lucide="shirt" class="icon" style="color:#EC4899"></i> Dress Code</div>
               <button class="btn btn-outline btn-sm" onclick="addDressColorRow()">+ Ongeza Rangi</button>
             </div>
-            <p style="font-size:12px;color:var(--gray-400);margin-bottom:12px;">Ongeza rangi za mavazi - unaweza pia kupakia picha ya mfano (mtu aliyevaa rangi hiyo) kwa kila moja</p>
+            <p style="font-size:12px;color:var(--gray-400);margin-bottom:12px;">Ongeza rangi za mavazi/picha ya mtu aliyevaa rangi hiyo</p>
             <div id="dressColorsList" style="display:flex; flex-direction:column; gap:10px;"></div>
           </div>
 
@@ -1624,7 +1614,7 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
               <div class="card-title"><i data-lucide="contact" class="icon" style="color:#0EA5E9"></i> Wahudumu wa Tukio</div>
               <button class="btn btn-outline btn-sm" onclick="addProviderRow()">+ Ongeza</button>
             </div>
-            <p style="font-size:11px;color:var(--gray-400);margin:0 0 10px;">Mfano: MC, DJ, Mpiga Picha, Videographer n.k. - jina upande wa kushoto, namba ya simu upande wa kulia.</p>
+            <p style="font-size:11px;color:var(--gray-400);margin:0 0 10px;">Mfano: MC, DJ, Mpiga Picha, Videographer n.k.</p>
             <div id="providersList" style="display:flex; flex-direction:column; gap:10px;"></div>
           </div>
 
@@ -1647,8 +1637,6 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
 
       <div class="page" id="page-invitations">
         <div style="margin-bottom:20px;">
-          <h2 style="font-size:18px;font-weight:700;">Send Invitations</h2>
-          <p style="font-size:13px;color:var(--gray-400);margin-top:2px;">Tuma mialiko kwa wageni wako</p>
         </div>
 
         <div class="grid-2" style="margin-bottom:16px;">
@@ -1767,8 +1755,6 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
             <select id="rsvpEventSelect" onchange="onRsvpEventChange()">
               <option value="">-- Chagua Event au Folder --</option>
             </select>
-            <p style="font-size:11px;color:var(--gray-400);margin-top:6px;">Huna event bado? Tengeneza "Folder" - inakuwezesha kupakia/kuongeza contacts na kutuma SMS moja kwa moja, bila kuhitaji kutengeneza event kamili.</p>
-            <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">📁 Folder ni tofauti kabisa na Event - kuifuta (au kufuta contacts zake) <strong>hakuathiri</strong> wageni/data za "Tuma Mialiko" (Invitations) kwa vyovyote vile. Bofya "🗑️ Futa Folder" juu kuchagua Folder ya kufuta.</p>
           </div>
           <div id="rsvpEventStats" style="display:none;">
             <div style="display:flex;gap:12px;margin-top:12px;">
@@ -1798,9 +1784,7 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
             <div class="card-title">✍️ Andika Ujumbe wa Shukrani</div>
           </div>
           <div class="form-group">
-            <label>Ujumbe (utatumwa kama SMS kwa wageni)</label>
             <textarea id="rsvpMessageText" rows="8" placeholder="Mfano: Habari Rafiki, asante sana kwa kuja/kutuunga mkono kwenye tukio letu. Tunathamini sana uwepo/mchango wako. Karibu tena!" style="width:100%;padding:12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>
-            <p style="font-size:11px;color:var(--gray-400);margin-top:6px;">Ujumbe huu unahifadhiwa kwa event iliyochaguliwa tu - events nyingine hazitagusa.</p>
           </div>
           <button class="btn btn-primary" style="width:auto;" onclick="saveRsvpMessage()">
             <i data-lucide="save" style="width:16px;height:16px;"></i> Hifadhi Ujumbe
@@ -1904,7 +1888,7 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
               <div class="card-title" style="margin-bottom:8px;">🔴 LIVE - Jumla ya Event Nzima (vifaa vyote)</div>
               <div style="text-align:center;">
                 <div style="font-size:28px;font-weight:800;color:var(--green,#16A34A);" id="liveAttendedCount">0 / 0</div>
-                <div style="font-size:11px;color:var(--gray-400);">Wamehudhuria kwenye event hii - namba hii ni sawa kwenye scanner ZOTE, si kifaa hiki tu</div>
+                <div style="font-size:11px;color:var(--gray-400);">Jumla ya idadi ya wageni</div>
               </div>
             </div>
 
@@ -1920,7 +1904,7 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
                   <div style="font-size:11px;color:var(--gray-400);">Zilizokataliwa</div>
                 </div>
               </div>
-              <p style="font-size:10.5px;color:var(--gray-400);margin-top:8px;">ℹ️ Hizi ni idadi ya scans ulizofanya kwenye KIFAA HIKI pekee tangu ufungue ukurasa - kila kifaa kina zake. Tumia kadi ya LIVE hapo juu kuona jumla halisi ya event.</p>
+              <p style="font-size:10.5px;color:var(--gray-400);margin-top:8px;">ℹ️ Hizi ni idadi ya scans zilizofanyika kwenye KIFAA HIKI pekee. Kila kifaa kina zake. Tumia LIVE COUNT hapo juu kuona jumla halisi.</p>
             </div>
           </div>
         </div>
@@ -2045,7 +2029,6 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
           <div>
             <h2 style="font-size:18px;font-weight:700;">👥 User Management</h2>
-            <p style="font-size:13px;color:var(--gray-400);">Simamia wafanyakazi na wasaidizi</p>
           </div>
           <div style="display:flex;gap:8px;">
             <button class="btn btn-primary" onclick="openAddUserModal()">+ Mtumiaji Mpya</button>
@@ -2070,7 +2053,6 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
       <div class="page" id="page-payments">
         <div style="margin-bottom:20px;">
           <h2 style="font-size:18px;font-weight:700;">💳 Mfumo wa Malipo</h2>
-          <p style="font-size:13px;color:var(--gray-400);">Simamia malipo ya wateja kwa kazi za kadi</p>
         </div>
 
         <div class="card" style="margin-bottom:16px;">
@@ -2140,7 +2122,7 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
 
         <div class="card" style="margin-bottom:16px;">
           <div class="card-header">
-            <div class="card-title">📊 Historia ya Malipo (Kazi Zote kwa Kila Event)</div>
+            <div class="card-title">📊 Historia ya Malipo </div>
             <button class="btn btn-outline btn-sm" onclick="exportPaymentsCSV()">📥 Export CSV</button>
           </div>
           <div class="table-wrap">
@@ -2159,7 +2141,6 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
           <div class="card-header">
             <div class="card-title">📢 Matangazo ya Kadi (Picha za Mvuto)</div>
           </div>
-          <p style="font-size:13px;color:var(--gray-400);margin-bottom:14px;">Pakia picha za matangazo/mifano ya kadi zako - zitaonekana hapa kama gallery ya kuvutia wateja.</p>
           <div class="form-group">
             <input type="file" id="promoImageFile" accept="image/*">
             <button class="btn btn-primary" style="margin-top:8px;" onclick="uploadPromoImage()">📤 Pakia Picha</button>
@@ -2233,7 +2214,6 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
 
             <div class="card" style="margin-top:16px;">
               <div class="card-title" style="margin-bottom:16px;">🎨 Appearance Mode</div>
-              <p style="font-size:13px;color:var(--gray-400);margin-bottom:14px;">Chagua muonekano wa mfumo mzima. Mipangilio hii inahifadhiwa kwenye kifaa hiki.</p>
               <div class="theme-toggle-wrap">
                 <button class="theme-toggle-btn" id="themeLightBtn" onclick="setThemeMode('light')">
                   <span class="icon-big">☀️</span>
@@ -3093,7 +3073,7 @@ function showPage(page) {
     dashboard: ['Dashboard', 'Muhtasari wa mfumo wako'],
     events: ['Event Management', 'Simamia matukio yako'],
     templates: ['Template Management', 'Simamia templates za kadi'],
-    invitedesign: ['Digital Invitation', 'Buni muonekano wa mualiko wa kidijitali (scroll)'],
+    invitedesign: ['Digital Invitation', 'Mualiko wa kidijitali (scroll)'],
     invitations: ['Send Invitations', 'Tuma mialiko kwa wageni'],
     rsvp: ['RSVP - Ujumbe wa Shukrani', 'Tuma SMS za shukrani kwa wageni'],
     scanner: ['Scanner', 'Kagua kadi za wageni mlangoni'],
@@ -5295,7 +5275,7 @@ async function loadWhatsappMonitor() {
     document.getElementById('rsvpNo').textContent      = 0;
     document.getElementById('rsvpPending').textContent = 0;
     document.getElementById('scannerLink').href      = window.location.href;
-    document.getElementById('waTable').innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:32px;">👆 Chagua event hapo juu kuona takwimu za WhatsApp/RSVP</td></tr>`;
+    document.getElementById('waTable').innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:32px;"> Chagua event hapo juu kuona takwimu za WhatsApp/RSVP</td></tr>`;
     return;
   }
 
