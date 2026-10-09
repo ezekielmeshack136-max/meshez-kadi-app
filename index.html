@@ -1701,7 +1701,7 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
           <div class="card-header">
            <div class="card-title">👥 Orodha ya Wageni</div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;">
-  <button class="btn btn-outline btn-sm" onclick="loadEventGuests()" title="Sasisha - ona mabadiliko ya wenzako">🔄 Sasisha</button>
+  <button class="btn btn-outline btn-sm" onclick="loadEventGuests()" title="Sasisha - ona mabadiliko ya wenzako">🔄 Refresh</button>
   <button class="btn btn-outline btn-sm" onclick="downloadGuestsListCSV()" title="Pakua orodha ya wageni pamoja na RSVP">📥 Pakua Wageni (CSV)</button>
   <button class="btn btn-orange btn-sm" onclick="generateAllCards()">📦 Pakua Kadi Zote (ZIP)</button>
   <button class="btn btn-outline btn-sm" id="uploadAllCardsBtn" onclick="handleUploadAllCards()">☁️ Pakia Kadi Zote Bucket</button>
@@ -3912,10 +3912,12 @@ function downloadGuestsListCSV() {
     return;
   }
   const eventName = document.getElementById('invEventSelect')?.selectedOptions?.[0]?.text || 'Event';
-  const headers = ['Jina','Guest ID','Namba','Nchi','Aina','WhatsApp','SMS','WA Status','RSVP','Muda wa RSVP'];
+  const headers = ['Jina','Guest ID','Namba','Nchi','Aina','Cheo','WhatsApp','SMS','WA Status','RSVP','Muda wa RSVP'];
   const rsvpLabel = g => g.rsvp === 'yes' ? 'Atahudhuria' : g.rsvp === 'no' ? 'Hatohudhuria' : 'Bado hajajibu';
+  const cheoLabel = g => (g.vip_status && g.vip_status.toLowerCase() !== 'none') ? g.vip_status : '';
   const rows = allGuestsCache.map(g => [
     g.name || '', g.card_id || '', g.phone || '', COUNTRY_CODES[g.country_code] || 'Tanzania', guestCardTypeLabel(g),
+    cheoLabel(g),
     g.whatsapp === 'yes' ? 'Ndiyo' : 'Hapana',
     g.sms_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa',
     g.wa_sent === 'yes' ? 'Imetumwa' : 'Haijatumwa',
