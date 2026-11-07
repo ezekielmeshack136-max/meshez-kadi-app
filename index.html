@@ -8584,7 +8584,7 @@ function mergeBrandingRow(row){
     updatedAt:row.updated_at||Date.now()
   };
 }
-async function loadPublicSystemBranding(){
+async function loadPublicSystemBranding(attempt=1){
   // Show the saved local identity immediately. Network calls must never blank it.
   applySystemBranding();
   try{
@@ -8600,11 +8600,20 @@ async function loadPublicSystemBranding(){
       }
     }
   }catch(e){
-    console.warn('Public system branding haijapatikana; identity ya local imehifadhiwa:',e);
+    // Supabase errors are objects - print the real message/code instead of [object Object].
+    const info=(e&&typeof e==='object')?{message:e.message,code:e.code,details:e.details,hint:e.hint}:e;
+    console.warn('Public system branding haijapatikana (jaribio '+attempt+'/3); identity ya local imehifadhiwa:',JSON.stringify(info));
     applySystemBranding();
+    // Retry on slow/unstable network. Do not retry permanent errors (function missing / no permission).
+    const permanent=e&&['PGRST202','42883','42501'].includes(e.code);
+    if(!permanent&&attempt<3){
+      setTimeout(()=>{loadPublicSystemBranding(attempt+1).catch(()=>{});},attempt*2000);
+    }
   }
   // Branding is already applied synchronously above; do not wait on an absent helper.
 }
+// Connection came back: refresh the public identity from Supabase.
+window.addEventListener('online',()=>{loadPublicSystemBranding().catch(()=>{});});
 async function loadSystemBrandingFromSupabase(){
   if(!ORG_OWNER_ID)return;
   try{
