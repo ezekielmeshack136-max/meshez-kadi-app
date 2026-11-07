@@ -3362,6 +3362,19 @@ body.dark-mode .dashboard-section-heading h2{color:#EEF3FC}
 // ===== SUPABASE SETUP =====
 const SUPABASE_URL = 'https://fymjjqembyrlwgktbcgf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_SMflxbKh4452586Q4ojrow_L4ZGq2uu';
+// Safe fallbacks used by PDF exports and Invoice Preview. The saved system
+// identity is read from the local branding cache when available.
+const BUSINESS_NAME = (() => {
+  try { return JSON.parse(localStorage.getItem('meshez_system_branding_v2') || '{}').name || 'Snap Cards'; }
+  catch (_) { return 'Snap Cards'; }
+})();
+const BUSINESS_TAGLINE = (() => {
+  try { return JSON.parse(localStorage.getItem('meshez_system_branding_v2') || '{}').slogan || ''; }
+  catch (_) { return ''; }
+})();
+const BUSINESS_PHONES = [];
+// Declare before any startup callback can call applySystemLanguage().
+let systemLanguageObserver = null;
 const { createClient } = supabase;
 // Keep sessions in memory only: reopening/reloading the app always requires Sign In.
 // Supabase still processes the one-time recovery link in the current page session.
@@ -8993,7 +9006,7 @@ SYSTEM_TRANSLATION_PAIRS.forEach(([en,sw])=>{
 });
 const systemOriginalText=new WeakMap();
 const systemOriginalAttributes=new WeakMap();
-let systemLanguageObserver=null;
+// systemLanguageObserver is declared near the top of this script.
 function systemDictionary(lang){return SYSTEM_TRANSLATIONS[lang==='en'?'en':'sw']||SYSTEM_TRANSLATIONS.sw;}
 function translateSystemNode(node,lang){
   if(!node||node.nodeType!==Node.TEXT_NODE)return;
