@@ -3973,7 +3973,7 @@ function showToast(msg, type = 'info') {
       .replace(/^Contacts (\d+) zimepakuliwa!$/, '$1 contacts downloaded!')
       .replace(/^Picha (\d+) ya ukumbi imepakiwa kama WebP!$/, 'Venue photo $1 uploaded as WebP!')
       .replace(/^Picha ya vazi imepakiwa kama WebP!$/, 'Outfit photo uploaded as WebP!')
-      .replace(/^Kadi (\d+) zimebadilishwa kuwa WebP!$/, '$1 cards converted to WebP!')
+      .replace(/^Kadi (\d+) zimebadilishwa kuwa JPEG!$/, '$1 cards converted to JPEG!')
       .replace(/^Kadi (\d+) zimefanikiwa, (\d+) zimeshindwa\.$/, '$1 cards succeeded, $2 failed.')
       .replace(/^Inatengeneza kadi (\d+)\.\.\. subiri$/, 'Generating $1 cards... please wait')
       .replace(/^(.+) hana namba ya simu - anarukwa$/, '$1 has no phone number - skipped')
@@ -3981,7 +3981,7 @@ function showToast(msg, type = 'info') {
       .replace(/^Folder "(.+)" imefutwa!$/, 'Folder "$1" deleted!')
       .replace(/^Mpangilio wa "(.+)" umehifadhiwa!$/, 'Layout for "$1" saved!')
       .replace(/^Ripoti ya "(.+)" imepakuliwa!$/, 'Report for "$1" downloaded!')
-      .replace(/^Kadi (\d+) zimebadilishwa kuwa WebP!$/, '$1 cards converted to WebP!')
+      .replace(/^Kadi (\d+) zimebadilishwa kuwa JPEG!$/, '$1 cards converted to JPEG!')
       .replace(/^Kadi (\d+) zimefanikiwa, (\d+) zimeshindwa\.$/, '$1 cards succeeded, $2 failed.')
       .replace(/^Inatengeneza kadi (\d+)\.\.\. subiri$/, 'Generating $1 cards... please wait')
       .replace(/^Hakuna template kwa event "(.+)"$/, 'No template for event "$1"');
@@ -9409,7 +9409,10 @@ function downloadCard() {
 }
   
 // ===== BULK QR/CARD GENERATION =====
-function generateSingleCardBlob(guest, template, pos) {
+// Hutengeneza kadi kama JPEG (WhatsApp haikubali WebP kwenye header ya template).
+// options.maxWidth: upana wa juu wa picha ya mwisho (default 1080px). 0 = usipunguze.
+function generateSingleCardBlob(guest, template, pos, options = {}) {
+  const maxWidth = options.maxWidth === undefined ? 1080 : options.maxWidth;
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -9466,20 +9469,33 @@ function generateSingleCardBlob(guest, template, pos) {
 
           drawGuestLabelWithVip(ctx, guest, pos, boxY);
 
-          // WebP compression: quality 85%
-          canvas.toBlob(blob => {
+          // Kadi zote zimechorwa kwa ukubwa halisi wa template (ili nafasi za jina/QR
+          // zibaki sahihi). Sasa tunapunguza ukubwa kwenye canvas ya pili, kisha JPEG.
+          const scale = (maxWidth > 0 && canvas.width > maxWidth) ? (maxWidth / canvas.width) : 1;
+          const out = document.createElement('canvas');
+          out.width = Math.round(canvas.width * scale);
+          out.height = Math.round(canvas.height * scale);
+          const octx = out.getContext('2d');
+          // JPEG haina uwazi (transparency) - weka background nyeupe kwanza
+          octx.fillStyle = '#FFFFFF';
+          octx.fillRect(0, 0, out.width, out.height);
+          octx.imageSmoothingEnabled = true;
+          octx.imageSmoothingQuality = 'high';
+          octx.drawImage(canvas, 0, 0, out.width, out.height);
+
+          out.toBlob(blob => {
             if (!blob) {
               reject(new Error('Imeshindikana kutengeneza picha ya kadi'));
               return;
             }
 
-            if (blob.type !== 'image/webp') {
-              reject(new Error('Browser haijaweza kutengeneza WebP. Tafadhali tumia Chrome au Edge ya kisasa.'));
+            if (blob.type !== 'image/jpeg') {
+              reject(new Error('Browser haijaweza kutengeneza JPEG. Tafadhali tumia Chrome au Edge ya kisasa.'));
               return;
             }
 
             resolve(blob);
-          }, 'image/webp', 0.85);
+          }, 'image/jpeg', 0.82);
         };
 
         qrImg.onerror = reject;
@@ -9505,7 +9521,9 @@ async function generateAndUploadCard(guestId, forceRegenerate = false) {
   if (gErr || !guest) throw new Error('Mgeni hajapatikana');
 
   // Kama tayari kuna link iliyohifadhiwa na hatujaombwa kuzalisha upya, itumie hiyo hiyo
-  if (!forceRegenerate && guest.card_image_url) {
+  // Link za zamani za .webp haziruhusiwi na WhatsApp - zizalishwe upya kama JPEG.
+  const cachedIsUsable = guest.card_image_url && !/\.webp(\?|$)/i.test(guest.card_image_url);
+  if (!forceRegenerate && cachedIsUsable) {
     return guest.card_image_url;
   }
 
@@ -9518,10 +9536,10 @@ async function generateAndUploadCard(guestId, forceRegenerate = false) {
   const blob = await generateSingleCardBlob(guest, template, pos);
 
   const safeName = guest.name.replace(/[^a-zA-Z0-9]/g, '_');
-  const path = `${ORG_OWNER_ID}/${guest.event_id}/${safeName}_${guest.card_id}.webp`;
+  const path = `${ORG_OWNER_ID}/${guest.event_id}/${safeName}_${guest.card_id}.jpg`;
 
   const { error: upErr } = await sb.storage.from(CARDS_BUCKET).upload(path, blob, {
-    contentType: 'image/webp',
+    contentType: 'image/jpeg',
     upsert: true
   });
   if (upErr) throw new Error('Kosa la upload: ' + upErr.message + ' (Hakikisha bucket "generated-cards" ipo na ni public)');
@@ -9574,7 +9592,7 @@ async function generateAndUploadAllCards(eventId, onProgress) {
         }
 
         console.log(
-          `WebP progress: ${success + failed}/${guests.length}`
+          `JPEG progress: ${success + failed}/${guests.length}`
         );
       })
     );
@@ -9597,12 +9615,12 @@ async function handleUploadAllCards() {
     const { success, failed } = await generateAndUploadAllCards(
       eventId,
       (done, total) => {
-        btn.textContent = `⏳ WebP ${done}/${total}`;
+        btn.textContent = `⏳ JPEG ${done}/${total}`;
       }
     );
 
     if (failed === 0) {
-      showToast(`Kadi ${success} zimebadilishwa kuwa WebP! ✅`, 'success');
+      showToast(`Kadi ${success} zimebadilishwa kuwa JPEG! ✅`, 'success');
     } else {
       showToast(
         `Kadi ${success} zimefanikiwa, ${failed} zimeshindwa.`,
@@ -9638,9 +9656,9 @@ async function generateAllCards() {
   for (let i = 0; i < guests.length; i++) {
     const g = guests[i];
     try {
-      const blob = await generateSingleCardBlob(g, template, pos);
+      const blob = await generateSingleCardBlob(g, template, pos, { maxWidth: 0 });
       const safeName = g.name.replace(/[^a-zA-Z0-9]/g, '_');
-      zip.file(`${safeName}_${g.card_id}.webp`, blob);
+      zip.file(`${safeName}_${g.card_id}.jpg`, blob);
     } catch (e) {
       console.error('Imeshindwa: ' + g.name, e);
     }
