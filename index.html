@@ -2651,10 +2651,10 @@ body.dark-mode .dashboard-section-heading h2{color:#EEF3FC}
             </select>
           </div>
           <div id="invoicePreviewCanvas" style="background:#fff;color:#1f2937;border:1px solid #d8dce5;border-radius:12px;padding:18px;max-width:820px;margin:12px auto 0;box-shadow:0 5px 18px rgba(26,26,46,.09);">
-            <div id="invoicePreviewHeaderBand" style="background:#1A1A2E;color:#fff;border-radius:8px;padding:16px;border-bottom:4px solid #FF1840;">
+            <div id="invoicePreviewHeaderBand" style="background:#1A1A2E;color:#fff;border-radius:8px;padding:16px;border-bottom:4px solid #FF1840;overflow-wrap:anywhere;word-break:normal;">
               <div id="invoicePreviewName" style="font-size:20px;font-weight:800;letter-spacing:.02em;">INVITATION MANAGEMENT SYSTEM</div>
               <div id="invoicePreviewTagline" style="font-size:12px;margin-top:5px;line-height:1.5;">Huduma za Kadi za Mialiko, Usimamizi wa Wageni na Uchapishaji wa Kadi</div>
-              <div id="invoicePreviewHeaderDetails" style="font-size:11px;margin-top:8px;line-height:1.6;"></div>
+              <div id="invoicePreviewHeaderDetails" style="font-size:11px;margin-top:8px;line-height:1.6;overflow-wrap:anywhere;white-space:normal;"></div>
             </div>
             <div style="display:flex;justify-content:space-between;gap:12px;margin:18px 0 12px;flex-wrap:wrap;">
               <div><strong style="font-size:17px;">INVOICE</strong><div style="font-size:12px;margin-top:6px;">Event: <span id="invoicePreviewEvent">Chagua event ili kuona mfano</span><div id="invoicePreviewEventMeta" style="font-size:11px;margin-top:5px;color:#596579;line-height:1.5;"></div></div></div>
@@ -2667,12 +2667,12 @@ body.dark-mode .dashboard-section-heading h2{color:#EEF3FC}
               <span>Utengenezaji wa Kadi za Mialiko</span><span id="invoicePreviewCount">0</span><strong id="invoicePreviewPrice">TZS 0</strong><strong id="invoicePreviewTotal">TZS 0</strong>
             </div>
             <div style="text-align:right;font-weight:800;font-size:15px;margin:14px 0;color:#1A1A2E;">JUMLA KUU: <span id="invoicePreviewGrandTotal" style="color:#FF1840;">TZS 0</span></div>
-            <div style="border-top:2px solid #1A1A2E;padding-top:12px;margin-top:18px;font-size:11px;line-height:1.7;">
-              <div id="invoicePreviewFooterThanks" style="font-weight:700;"></div>
-              <div id="invoicePreviewFooterPayment"></div>
-              <div id="invoicePreviewFooterTerms"></div>
-              <div id="invoicePreviewFooterContact"></div>
-              <div id="invoicePreviewFooterPrepared"></div>
+            <div style="border-top:2px solid #1A1A2E;padding-top:12px;margin-top:18px;font-size:11px;line-height:1.7;overflow-wrap:anywhere;white-space:pre-wrap;">
+              <div id="invoicePreviewFooterThanks" style="overflow-wrap:anywhere;white-space:pre-wrap;" style="font-weight:700;"></div>
+              <div id="invoicePreviewFooterPayment" style="overflow-wrap:anywhere;white-space:pre-wrap;"></div>
+              <div id="invoicePreviewFooterTerms" style="overflow-wrap:anywhere;white-space:pre-wrap;"></div>
+              <div id="invoicePreviewFooterContact" style="overflow-wrap:anywhere;white-space:pre-wrap;"></div>
+              <div id="invoicePreviewFooterPrepared" style="overflow-wrap:anywhere;white-space:pre-wrap;"></div>
             </div>
           </div>
         </div>
@@ -7388,31 +7388,42 @@ async function downloadEventInvoice(eventId) {
   const headerRgb = hexToRgb(invoiceCfg.headerColor, '#1A1A2E');
   const priceRgb = hexToRgb(invoiceCfg.priceColor, '#FF1840');
 
-  // Header band - rangi za Snap Cards: Indigo Night + Signal Red.
+  // Header band: height is calculated from wrapped text to prevent collisions.
+  const titleText = String(invoiceCfg.name || BUSINESS_NAME);
+  const taglineLines = doc.splitTextToSize(String(invoiceCfg.tagline || BUSINESS_TAGLINE), pageWidth - 28);
+  const headerDetailLines = headerLines.length
+    ? doc.splitTextToSize(headerLines.join(' | '), pageWidth - 28)
+    : [];
+  const headerHeight = Math.max(38, 15 + taglineLines.length * 4.5 + headerDetailLines.length * 4.2 + 8);
   doc.setFillColor(...headerRgb);
-  doc.rect(0, 0, pageWidth, 42, 'F');
+  doc.rect(0, 0, pageWidth, headerHeight, 'F');
   doc.setFillColor(...priceRgb);
-  doc.rect(0, 42, pageWidth, 2, 'F');
+  doc.rect(0, headerHeight, pageWidth, 2, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(21);
-  doc.text(invoiceCfg.name || BUSINESS_NAME, 14, 16);
+  doc.setFontSize(18);
+  const titleLines = doc.splitTextToSize(titleText, pageWidth - 28);
+  doc.text(titleLines, 14, 12);
+  let headerY = 12 + titleLines.length * 7;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  const taglineLines = doc.splitTextToSize(invoiceCfg.tagline || BUSINESS_TAGLINE, pageWidth - 28);
-  doc.text(taglineLines, 14, 23);
-  if (headerLines.length) doc.text(doc.splitTextToSize(headerLines.join(' | '), pageWidth - 28), 14, 33);
+  if (taglineLines.length) {
+    doc.text(taglineLines, 14, headerY + 2);
+    headerY += taglineLines.length * 4.5 + 3;
+  }
+  if (headerDetailLines.length) doc.text(headerDetailLines, 14, headerY + 1);
 
+  const invoiceTop = headerHeight + 13;
   doc.setTextColor(30, 30, 30);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.text('INVOICE', pageWidth - 14, 53, { align: 'right' });
+  doc.text('INVOICE', pageWidth - 14, invoiceTop, { align: 'right' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.text('Namba: ' + invoiceNo, pageWidth - 14, 60, { align: 'right' });
-  doc.text('Tarehe ya Kutoa: ' + new Date().toLocaleDateString('sw-TZ'), pageWidth - 14, 66, { align: 'right' });
+  doc.text('Namba: ' + invoiceNo, pageWidth - 14, invoiceTop + 7, { align: 'right' });
+  doc.text('Tarehe ya Kutoa: ' + new Date().toLocaleDateString('sw-TZ'), pageWidth - 14, invoiceTop + 13, { align: 'right' });
 
-  let y = 53;
+  let y = invoiceTop;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.text('Taarifa za Kazi', 14, y);
@@ -7484,19 +7495,22 @@ async function downloadEventInvoice(eventId) {
 
   const pageHeight = doc.internal.pageSize.getHeight();
   const footerLines = [invoiceCfg.thanks,invoiceCfg.payment,invoiceCfg.terms,invoiceCfg.contact,invoiceCfg.preparedBy ? 'Imeandaliwa na: '+invoiceCfg.preparedBy : ''].filter(Boolean);
+  const wrappedFooter = footerLines.flatMap(line => doc.splitTextToSize(String(line), pageWidth - 28));
+  const footerBlockHeight = 9 + wrappedFooter.length * 4.2;
+  if (y + footerBlockHeight > pageHeight - 10) {
+    doc.addPage();
+    y = 18;
+  } else {
+    y += 10;
+  }
   doc.setDrawColor(...headerRgb);
   doc.setLineWidth(0.8);
-  doc.line(14,pageHeight-32,pageWidth-14,pageHeight-32);
+  doc.line(14,y,pageWidth-14,y);
   doc.setFont('helvetica','normal');
   doc.setFontSize(8.5);
   doc.setTextColor(80,80,80);
-  let footerY = pageHeight - 26;
-  footerLines.forEach(line => {
-    const wrapped = doc.splitTextToSize(String(line),pageWidth-28);
-    if (footerY + wrapped.length * 4 > pageHeight - 8) return;
-    doc.text(wrapped,14,footerY);
-    footerY += wrapped.length * 4;
-  });
+  let footerY = y + 7;
+  if (wrappedFooter.length) doc.text(wrappedFooter,14,footerY);
 
   const safeName = (e.name || 'event').replace(/[^a-zA-Z0-9]/g, '_');
   doc.save(`Invoice_${invoiceNo.replace(/[^a-zA-Z0-9-]/g,'_')}_${safeName}.pdf`);
@@ -9586,22 +9600,40 @@ async function generateAllCards() {
 })();
 </script>
 
-// Initialize Snap Cards invoice preview controls when the app document is ready.
+<!-- Invoice Preview initialization: kept inside a script so JavaScript is never rendered as page text. -->
+<script>
 (function initSnapInvoicePreview(){
   const boot = () => {
-    const card = document.getElementById('invoicePreviewCanvas');
-    if (!card) return;
-    const settings = document.getElementById('page-invoice');
-    if (settings) settings.querySelectorAll('input,textarea').forEach(el => {
-      el.addEventListener('input', () => {
-        if (el.id !== 'invoicePreviewEventSelect') refreshInvoicePreview();
+    const page = document.getElementById('page-invoice');
+    if (!page || !document.getElementById('invoicePreviewCanvas')) return;
+
+    // Delegated listener also covers fields recreated later by the app.
+    if (!page.dataset.invoicePreviewBound) {
+      page.dataset.invoicePreviewBound = '1';
+      page.addEventListener('input', (event) => {
+        if (event.target && event.target.matches('input,textarea')) {
+          refreshInvoicePreview();
+        }
       });
-    });
+      page.addEventListener('change', (event) => {
+        if (event.target && event.target.id === 'invoicePreviewEventSelect') {
+          refreshInvoicePreview();
+        }
+      });
+    }
+
+    // Populate cached values immediately. Supabase settings are loaded again
+    // whenever the Invoice page opens, after which the preview is refreshed.
     loadInvoicePreviewSettings();
   };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, {once:true});
-  else boot();
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
 })();
+</script>
 
 </body>
 </html>
