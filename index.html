@@ -2614,6 +2614,18 @@ body.dark-mode .dashboard-section-heading h2{color:#EEF3FC}
               <div class="form-group"><label>Namba za Simu</label><input id="invoiceHeadPhones" placeholder="+255... , +255..."></div>
               <div class="form-group"><label>Barua Pepe</label><input id="invoiceHeadEmail" type="email" placeholder="info@example.com"></div>
               <div class="form-group"><label>TIN / Namba ya Usajili (hiari)</label><input id="invoiceHeadTin" placeholder="TIN / Registration No."></div>
+              <div class="form-group" style="margin-top:12px;">
+                <label>Logo ya Invoice (itaonekana upande wa kulia)</label>
+                <input id="invoiceLogoFile" type="file" accept="image/png,image/jpeg,image/webp" onchange="previewInvoiceLogoFile(this)">
+                <div style="display:flex;align-items:center;gap:12px;margin-top:8px;flex-wrap:wrap;">
+                  <div id="invoiceLogoUploadPreview" style="width:116px;height:72px;border:1px dashed #cbd5e1;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:6px;background:#fff;color:#64748b;font-size:11px;overflow:hidden;">Hakuna logo</div>
+                  <div style="display:flex;gap:7px;flex-wrap:wrap;">
+                    <button class="btn btn-primary btn-sm" type="button" onclick="uploadInvoiceLogo()">Pakia Logo</button>
+                    <button class="btn btn-outline btn-sm" type="button" onclick="removeInvoiceLogo()">Ondoa Logo</button>
+                  </div>
+                </div>
+                <small style="display:block;color:var(--gray-500);margin-top:6px;">Logo itahifadhiwa Supabase Storage kama WebP na kutumika kwenye PDF na vifaa vingine.</small>
+              </div>
             </div>
             <div>
               <h4 style="color:#1A1A2E;margin:4px 0 10px;">FOOTER / TAARIFA ZA CHINI</h4>
@@ -2651,28 +2663,31 @@ body.dark-mode .dashboard-section-heading h2{color:#EEF3FC}
             </select>
           </div>
           <div id="invoicePreviewCanvas" style="background:#fff;color:#1f2937;border:1px solid #d8dce5;border-radius:12px;padding:18px;max-width:820px;margin:12px auto 0;box-shadow:0 5px 18px rgba(26,26,46,.09);">
-            <div id="invoicePreviewHeaderBand" style="background:#1A1A2E;color:#fff;border-radius:8px;padding:16px;border-bottom:4px solid #FF1840;overflow-wrap:anywhere;word-break:normal;">
-              <div id="invoicePreviewName" style="font-size:20px;font-weight:800;letter-spacing:.02em;">INVITATION MANAGEMENT SYSTEM</div>
-              <div id="invoicePreviewTagline" style="font-size:12px;margin-top:5px;line-height:1.5;">Huduma za Kadi za Mialiko, Usimamizi wa Wageni na Uchapishaji wa Kadi</div>
-              <div id="invoicePreviewHeaderDetails" style="font-size:11px;margin-top:8px;line-height:1.6;overflow-wrap:anywhere;white-space:normal;"></div>
+            <div id="invoicePreviewHeaderBand" style="background:#1A1A2E;color:#fff;border-radius:8px;padding:14px 16px;border-bottom:4px solid #FF1840;display:flex;align-items:center;justify-content:space-between;gap:16px;overflow:hidden;">
+              <div style="flex:1;min-width:0;overflow-wrap:anywhere;word-break:normal;">
+                <div id="invoicePreviewName" style="font-size:20px;font-weight:800;letter-spacing:.02em;line-height:1.2;">INVITATION MANAGEMENT SYSTEM</div>
+                <div id="invoicePreviewTagline" style="font-size:12px;margin-top:4px;line-height:1.25;">Huduma za Kadi za Mialiko, Usimamizi wa Wageni na Uchapishaji wa Kadi</div>
+                <div id="invoicePreviewHeaderDetails" style="font-size:11px;margin-top:6px;line-height:1.3;overflow-wrap:anywhere;white-space:normal;"></div>
+              </div>
+              <img id="invoicePreviewLogo" alt="Logo ya invoice" style="display:none;width:112px;height:76px;object-fit:contain;flex:0 0 112px;background:#fff;border-radius:6px;padding:5px;">
             </div>
             <div style="display:flex;justify-content:space-between;gap:12px;margin:18px 0 12px;flex-wrap:wrap;">
               <div><strong style="font-size:17px;">INVOICE</strong><div style="font-size:12px;margin-top:6px;">Event: <span id="invoicePreviewEvent">Chagua event ili kuona mfano</span><div id="invoicePreviewEventMeta" style="font-size:11px;margin-top:5px;color:#596579;line-height:1.5;"></div></div></div>
               <div style="font-size:11px;text-align:right;line-height:1.8;">Invoice No: <strong id="invoicePreviewNumber">-</strong><br>Tarehe: <span id="invoicePreviewDate"></span></div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;background:#1A1A2E;color:#fff;padding:11px 12px;border-radius:6px;font-size:12px;font-weight:750;">
-              <span>Maelezo</span><span>Idadi</span><span>Bei@</span><span>Jumla</span>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 62px 100px 112px;column-gap:14px;align-items:center;background:#1A1A2E;color:#fff;padding:11px 12px;border-radius:6px;font-size:12px;font-weight:750;">
+              <span>Maelezo</span><span style="text-align:right;">Idadi</span><span style="text-align:right;">Bei@</span><span style="text-align:right;">Jumla</span>
             </div>
-            <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;padding:13px 12px;border-bottom:1px solid #e5e7eb;font-size:12px;">
-              <span>Utengenezaji wa Kadi za Mialiko</span><span id="invoicePreviewCount">0</span><strong id="invoicePreviewPrice">TZS 0</strong><strong id="invoicePreviewTotal">TZS 0</strong>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 62px 100px 112px;column-gap:14px;align-items:center;padding:13px 12px;border-bottom:1px solid #e5e7eb;font-size:12px;">
+              <span>Utengenezaji wa Kadi za Mialiko</span><span id="invoicePreviewCount" style="text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;">0</span><strong id="invoicePreviewPrice" style="text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:.015em;">TZS 0</strong><strong id="invoicePreviewTotal" style="text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:.015em;">TZS 0</strong>
             </div>
             <div style="text-align:right;font-weight:800;font-size:15px;margin:14px 0;color:#1A1A2E;">JUMLA KUU: <span id="invoicePreviewGrandTotal" style="color:#FF1840;">TZS 0</span></div>
-            <div style="border-top:2px solid #1A1A2E;padding-top:12px;margin-top:18px;font-size:11px;line-height:1.7;overflow-wrap:anywhere;white-space:pre-wrap;">
-              <div id="invoicePreviewFooterThanks" style="overflow-wrap:anywhere;white-space:pre-wrap;" style="font-weight:700;"></div>
-              <div id="invoicePreviewFooterPayment" style="overflow-wrap:anywhere;white-space:pre-wrap;"></div>
-              <div id="invoicePreviewFooterTerms" style="overflow-wrap:anywhere;white-space:pre-wrap;"></div>
-              <div id="invoicePreviewFooterContact" style="overflow-wrap:anywhere;white-space:pre-wrap;"></div>
-              <div id="invoicePreviewFooterPrepared" style="overflow-wrap:anywhere;white-space:pre-wrap;"></div>
+            <div style="border-top:2px solid #1A1A2E;padding-top:9px;margin-top:14px;font-size:11px;line-height:1.32;overflow-wrap:anywhere;white-space:pre-wrap;">
+              <div id="invoicePreviewFooterThanks" style="overflow-wrap:anywhere;white-space:pre-wrap;font-weight:700;margin-bottom:2px;"></div>
+              <div id="invoicePreviewFooterPayment" style="overflow-wrap:anywhere;white-space:pre-wrap;margin-bottom:2px;"></div>
+              <div id="invoicePreviewFooterTerms" style="overflow-wrap:anywhere;white-space:pre-wrap;margin-bottom:2px;"></div>
+              <div id="invoicePreviewFooterContact" style="overflow-wrap:anywhere;white-space:pre-wrap;margin-bottom:2px;"></div>
+              <div id="invoicePreviewFooterPrepared" style="overflow-wrap:anywhere;white-space:pre-wrap;margin-bottom:2px;"></div>
             </div>
           </div>
         </div>
@@ -7165,7 +7180,7 @@ const INVOICE_DEFAULTS = {
   phones: BUSINESS_PHONES.join(', '), email:'', tin:'',
   thanks:'Asante kwa kutuchagua kwa kazi yako!',
   payment:'', terms:'', contact:'', preparedBy:'',
-  headerColor:'#1A1A2E', priceColor:'#FF1840'
+  headerColor:'#1A1A2E', priceColor:'#FF1840', logoUrl:'', logoPath:''
 };
 
 function getInvoicePreviewSettings() {
@@ -7194,7 +7209,7 @@ async function fetchInvoicePreviewSettings() {
 
 async function persistInvoicePreviewSettings(values, silent = false) {
   if (!ORG_OWNER_ID) throw new Error('Owner wa mfumo hajapatikana.');
-  const clean = { ...INVOICE_DEFAULTS, ...values };
+  const clean = { ...INVOICE_DEFAULTS, ...getInvoicePreviewSettings(), ...values };
   const { error } = await sb.from('snap_cards_public_settings').upsert({
     user_id: ORG_OWNER_ID, invoice_preview: clean, updated_at: new Date().toISOString()
   }, { onConflict: 'user_id' });
@@ -7212,7 +7227,7 @@ function invoiceInputValues() {
     contact:'invoiceFootContact', preparedBy:'invoiceFootPreparedBy',
     headerColor:'invoiceHeaderColor', priceColor:'invoicePriceColor'
   };
-  const values = {};
+  const values = { logoUrl:getInvoicePreviewSettings().logoUrl || '', logoPath:getInvoicePreviewSettings().logoPath || '' };
   Object.entries(ids).forEach(([key,id]) => {
     const el = document.getElementById(id);
     values[key] = el ? el.value.trim() : (getInvoicePreviewSettings()[key] || '');
@@ -7314,6 +7329,13 @@ async function refreshInvoicePreview() {
   set('invoicePreviewFooterTerms', cfg.terms);
   set('invoicePreviewFooterContact', cfg.contact);
   set('invoicePreviewFooterPrepared', cfg.preparedBy ? 'Imeandaliwa na: '+cfg.preparedBy : '');
+  const previewLogo = document.getElementById('invoicePreviewLogo');
+  if (previewLogo) {
+    if (cfg.logoUrl) { previewLogo.src = cfg.logoUrl; previewLogo.style.display = 'block'; }
+    else { previewLogo.removeAttribute('src'); previewLogo.style.display = 'none'; }
+  }
+  const uploadLogoPreview = document.getElementById('invoiceLogoUploadPreview');
+  if (uploadLogoPreview && cfg.logoUrl && !document.getElementById('invoiceLogoFile')?.files?.length) uploadLogoPreview.innerHTML = `<img src="${cfg.logoUrl}" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain;">`;
   set('invoicePreviewDate', new Date().toLocaleDateString('sw-TZ'));
   const header = document.getElementById('invoicePreviewHeaderBand');
   if (header) {
@@ -7360,6 +7382,92 @@ async function refreshInvoicePreview() {
   }
 }
 
+let pendingInvoiceLogoFile = null;
+
+function previewInvoiceLogoFile(input) {
+  const file = input?.files?.[0];
+  if (!file) return;
+  if (!['image/png','image/jpeg','image/webp'].includes(file.type)) {
+    input.value = '';
+    return showToast('Chagua logo ya PNG, JPG au WebP.', 'error');
+  }
+  pendingInvoiceLogoFile = file;
+  const box = document.getElementById('invoiceLogoUploadPreview');
+  if (box) {
+    const url = URL.createObjectURL(file);
+    box.innerHTML = `<img src="${url}" alt="Logo mpya" style="max-width:100%;max-height:100%;object-fit:contain;">`;
+  }
+}
+
+async function uploadInvoiceLogo() {
+  if (!pendingInvoiceLogoFile) return showToast('Chagua logo kwanza.', 'error');
+  if (!ORG_OWNER_ID) return showToast('Owner wa mfumo hajapatikana.', 'error');
+  let newPath = '';
+  try {
+    showToast('Inabadilisha logo kuwa WebP...', 'info');
+    const webp = await convertImageToWebP(pendingInvoiceLogoFile, 0.9);
+    newPath = `${ORG_OWNER_ID}/invoice/logo_${Date.now()}.webp`;
+    const { error: uploadError } = await sb.storage.from(PROMO_BUCKET).upload(newPath, webp, {
+      contentType: 'image/webp', upsert: false, cacheControl: '31536000'
+    });
+    if (uploadError) throw uploadError;
+    const { data: { publicUrl } } = sb.storage.from(PROMO_BUCKET).getPublicUrl(newPath);
+    const previous = getInvoicePreviewSettings();
+    const updated = { ...previous, ...invoiceInputValues(), logoUrl: publicUrl, logoPath: newPath };
+    await persistInvoicePreviewSettings(updated, true);
+    if (previous.logoPath && previous.logoPath !== newPath) {
+      const { error: removeError } = await sb.storage.from(PROMO_BUCKET).remove([previous.logoPath]);
+      if (removeError) console.warn('Old invoice logo cleanup failed:', removeError);
+    }
+    pendingInvoiceLogoFile = null;
+    const input = document.getElementById('invoiceLogoFile'); if (input) input.value = '';
+    await refreshInvoicePreview();
+    showToast('Logo imehifadhiwa Supabase kama WebP.', 'success');
+  } catch (error) {
+    if (newPath) await sb.storage.from(PROMO_BUCKET).remove([newPath]).catch(() => {});
+    console.error('Invoice logo upload failed:', error);
+    showToast('Imeshindwa kupakia logo: ' + (error.message || error), 'error');
+  }
+}
+
+async function removeInvoiceLogo() {
+  const previous = getInvoicePreviewSettings();
+  try {
+    const updated = { ...previous, logoUrl: '', logoPath: '' };
+    await persistInvoicePreviewSettings(updated, true);
+    if (previous.logoPath) {
+      const { error } = await sb.storage.from(PROMO_BUCKET).remove([previous.logoPath]);
+      if (error) console.warn('Invoice logo removal from storage failed:', error);
+    }
+    pendingInvoiceLogoFile = null;
+    const input = document.getElementById('invoiceLogoFile'); if (input) input.value = '';
+    const box = document.getElementById('invoiceLogoUploadPreview'); if (box) box.textContent = 'Hakuna logo';
+    await refreshInvoicePreview();
+    showToast('Logo ya invoice imeondolewa.', 'success');
+  } catch (error) {
+    showToast('Imeshindwa kuondoa logo: ' + (error.message || error), 'error');
+  }
+}
+
+async function invoiceLogoToDataUrl(url) {
+  const response = await fetch(url, { mode: 'cors', cache: 'force-cache' });
+  if (!response.ok) throw new Error('Logo haijapatikana kwenye Storage.');
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const img = new Image();
+    img.src = objectUrl;
+    await img.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+    return canvas.toDataURL('image/png');
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 async function downloadPreviewInvoice() {
   const eventId = document.getElementById('invoicePreviewEventSelect')?.value;
   if (!eventId) return showToast('Chagua Event kwanza.', 'error');
@@ -7390,11 +7498,13 @@ async function downloadEventInvoice(eventId) {
 
   // Header band: height is calculated from wrapped text to prevent collisions.
   const titleText = String(invoiceCfg.name || BUSINESS_NAME);
-  const taglineLines = doc.splitTextToSize(String(invoiceCfg.tagline || BUSINESS_TAGLINE), pageWidth - 28);
+  const invoiceLogoData = invoiceCfg.logoUrl ? await invoiceLogoToDataUrl(invoiceCfg.logoUrl).catch(err => { console.warn('Invoice logo PDF load failed:', err); return null; }) : null;
+  const textWidth = invoiceLogoData ? pageWidth - 76 : pageWidth - 28;
+  const taglineLines = doc.splitTextToSize(String(invoiceCfg.tagline || BUSINESS_TAGLINE), textWidth);
   const headerDetailLines = headerLines.length
-    ? doc.splitTextToSize(headerLines.join(' | '), pageWidth - 28)
+    ? doc.splitTextToSize(headerLines.join(' | '), textWidth)
     : [];
-  const headerHeight = Math.max(38, 15 + taglineLines.length * 4.5 + headerDetailLines.length * 4.2 + 8);
+  const headerHeight = Math.max(38, 15 + taglineLines.length * 4.0 + headerDetailLines.length * 3.6 + 8);
   doc.setFillColor(...headerRgb);
   doc.rect(0, 0, pageWidth, headerHeight, 'F');
   doc.setFillColor(...priceRgb);
@@ -7402,16 +7512,19 @@ async function downloadEventInvoice(eventId) {
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
-  const titleLines = doc.splitTextToSize(titleText, pageWidth - 28);
+  const titleLines = doc.splitTextToSize(titleText, textWidth);
   doc.text(titleLines, 14, 12);
   let headerY = 12 + titleLines.length * 7;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   if (taglineLines.length) {
     doc.text(taglineLines, 14, headerY + 2);
-    headerY += taglineLines.length * 4.5 + 3;
+    headerY += taglineLines.length * 4.0 + 2.5;
   }
   if (headerDetailLines.length) doc.text(headerDetailLines, 14, headerY + 1);
+  if (invoiceLogoData) {
+    doc.addImage(invoiceLogoData, 'PNG', pageWidth - 58, 7, 44, 30, undefined, 'FAST');
+  }
 
   const invoiceTop = headerHeight + 13;
   doc.setTextColor(30, 30, 30);
@@ -7459,10 +7572,10 @@ async function downloadEventInvoice(eventId) {
   doc.setFillColor(245,247,250);
   doc.rect(14,y,pageWidth-28,10,'F');
   doc.text('Utengenezaji wa Kadi za Mialiko',17,y+6.5);
-  doc.text(String(cardCount),110,y+6.5);
+  doc.text(String(cardCount),116,y+6.5,{align:'right'});
   doc.setTextColor(...priceRgb);
-  doc.text(price.toLocaleString(),145,y+6.5);
-  doc.text(total.toLocaleString(),180,y+6.5,{align:'right'});
+  doc.text(price.toLocaleString(),153,y+6.5,{align:'right'});
+  doc.text(total.toLocaleString(),pageWidth-16,y+6.5,{align:'right'});
   y += 14;
 
   doc.setDrawColor(200,200,200);
@@ -7496,7 +7609,7 @@ async function downloadEventInvoice(eventId) {
   const pageHeight = doc.internal.pageSize.getHeight();
   const footerLines = [invoiceCfg.thanks,invoiceCfg.payment,invoiceCfg.terms,invoiceCfg.contact,invoiceCfg.preparedBy ? 'Imeandaliwa na: '+invoiceCfg.preparedBy : ''].filter(Boolean);
   const wrappedFooter = footerLines.flatMap(line => doc.splitTextToSize(String(line), pageWidth - 28));
-  const footerBlockHeight = 9 + wrappedFooter.length * 4.2;
+  const footerBlockHeight = 8 + wrappedFooter.length * 3.5;
   if (y + footerBlockHeight > pageHeight - 10) {
     doc.addPage();
     y = 18;
@@ -7509,8 +7622,8 @@ async function downloadEventInvoice(eventId) {
   doc.setFont('helvetica','normal');
   doc.setFontSize(8.5);
   doc.setTextColor(80,80,80);
-  let footerY = y + 7;
-  if (wrappedFooter.length) doc.text(wrappedFooter,14,footerY);
+  let footerY = y + 6;
+  if (wrappedFooter.length) doc.text(wrappedFooter,14,footerY,{lineHeightFactor:1.05});
 
   const safeName = (e.name || 'event').replace(/[^a-zA-Z0-9]/g, '_');
   doc.save(`Invoice_${invoiceNo.replace(/[^a-zA-Z0-9-]/g,'_')}_${safeName}.pdf`);
